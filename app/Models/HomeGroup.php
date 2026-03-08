@@ -16,12 +16,30 @@ class HomeGroup extends Model
      */
     protected $fillable = [
         'name',
-        'zone_id'
+        'zone_id',
+        'location',
+        'meeting_day',
+        'meeting_time',
+        'leader_id'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'meeting_time' => 'datetime:H:i',
     ];
 
     public function zone()
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    public function leader()
+    {
+        return $this->belongsTo(User::class, 'leader_id');
     }
 
     public function users()
