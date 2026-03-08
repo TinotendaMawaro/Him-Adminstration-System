@@ -1,0 +1,570 @@
+.fade-slide-enter {
+  opacity: 0;
+  transform: translateX(-50px);
+}
+
+.fade-slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 500ms ease-in-out;
+}
+
+.fade-slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.fade-slide-exit-active {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 500ms ease-in-out;
+}
+
+/* Tooltip animations */
+.tooltip-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tooltip-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 300ms ease-in-out;
+}
+
+.tooltip-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 300ms ease-in-out;
+}
+
+/* Tooltip format positioning */
+.tooltip-format {
+  top: -45px;
+  left: 0;
+  width: 100%;
+}
+
+/* Text gradient animation */
+@keyframes textGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-textGradient {
+  background: linear-gradient(90deg, #ffd700, #fff, #ffd700);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: textGradient 3s ease infinite;
+}
+
+/* Sparkle animation */
+@keyframes sparkle {
+  0%, 100% {
+    box-shadow: 0 0 8px #FFD700, 0 0 15px #FFE066;
+  }
+
+  50% {
+    box-shadow: 0 0 15px #FFD700, 0 0 25px #FFE066;
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 1.2s ease-in-out infinite;
+}
+
+/* Particle float animation */
+@keyframes particleFloat {
+  0% {
+    transform: translateY(100vh) translateX(0px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.2;
+  }
+
+  90% {
+    opacity: 0.2;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(30px);
+    opacity: 0;
+  }
+}
+
+.particle-float {
+  animation: particleFloat linear infinite;
+}
+
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Checkbox check animation */
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 200ms ease-out forwards;
+}
+
+/* Slide animations */
+.slide-enter {
+  opacity: 0;
+  transform: translateX(50px);
+}
+
+.slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 500ms ease;
+}
+
+.slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-exit-active {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 500ms ease;
+}
+
+/* Float up animation for buttons */
+.floatUp-appear {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.floatUp-appear-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 500ms ease;
+}
+
+/* Fade animation for form content switching */
+.fade-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 300ms ease-out;
+}
+
+.fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 300ms ease-out;
+}
+
+/* Flame gold text with moving black shadow animation */
+@keyframes flameGold {
+  0% {
+    color: #FFD700;
+    text-shadow:
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      0 0 10px rgba(255, 215, 0, 0.5);
+    transform: translateX(0);
+  }
+
+  25% {
+    color: #FFD700;
+    text-shadow:
+      2px -2px 0 #000,
+      2px 2px 0 #000,
+      -2px 2px 0 #000,
+      -2px -2px 0 #000,
+      0 0 15px rgba(255, 215, 0, 0.7);
+    transform: translateX(3px);
+  }
+
+  50% {
+    color: #FFA500;
+    text-shadow:
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      2px -2px 0 #000,
+      -2px -2px 0 #000,
+      0 0 20px rgba(255, 165, 0, 0.8);
+    transform: translateX(0);
+  }
+
+  75% {
+    color: #FFD700;
+    text-shadow:
+      2px 2px 0 #000,
+      -2px 2px 0 #000,
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      0 0 15px rgba(255, 215, 0, 0.7);
+    transform: translateX(-3px);
+  }
+
+  100% {
+    color: #FFD700;
+    text-shadow:
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      0 0 10px rgba(255, 215, 0, 0.5);
+    transform: translateX(0);
+  }
+}
+
+.animate-flameGold {
+  animation: flameGold 3s ease-in-out infinite;
+}
+
+/* Gold moving gradient text with shimmer effect */
+@keyframes goldGradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes goldShimmer {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    filter: brightness(1.3);
+  }
+}
+
+@keyframes shimmerSparkle {
+  0%, 100% {
+    text-shadow:
+      0 0 10px rgba(255, 215, 0, 0.8),
+      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 30px rgba(255, 215, 0, 0.4),
+      0 0 40px rgba(255, 215, 0, 0.2);
+  }
+
+  25% {
+    text-shadow:
+      0 0 15px rgba(255, 215, 0, 1),
+      0 0 30px rgba(255, 215, 0, 0.8),
+      0 0 45px rgba(255, 215, 0, 0.6),
+      0 0 60px rgba(255, 215, 0, 0.4);
+  }
+
+  50% {
+    text-shadow:
+      0 0 10px rgba(255, 215, 0, 0.8),
+      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 30px rgba(255, 215, 0, 0.4),
+      0 0 40px rgba(255, 215, 0, 0.2);
+  }
+
+  75% {
+    text-shadow:
+      0 0 20px rgba(255, 215, 0, 1),
+      0 0 40px rgba(255, 215, 0, 0.8),
+      0 0 60px rgba(255, 215, 0, 0.6),
+      0 0 80px rgba(255, 215, 0, 0.4);
+  }
+}
+
+/* Animated gold gradient with slow movement */
+.animate-goldGradient {
+  /* Elegant gold gradient colors */
+  background: linear-gradient(90deg,
+      #B8860B 0%,
+      #FFD700 25%,
+      #FFF8DC 50%,
+      #FFD700 75%,
+      #B8860B 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  /* Animation - slow moving gradient */
+  animation:
+    goldGradientMove 4s ease-in-out infinite,
+    shimmerSparkle 3s ease-in-out infinite;
+  animation-delay: 0s, 0s;
+}
+
+/* Black strip background for header */
+.gold-header-bg {
+  background: linear-gradient(90deg,
+      rgba(0, 0, 0, 0.95) 0%,
+      rgba(0, 0, 0, 0.85) 50%,
+      rgba(0, 0, 0, 0.95) 100%);
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 215, 0, 0.1);
+}
+
+/* Static gold gradient fallback */
+.animate-goldGradientStatic {
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.5);
+  color: transparent;
+  background: linear-gradient(to bottom, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* Animated Circles Background */
+@keyframes animate {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+    border-radius: 0;
+  }
+
+  100% {
+    transform: translateY(-1000px) rotate(720deg);
+    opacity: 0;
+    border-radius: 50%;
+  }
+}
+
+.area {
+  background: #c84e62;
+  background: -webkit-linear-gradient(to left, #8f94fb, #4e54c8);
+  width: 100%;
+  height: 100vh;
+  position: absolute;
+  z-index: -1;
+}
+
+.circles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 96%;
+  overflow: hidden;
+}
+
+.circles li {
+  position: absolute;
+  display: block;
+  list-style: none;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  animation: animate 25s linear infinite;
+  bottom: -150px;
+}
+
+.circles li:nth-child(1) {
+  left: 25%;
+  width: 80px;
+  height: 80px;
+  animation-delay: 0s;
+}
+
+.circles li:nth-child(2) {
+  left: 10%;
+  width: 20px;
+  height: 20px;
+  animation-delay: 2s;
+  animation-duration: 12s;
+}
+
+.circles li:nth-child(3) {
+  left: 70%;
+  width: 20px;
+  height: 20px;
+  animation-delay: 4s;
+}
+
+.circles li:nth-child(4) {
+  left: 40%;
+  width: 60px;
+  height: 60px;
+  animation-delay: 0s;
+  animation-duration: 18s;
+}
+
+.circles li:nth-child(5) {
+  left: 65%;
+  width: 20px;
+  height: 20px;
+  animation-delay: 0s;
+}
+
+.circles li:nth-child(6) {
+  left: 75%;
+  width: 110px;
+  height: 110px;
+  animation-delay: 3s;
+}
+
+.circles li:nth-child(7) {
+  left: 35%;
+  width: 150px;
+  height: 150px;
+  animation-delay: 7s;
+}
+
+.circles li:nth-child(8) {
+  left: 50%;
+  width: 25px;
+  height: 25px;
+  animation-delay: 15s;
+  animation-duration: 45s;
+}
+
+.circles li:nth-child(9) {
+  left: 20%;
+  width: 15px;
+  height: 15px;
+  animation-delay: 2s;
+  animation-duration: 35s;
+}
+
+.circles li:nth-child(10) {
+  left: 85%;
+  width: 150px;
+  height: 150px;
+  animation-delay: 0s;
+  animation-duration: 11s;
+}
+
+/* Drawer slide-in animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Scale in animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Shake animation for destructive actions */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Ripple animation for buttons */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s linear;
+}
