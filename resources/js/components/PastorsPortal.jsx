@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import ZoneTab from "./dashboard/ZoneTab.jsx";
+import MembersTab from "./dashboard/MembersTab.jsx";
 import PastorsSidebar from "./PastorsSidebar.jsx";
 
 // ============================================================================
@@ -1450,7 +1451,7 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
                     <DashboardContent user={user} onNavigate={setActiveItem} />
                 );
             case "members":
-                return <MembersPage />;
+                return <MembersTab />;
             case "homegroups":
                 return <HomeGroupsPage />;
             case "departments":
