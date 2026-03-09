@@ -8,6 +8,7 @@ import PastorsSidebar from "./PastorsSidebar.jsx";
 import WeeklyReportForm from "./reports/WeeklyReportForm.jsx";
 import ReportsHistory from "./reports/ReportsHistory.jsx";
 import NotificationBell from "./notifications/NotificationBell.jsx";
+import ProfileSection from "./dashboard/sections/ProfileSection.jsx";
 
 // ============================================================================
 // PREMIUM FLOATING PARTICLES BACKGROUND COMPONENT
@@ -519,6 +520,7 @@ const ProfileDrawer = ({ user, onClose, onSave }) => {
 
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Icons.Dashboard },
+    { id: "profile", label: "My Profile", icon: Icons.UserCircle },
     { id: "members", label: "Members", icon: Icons.Users },
     { id: "homegroups", label: "Home Groups", icon: Icons.HomeGroup },
     { id: "departments", label: "Departments", icon: Icons.BuildingOffice },
@@ -1469,6 +1471,16 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
                 return (
                     <DashboardContent user={user} onNavigate={setActiveItem} />
                 );
+            case "profile":
+                return (
+                    <ProfileSection 
+                        user={user} 
+                        onClose={() => setActiveItem("dashboard")}
+                        onUpdate={(updatedUser) => {
+                            setUser(updatedUser);
+                        }}
+                    />
+                );
             case "members":
                 return <MembersTab />;
             case "homegroups":
@@ -1491,6 +1503,7 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
     const getPageTitle = () =>
         ({
             dashboard: "Dashboard",
+            profile: "My Profile",
             members: "Members",
             homegroups: "Home Groups",
             departments: "Departments",
@@ -1564,7 +1577,7 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
                             title={getPageTitle()}
                             user={user}
                             onLogout={onLogout}
-                            onOpenProfile={() => setShowProfileDrawer(true)}
+                            onOpenProfile={() => setActiveItem("profile")}
                             onNavigate={setActiveItem}
                         />
                     </div>
