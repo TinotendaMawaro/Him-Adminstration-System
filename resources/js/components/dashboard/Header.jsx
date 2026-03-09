@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationBell from "../notifications/NotificationBell.jsx";
 
 export default function Header({ title, user, onLogout }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -18,14 +19,8 @@ export default function Header({ title, user, onLogout }) {
       
       {/* Actions Section */}
       <div className="flex items-center gap-4">
-        {/* Notifications */}
-        <button className="relative p-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth group">
-          <svg className="w-5 h-5 text-gray-600 group-hover:text-sky-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          {/* Notification badge */}
-          <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-full shadow-lg shadow-red-500/40 animate-pulse"></span>
-        </button>
+        {/* Notifications Bell */}
+        <NotificationBell userId={user?.id} />
 
         {/* User Profile with Dropdown */}
         <div className="relative">

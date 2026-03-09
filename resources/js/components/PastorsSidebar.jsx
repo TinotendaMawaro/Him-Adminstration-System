@@ -123,7 +123,7 @@ const menuItems = [
     { id: "homegroups", label: "Home Groups", icon: Icons.HomeGroup },
     { id: "departments", label: "Departments", icon: Icons.BuildingOffice },
     { id: "achievements", label: "Achievements", icon: Icons.Achievements },
-    { id: "reports", label: "Reports", icon: Icons.DocumentChart, badge: 1 },
+    { id: "reports", label: "Reports", icon: Icons.DocumentChart },
     { id: "zone", label: "My Zone", icon: Icons.MapPin },
 ];
 

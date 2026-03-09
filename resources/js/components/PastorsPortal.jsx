@@ -5,6 +5,9 @@ import MembersTab from "./dashboard/MembersTab.jsx";
 import HomeGroupsTab from "./dashboard/HomegroupsTab.jsx";
 import DepartmentsTab from "./dashboard/DepartmentsTab.jsx";
 import PastorsSidebar from "./PastorsSidebar.jsx";
+import WeeklyReportForm from "./reports/WeeklyReportForm.jsx";
+import ReportsHistory from "./reports/ReportsHistory.jsx";
+import NotificationBell from "./notifications/NotificationBell.jsx";
 
 // ============================================================================
 // PREMIUM FLOATING PARTICLES BACKGROUND COMPONENT
@@ -520,7 +523,7 @@ const menuItems = [
     { id: "homegroups", label: "Home Groups", icon: Icons.HomeGroup },
     { id: "departments", label: "Departments", icon: Icons.BuildingOffice },
     { id: "achievements", label: "Achievements", icon: Icons.Achievements },
-    { id: "reports", label: "Reports", icon: Icons.DocumentChart, badge: 1 },
+    { id: "reports", label: "Reports", icon: Icons.DocumentChart },
     { id: "zone", label: "My Zone", icon: Icons.MapPin },
 ];
 
@@ -764,14 +767,7 @@ const Header = ({
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <button className="relative p-3 rounded-2xl bg-white/60 hover:bg-white text-gray-600 hover:text-gray-900 transition-all duration-300 shadow-lg hover:shadow-xl">
-                    <Icons.Bell className="w-5 h-5" />
-                    {notifications > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30">
-                            {notifications}
-                        </span>
-                    )}
-                </button>
+                <NotificationBell userId={user?.id} />
                 {/* Dropdown for Profile and Logout */}
                 <div className="relative">
                     <button
@@ -1396,14 +1392,35 @@ const AchievementsPage = () => (
     </div>
 );
 
-const ReportsPage = () => (
-    <div className="p-8 space-y-6">
-        <div>
-            <h2 className="text-2xl font-bold text-gray-900">Reports</h2>
-            <p className="text-gray-500 mt-1">Submit and track zone reports</p>
-        </div>
-    </div>
-);
+const ReportsPage = ({ user, onBack }) => {
+    const [view, setView] = useState('history'); // 'form' or 'history'
+    
+    const handleBack = () => {
+        if (view === 'form') {
+            setView('history');
+        } else if (onBack) {
+            onBack();
+        }
+    };
+    
+    if (view === 'form') {
+        return (
+            <WeeklyReportForm 
+                user={user} 
+                onBack={handleBack}
+                onSuccess={() => setView('history')}
+            />
+        );
+    }
+    
+    return (
+        <ReportsHistory 
+            user={user} 
+            onBack={handleBack}
+            onNewReport={() => setView('form')}
+        />
+    );
+};
 
 const ZoneInfoPage = ({ user }) => (
     <div className="p-8 space-y-6">
@@ -1461,7 +1478,7 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
             case "achievements":
                 return <AchievementsPage />;
             case "reports":
-                return <ReportsPage />;
+                return <ReportsPage user={user} onBack={() => setActiveItem("dashboard")} />;
             case "zone":
                 return <ZoneTab user={user} />;
             default:

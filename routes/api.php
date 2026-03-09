@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeGroupApiController;
+use App\Http\Controllers\Api\WeeklyReportController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -28,4 +30,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
     Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
     Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
+    
+    // Weekly Reports routes
+    Route::get('/reports/history', [WeeklyReportController::class, 'history']);
+    Route::get('/reports/pending', [WeeklyReportController::class, 'pendingReminders']);
+    Route::post('/reports', [WeeklyReportController::class, 'store']);
+    Route::get('/reports/{id}', [WeeklyReportController::class, 'show']);
+    Route::put('/reports/{id}', [WeeklyReportController::class, 'update']);
+    Route::post('/reports/{id}/remittance', [WeeklyReportController::class, 'submitRemittance']);
+    Route::post('/reports/{id}/attachment', [WeeklyReportController::class, 'uploadAttachment']);
+    
+    // Notifications routes
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
 });
