@@ -336,8 +336,11 @@ export default function NotificationBell({ userId }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [displayCount, setDisplayCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showSuccessGlow, setShowSuccessGlow] = useState(false);
+    const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
     // Fetch notifications from API
     const fetchNotifications = async () => {
@@ -457,7 +460,7 @@ export default function NotificationBell({ userId }) {
             <div className="relative">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="relative p-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth group"
+                    className="relative p-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth group hover:scale-105 active:scale-95"
                     aria-label="Notifications"
                 >
                     <svg
@@ -474,16 +477,23 @@ export default function NotificationBell({ userId }) {
                         />
                     </svg>
 
-                    {/* Glowing Badge for Unread Messages */}
+                    {/* Glowing Badge for Unread Messages - Gold Glow Animation */}
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 rounded-full text-white text-xs font-bold shadow-lg shadow-red-500/50 animate-pulse">
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
+                        <>
+                            {/* Outer glow ring */}
+                            <span className="absolute -top-0.5 -right-0.5 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-gold-600 animate-pulse opacity-50 blur-sm" />
+                            {/* Inner glow ring */}
+                            <span className="absolute -top-0.5 -right-0.5 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-gold-600 animate-pulse opacity-75 blur-md" style={{ animationDelay: '0.5s' }} />
+                            {/* Main badge */}
+                            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-gradient-to-br from-amber-400 via-gold-500 to-amber-600 rounded-full text-white text-xs font-bold shadow-lg shadow-amber-500/50 animate-bounce-spring">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                        </>
                     )}
 
                     {/* Soft pulsing glow when there are unread */}
                     {unreadCount > 0 && (
-                        <span className="absolute inset-0 rounded-2xl bg-sky-400/20 animate-ping opacity-75" />
+                        <span className="absolute inset-0 rounded-2xl bg-sky-400/20 animate-ping opacity-50" />
                     )}
                 </button>
 
@@ -511,6 +521,17 @@ export default function NotificationBell({ userId }) {
                     onClose={() => setIsDrawerOpen(false)}
                 />
             )}
+            
+            {/* CSS for bounce-spring animation */}
+            <style>{`
+                @keyframes bounce-spring {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                }
+                .animate-bounce-spring {
+                    animation: bounce-spring 2s ease-in-out infinite;
+                }
+            `}</style>
         </>
     );
 }

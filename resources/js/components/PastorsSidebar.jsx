@@ -153,11 +153,64 @@ const PastorsSidebar = ({
     onLogout,
     isOpen = true,
     onClose,
+    isMobile = false,
 }) => {
     const handleItemClick = (itemId) => {
         onItemClick(itemId);
         if (onClose) onClose();
     };
+
+    // Mobile Bottom Tab Navigation
+    if (isMobile) {
+        return (
+            <>
+                {/* Mobile Bottom Tab Bar */}
+                <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-lg lg:hidden safe-area-pb">
+                    <div className="flex items-center justify-around px-2 py-2">
+                        {menuItems.slice(0, 5).map((item) => {
+                            const Icon = item.icon;
+                            const isActive = activeItem === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => handleItemClick(item.id)}
+                                    className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 min-w-[60px] ${
+                                        isActive 
+                                            ? "text-gold-600 bg-gold-50" 
+                                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <div className={`relative p-1.5 rounded-lg transition-all duration-300 ${isActive ? "bg-gold-100" : ""}`}>
+                                        <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : ""}`} />
+                                        {isActive && (
+                                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gold-500 rounded-full animate-pulse" />
+                                        )}
+                                    </div>
+                                    <span className={`text-[10px] font-medium mt-1 ${isActive ? "text-gold-600" : "text-gray-500"}`}>
+                                        {item.label.split(' ')[0]}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                        {/* More button to show additional items */}
+                        <button
+                            onClick={() => handleItemClick('more')}
+                            className="flex flex-col items-center justify-center p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-1.5">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-medium text-gray-500 mt-1">More</span>
+                        </button>
+                    </div>
+                </nav>
+            </>
+        );
+    }
+
+    // Desktop Sidebar
     return (
         <>
             {isOpen && (
@@ -218,7 +271,7 @@ const PastorsSidebar = ({
                                 <button
                                     key={item.id}
                                     onClick={() => onItemClick(item.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative ${isActive ? "bg-gradient-to-r from-gold-500 to-gold-600 text-white shadow-xl" : "text-gray-300 hover:bg-white/10 hover:text-white"}`}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative hover:scale-[1.02] ${isActive ? "bg-gradient-to-r from-gold-500 to-gold-600 text-white shadow-xl" : "text-gray-300 hover:bg-white/10 hover:text-white"}`}
                                 >
                                     {isActive && (
                                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-r-full"></div>

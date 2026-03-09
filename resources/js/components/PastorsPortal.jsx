@@ -1464,6 +1464,21 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showProfileDrawer, setShowProfileDrawer] = useState(false);
     const [user, setUser] = useState(initialUser);
+    const [isMobile, setIsMobile] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
+
+    // Detect screen size for responsive design
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            setIsMobile(width < 768);
+            setIsTablet(width >= 768 && width < 1024);
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const getPageContent = () => {
         switch (activeItem) {
@@ -1513,7 +1528,7 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
         })[activeItem] || "Dashboard";
 
     return (
-        <div className="relative min-h-screen">
+        <div className="relative min-h-screen pb-16 lg:pb-0">
             <FloatingParticles />
             <PastorsSidebar
                 activeItem={activeItem}
@@ -1522,8 +1537,9 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
                 onLogout={onLogout}
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
+                isMobile={isMobile}
             />
-            <div className="pl-0 lg:pl-64 flex flex-col min-h-screen w-full">
+            <div className={`pl-0 lg:pl-64 flex flex-col min-h-screen w-full ${isMobile ? 'pb-20' : ''}`}>
                 <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30">
                     <button
                         onClick={() => setSidebarOpen(true)}
