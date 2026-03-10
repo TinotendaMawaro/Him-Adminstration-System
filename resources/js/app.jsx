@@ -7,6 +7,8 @@ import LoadingScreen from "./components/onboarding/LoadingScreen.jsx";
 import TermsModal from "./components/onboarding/TermsModal.jsx";
 import GuidedTour from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal from "./components/PastorsPortal.jsx";
+import HODPortal from "./components/HODPortal.jsx";
+import MembersPortal from "./components/MembersPortal.jsx";
 
 // App States:
 // 1. auth - Original login page
@@ -105,6 +107,30 @@ function App() {
         setAppState("auth");
     };
 
+    // Render the appropriate portal based on user role
+    const renderPortal = (portalUser, onLogout) => {
+        console.log("[DEBUG] Rendering portal for user role:", portalUser?.role);
+        
+        if (portalUser?.role === 'member') {
+            console.log("[DEBUG] Routing to MembersPortal");
+            return <MembersPortal user={portalUser} onLogout={onLogout} />;
+        }
+        
+        if (portalUser?.role === 'hod') {
+            console.log("[DEBUG] Routing to HODPortal");
+            return <HODPortal user={portalUser} onLogout={onLogout} />;
+        }
+        
+        if (portalUser?.role === 'pastor') {
+            console.log("[DEBUG] Routing to PastorsPortal (pastor)");
+            return <PastorsPortal user={portalUser} onLogout={onLogout} />;
+        }
+        
+        // Default to PastorsPortal for other roles
+        console.log("[DEBUG] Routing to PastorsPortal (default)");
+        return <PastorsPortal user={portalUser} onLogout={onLogout} />;
+    };
+
     // Render based on app state
     const renderContent = () => {
         switch (appState) {
@@ -128,7 +154,7 @@ function App() {
             case "tour":
                 return (
                     <>
-                        <PastorsPortal user={user} onLogout={handleLogout} />
+                        {renderPortal(user, handleLogout)}
                         <GuidedTour
                             onFinish={handleTourComplete}
                             onSkip={handleTourSkip}
@@ -137,7 +163,7 @@ function App() {
                 );
 
             case "dashboard":
-                return <PastorsPortal user={user} onLogout={handleLogout} />;
+                return renderPortal(user, handleLogout);
 
             default:
                 return <AuthPage onLoginSuccess={handleAuthenticated} />;

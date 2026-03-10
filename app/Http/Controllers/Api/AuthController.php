@@ -32,8 +32,9 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Load zone relationship before returning user
+        // Load zone and department relationships before returning user
         $user->load('zone');
+        $user->load('department');
 
         // Debug: Log the user zone info
         \Log::info('Login attempt - User zone info', [

@@ -18,7 +18,7 @@ if (typeof window !== "undefined") {
 
 // Validation functions
 const validateCode = (code) => {
-    const pattern = /^R\d{4}P\d{2}$/;
+    const pattern = /^R\d{4}[PH]\d{2}$/;
     return pattern.test(code);
 };
 
@@ -203,7 +203,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
         switch (fieldName) {
             case "code":
                 if (value && !validateCode(value)) {
-                    error = "Invalid code format! Example: R0101P01";
+                    error = "Invalid code format! Example: R0101P01 or R0101H01";
                 }
                 break;
             case "email":
@@ -237,7 +237,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
             if (!code) {
                 newErrors.code = "Code is required";
             } else if (!validateCode(code)) {
-                newErrors.code = "Invalid code format! Example: R0101P01";
+                newErrors.code = "Invalid code format! Example: R0101P01 or R0101H01";
             }
         } else if (mode === "login") {
             if (!formData.username) {
@@ -345,6 +345,11 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                             : null,
                         zoneName: data.user.zone ? data.user.zone.name : null,
                         zoneId: data.user.zone_id,
+                        // Include department info for HOD users
+                        department: data.user.department
+                            ? { name: data.user.department.name, id: data.user.department.id }
+                            : null,
+                        departmentId: data.user.department_id,
                         email: data.user.email,
                         firstLogin: data.is_first_time,
                         termsAccepted: !data.needs_terms_acceptance,
@@ -357,20 +362,30 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     // Call the success callback
                     onLoginSuccess(userData);
                 } else {
-                    // API returned error - use fallback with correct defaults
+                    // API returned error - determine role from code and use fallback
                     console.log(
                         "[DEBUG] API Error, using fallback:",
                         data.message,
                     );
 
+                    // Determine role from code (RXXXXPXX = Pastor, RXXXXHXX = HOD)
+                    let fallbackRole = "member";
+                    if (code.includes("P")) {
+                        fallbackRole = "pastor";
+                    } else if (code.includes("H")) {
+                        fallbackRole = "hod";
+                    }
+
                     // Code R0101P01 belongs to Chipo Vutabwashe (Regional Leader - P01)
                     const userData = {
                         code: code,
-                        role: "pastor",
-                        name: "Chipo Vutabwashe",
+                        role: fallbackRole,
+                        name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
                         zone: { name: "IOC (International Overflow Center)" },
                         zoneName: "IOC (International Overflow Center)",
                         zoneId: 1,
+                        department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
+                        departmentId: fallbackRole === "hod" ? 1 : null,
                         firstLogin: false,
                         termsAccepted: true,
                         tourCompleted: true,
@@ -379,6 +394,32 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     localStorage.setItem("him_user", JSON.stringify(userData));
                     onLoginSuccess(userData);
                 }
+            } else if (mode === "register") {
+                // Registration - create new member account
+                const newUser = {
+                    id: Date.now(),
+                    role: "member",
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    email: formData.email,
+                    phone: formData.phoneNumber,
+                    zone: { name: formData.zone || "IOC" },
+                    zoneName: formData.zone || "IOC",
+                    zoneId: 1,
+                    homegroup: null,
+                    homegroupId: null,
+                    department: null,
+                    departmentId: null,
+                    address: formData.physicalAddress,
+                    firstLogin: false,
+                    termsAccepted: true,
+                    tourCompleted: true,
+                };
+
+                // Save to localStorage
+                localStorage.setItem("him_user", JSON.stringify(newUser));
+
+                // Call the success callback
+                onLoginSuccess(newUser);
             } else {
                 // For other modes (login/register), still use simulation for now
                 // Simulate API call
@@ -386,10 +427,12 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
 
                 // Determine user role from code
                 let role = "member";
+                let department = null;
                 if (mode === "code" && code.includes("P")) {
                     role = "pastor";
                 } else if (mode === "code" && code.includes("H")) {
                     role = "hod";
+                    department = { name: "Youth", id: 1 };
                 }
 
                 // Create user object
@@ -403,6 +446,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                               ? "John Doe"
                               : "Member",
                     zone: "IOC (International Overflow Center)",
+                    department: department,
                     firstLogin: true,
                     termsAccepted: false,
                     tourCompleted: false,
@@ -417,15 +461,24 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
         } catch (err) {
             console.error("[DEBUG] Login error:", err);
 
-            // Fallback: use correct defaults when API is unavailable
+            // Fallback: determine role from code when API is unavailable
+            let fallbackRole = "member";
+            if (code.includes("P")) {
+                fallbackRole = "pastor";
+            } else if (code.includes("H")) {
+                fallbackRole = "hod";
+            }
+
             // Code R0101P01 belongs to Chipo Vutabwashe (Regional Leader - P01)
             const userData = {
                 code: code,
-                role: "pastor",
-                name: "Chipo Vutabwashe",
+                role: fallbackRole,
+                name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
                 zone: { name: "IOC" },
                 zoneName: "IOC",
                 zoneId: 1,
+                department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
+                departmentId: fallbackRole === "hod" ? 1 : null,
                 firstLogin: false,
                 termsAccepted: true,
                 tourCompleted: true,

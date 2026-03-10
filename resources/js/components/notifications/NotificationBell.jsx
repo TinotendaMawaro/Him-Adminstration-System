@@ -3,11 +3,17 @@ import React, { useState, useEffect, useRef } from "react";
 // Notification type icons and colors
 const getNotificationStyle = (category, type) => {
     const styles = {
-        report: { icon: '📊', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50' },
-        finance: { icon: '💰', color: 'from-emerald-400 to-green-500', bg: 'bg-emerald-50' },
-        member: { icon: '👤', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50' },
-        appointment: { icon: '🎖️', color: 'from-purple-400 to-violet-500', bg: 'bg-purple-50' },
-        system: { icon: '📢', color: 'from-gray-400 to-slate-500', bg: 'bg-gray-50' },
+        pastor: { icon: '📣', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Pastor' },
+        announcement: { icon: '📢', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Announcement' },
+        report: { icon: '📊', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Report' },
+        report_reminder: { icon: '⏰', color: 'from-orange-400 to-red-500', bg: 'bg-orange-50', label: 'Report Reminder' },
+        event: { icon: '📅', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50', label: 'Event' },
+        event_reminder: { icon: '🔔', color: 'from-violet-400 to-purple-500', bg: 'bg-violet-50', label: 'Event Reminder' },
+        finance: { icon: '💰', color: 'from-emerald-400 to-green-500', bg: 'bg-emerald-50', label: 'Finance' },
+        member: { icon: '👤', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50', label: 'Member' },
+        member_update: { icon: '🔄', color: 'from-cyan-400 to-teal-500', bg: 'bg-cyan-50', label: 'Member Update' },
+        appointment: { icon: '🎖️', color: 'from-purple-400 to-violet-500', bg: 'bg-purple-50', label: 'Appointment' },
+        system: { icon: '📢', color: 'from-gray-400 to-slate-500', bg: 'bg-gray-50', label: 'System' },
     };
     return styles[category] || styles.system;
 };
@@ -336,8 +342,11 @@ export default function NotificationBell({ userId }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [displayCount, setDisplayCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showSuccessGlow, setShowSuccessGlow] = useState(false);
+    const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
     // Fetch notifications from API
     const fetchNotifications = async () => {
@@ -457,7 +466,7 @@ export default function NotificationBell({ userId }) {
             <div className="relative">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="relative p-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth group"
+                    className="relative p-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth group hover:scale-105 active:scale-95"
                     aria-label="Notifications"
                 >
                     <svg
@@ -474,16 +483,23 @@ export default function NotificationBell({ userId }) {
                         />
                     </svg>
 
-                    {/* Glowing Badge for Unread Messages */}
+                    {/* Glowing Badge for Unread Messages - Gold Glow Animation */}
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 rounded-full text-white text-xs font-bold shadow-lg shadow-red-500/50 animate-pulse">
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
+                        <>
+                            {/* Outer glow ring */}
+                            <span className="absolute -top-0.5 -right-0.5 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-gold-600 animate-pulse opacity-50 blur-sm" />
+                            {/* Inner glow ring */}
+                            <span className="absolute -top-0.5 -right-0.5 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-gold-600 animate-pulse opacity-75 blur-md" style={{ animationDelay: '0.5s' }} />
+                            {/* Main badge */}
+                            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-gradient-to-br from-amber-400 via-gold-500 to-amber-600 rounded-full text-white text-xs font-bold shadow-lg shadow-amber-500/50 animate-bounce-spring">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                        </>
                     )}
 
                     {/* Soft pulsing glow when there are unread */}
                     {unreadCount > 0 && (
-                        <span className="absolute inset-0 rounded-2xl bg-sky-400/20 animate-ping opacity-75" />
+                        <span className="absolute inset-0 rounded-2xl bg-sky-400/20 animate-ping opacity-50" />
                     )}
                 </button>
 
@@ -511,6 +527,17 @@ export default function NotificationBell({ userId }) {
                     onClose={() => setIsDrawerOpen(false)}
                 />
             )}
+            
+            {/* CSS for bounce-spring animation */}
+            <style>{`
+                @keyframes bounce-spring {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                }
+                .animate-bounce-spring {
+                    animation: bounce-spring 2s ease-in-out infinite;
+                }
+            `}</style>
         </>
     );
 }

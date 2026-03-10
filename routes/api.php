@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeGroupApiController;
 use App\Http\Controllers\Api\WeeklyReportController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\MessageController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -47,4 +49,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
+    
+    // Activities routes
+    Route::get('/activities', [ActivityController::class, 'index']);
+    Route::get('/activities/upcoming', [ActivityController::class, 'upcoming']);
+    Route::post('/activities', [ActivityController::class, 'store']);
+    Route::get('/activities/{id}', [ActivityController::class, 'show']);
+    Route::put('/activities/{id}', [ActivityController::class, 'update']);
+    Route::delete('/activities/{id}', [ActivityController::class, 'destroy']);
+    Route::put('/activities/{id}/status', [ActivityController::class, 'updateStatus']);
+    
+    // Messages routes
+    Route::get('/messages/conversations', [MessageController::class, 'conversations']);
+    Route::get('/messages/conversation/{contactId}', [MessageController::class, 'conversation']);
+    Route::post('/messages/direct', [MessageController::class, 'sendDirect']);
+    Route::post('/messages/announcement', [MessageController::class, 'sendAnnouncement']);
+    Route::post('/messages/notice', [MessageController::class, 'sendNotice']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
+    Route::get('/messages/pastor', [MessageController::class, 'pastorMessages']);
+    Route::put('/messages/{id}/read', [MessageController::class, 'markAsRead']);
+    Route::get('/messages/department-members', [MessageController::class, 'departmentMembers']);
 });
