@@ -8,6 +8,7 @@ import TermsModal from "./components/onboarding/TermsModal.jsx";
 import GuidedTour from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal from "./components/PastorsPortal.jsx";
 import HODPortal from "./components/HODPortal.jsx";
+import MembersPortal from "./components/MembersPortal.jsx";
 
 // App States:
 // 1. auth - Original login page
@@ -109,6 +110,11 @@ function App() {
     // Render the appropriate portal based on user role
     const renderPortal = (portalUser, onLogout) => {
         console.log("[DEBUG] Rendering portal for user role:", portalUser?.role);
+        
+        if (portalUser?.role === 'member') {
+            console.log("[DEBUG] Routing to MembersPortal");
+            return <MembersPortal user={portalUser} onLogout={onLogout} />;
+        }
         
         if (portalUser?.role === 'hod') {
             console.log("[DEBUG] Routing to HODPortal");

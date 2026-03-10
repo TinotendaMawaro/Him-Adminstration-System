@@ -32,6 +32,7 @@ export {
     HODProfileField,
     HODDueDateIndicator,
     HODDepartmentAvatar,
+    DepartmentInfoCard,
 } from "./HODComponents";
 
 // Main Page Components
@@ -44,3 +45,5 @@ export { default as DepartmentProfilePage } from "./DepartmentProfile";
 export { default as HODActivitiesPage } from "./HODActivities";
 export { default as HODAchievementsPage } from "./HODAchievements";
 export { default as HODCommunicationPage } from "./HODCommunication";
+export { default as HODActivityFeed } from "./HODActivityFeed";
+export { HODActivityFeedCompact } from "./HODActivityFeed";

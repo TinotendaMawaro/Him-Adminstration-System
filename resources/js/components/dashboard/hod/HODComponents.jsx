@@ -1,39 +1,47 @@
 // ============================================================================
-// HOD PORTAL DESIGN SYSTEM - Gold/Sky-Blue Glass Morphism Theme
+// HOD PORTAL DESIGN SYSTEM - Apple-inspired Premium Frosted Glass
+// Gold/Sky Blue Theme with Soft Glow Accents
 // ============================================================================
 
 import React from "react";
 import { HODIcons } from "./HODIcons";
 
 // ============================================================================
-// DESIGN TOKENS
+// DESIGN TOKENS - Apple-inspired premium design system
 // ============================================================================
 
 export const HODTheme = {
-    // Colors
+    // Colors - Premium Gold & Sky Blue
     colors: {
-        primary: "from-amber-400 via-yellow-500 to-amber-600",
-        primaryGlow: "shadow-amber-500/30",
-        secondary: "from-sky-400 via-sky-500 to-sky-600",
-        secondaryGlow: "shadow-sky-500/20",
-        success: "from-emerald-400 to-emerald-600",
-        danger: "from-red-400 to-red-600",
-        warning: "from-amber-400 to-amber-600",
+        primary: "from-amber-300 via-yellow-400 to-amber-500",
+        primaryGlow: "shadow-amber-400/25",
+        secondary: "from-sky-300 via-sky-400 to-sky-500",
+        secondaryGlow: "shadow-sky-400/20",
+        success: "from-emerald-300 to-emerald-500",
+        danger: "from-red-300 to-red-500",
+        warning: "from-amber-300 to-amber-500",
     },
     
-    // Glass morphism classes
-    glass: "bg-white/30 backdrop-blur-xl border-white/40 shadow-xl",
-    glassHover: "hover:bg-white/50 hover:shadow-2xl",
+    // Frosted Glass - Apple-inspired premium look
+    glass: "bg-white/40 backdrop-blur-2xl border-white/30 shadow-lg shadow-black/5",
+    glassHover: "hover:bg-white/60 hover:shadow-xl hover:shadow-black/10",
     
-    // Transitions
-    transition: "transition-all duration-300 ease",
+    // Subtle glass variant for nested elements
+    glassSubtle: "bg-white/20 backdrop-blur-xl border-white/20",
     
-    // Border radius
+    // Transitions - Smooth Apple-like animations
+    transition: "transition-all duration-300 ease-out",
+    
+    // Border radius - Rounded, friendly Apple aesthetic
     rounded: "rounded-2xl",
     roundedLg: "rounded-3xl",
     
-    // Hover scale
-    scale: "hover:scale-[1.03]",
+    // Subtle hover effects
+    scale: "hover:scale-[1.02]",
+    
+    // Glow effects for premium feel
+    glowGold: "shadow-[0_0_20px_rgba(251,191,36,0.3)]",
+    glowSky: "shadow-[0_0_20px_rgba(56,189,248,0.3)]",
 };
 
 // ============================================================================
@@ -45,13 +53,13 @@ export const HODGoldButton = ({ children, icon: Icon, onClick, className = "", d
         type={type}
         onClick={onClick}
         disabled={disabled}
-        className={`group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white rounded-2xl overflow-hidden ${HODTheme.transition} ${className}`}
+        className={`group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white rounded-2xl overflow-hidden ${HODTheme.transition} shadow-lg hover:shadow-xl ${className}`}
     >
         {/* Gold gradient background */}
         <span className={`absolute inset-0 bg-gradient-to-r ${HODTheme.colors.primary} group-hover:animate-pulse`}></span>
         
         {/* Glow effect */}
-        <span className="absolute inset-0 bg-amber-400 opacity-0 group-hover:opacity-30 blur-xl transition-opacity"></span>
+        <span className="absolute inset-0 bg-amber-400 opacity-0 group-hover:opacity-40 blur-xl transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(251,191,36,0.6)]"></span>
         
         {/* Content */}
         <span className="relative flex items-center gap-2">
@@ -70,10 +78,16 @@ export const HODSkyButton = ({ children, icon: Icon, onClick, className = "", di
         type={type}
         onClick={onClick}
         disabled={disabled}
-        className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-2xl ${HODTheme.transition} ${HODTheme.glass} ${HODTheme.glassHover} ${className}`}
+        className={`group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-2xl ${HODTheme.transition} ${HODTheme.glass} ${HODTheme.glassHover} shadow-md hover:shadow-lg ${className}`}
     >
-        {Icon && <Icon className="w-4 h-4 text-sky-600" />}
-        {children}
+        {/* Glass effect overlay */}
+        <span className="absolute inset-0 bg-sky-400/0 group-hover:bg-sky-400/10 rounded-2xl transition-all duration-300"></span>
+        
+        {/* Content */}
+        <span className="relative flex items-center gap-2">
+            {Icon && <Icon className="w-4 h-4 text-sky-600" />}
+            {children}
+        </span>
     </button>
 );
 
@@ -103,8 +117,9 @@ export const HODGlassCard = ({ children, className = "", title, action, noPaddin
 // INPUT COMPONENT
 // ============================================================================
 
-export const HODInput = ({ icon: Icon, placeholder, value, onChange, type = "text", className = "", error }) => (
+export const HODInput = ({ icon: Icon, placeholder, value, onChange, type = "text", className = "", error, label }) => (
     <div className="relative">
+        {label && <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>}
         {Icon && (
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500">
                 <Icon className="w-4 h-4" />
@@ -127,14 +142,17 @@ export const HODInput = ({ icon: Icon, placeholder, value, onChange, type = "tex
 // TEXTAREA COMPONENT
 // ============================================================================
 
-export const HODTextarea = ({ placeholder, value, onChange, rows = 4, className = "" }) => (
-    <textarea
-        rows={rows}
-        value={value}
-        onChange={onChange}
-        className={`w-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-gray-800 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 ${HODTheme.transition} resize-none ${className}`}
-        placeholder={placeholder}
-    />
+export const HODTextarea = ({ placeholder, value, onChange, rows = 4, className = "", label }) => (
+    <div>
+        {label && <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>}
+        <textarea
+            rows={rows}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            className={`w-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 text-gray-800 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 ${HODTheme.transition} resize-none ${className}`}
+        />
+    </div>
 );
 
 // ============================================================================
@@ -172,11 +190,11 @@ export const HODDrawer = ({ isOpen, onClose, title, children }) => {
                 onClick={onClose}
             />
             
-            {/* Drawer panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white/90 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto animate-slide-in-right">
+            {/* Drawer panel - full screen on mobile, side drawer on desktop */}
+            <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-md bg-white/90 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto animate-slide-in-right">
                 {/* Header */}
-                <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-white/40 px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+                <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-white/40 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+                    <h2 className="text-base md:text-lg font-semibold text-gray-800">{title}</h2>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
@@ -186,7 +204,7 @@ export const HODDrawer = ({ isOpen, onClose, title, children }) => {
                 </div>
                 
                 {/* Content */}
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                     {children}
                 </div>
             </div>
@@ -439,7 +457,7 @@ export const HODActivityItem = ({ icon: Icon, title, description, time }) => (
 // ============================================================================
 
 export const HODCard = ({ children, className = "" }) => (
-    <div className={`${HODTheme.glass} ${HODTheme.rounded} p-5 ${className}`}>
+    <div className={`${HODTheme.glass} ${HODTheme.rounded} p-4 md:p-5 ${className}`}>
         {children}
     </div>
 );
@@ -530,6 +548,158 @@ export const HODDepartmentAvatar = ({ name, size = "md", color = "from-amber-400
     );
 };
 
+// ============================================================================
+// DEPARTMENT INFO CARD - Large frosted glass card for HOD Portal
+// Shows department name, zone, pastor in charge, members, homegroups
+// Includes edit button if permitted with hover glow effect
+// ============================================================================
+
+export const DepartmentInfoCard = ({ 
+    departmentName, 
+    zoneName, 
+    pastorInCharge, 
+    totalMembers, 
+    totalHomegroups, 
+    canEdit = false, 
+    onEditClick,
+    className = ""
+}) => {
+    return (
+        <div className={`
+            relative overflow-hidden rounded-3xl
+            bg-white/30 backdrop-blur-xl border border-white/40
+            shadow-xl
+            transition-all duration-300 ease-out
+            hover:shadow-2xl hover:border-amber-400/50 hover:bg-white/40
+            ${canEdit ? 'cursor-pointer' : ''}
+            ${className}
+        `}>
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-amber-500/5 pointer-events-none"></div>
+            
+            {/* Glow effect on hover */}
+            <div className="absolute inset-0 bg-amber-400/0 hover:bg-amber-400/10 transition-colors duration-300 rounded-3xl"></div>
+            
+            {/* Decorative elements */}
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-400/10 rounded-full blur-2xl"></div>
+            <div className="absolute -left-4 -bottom-4 w-20 h-20 bg-sky-400/10 rounded-full blur-2xl"></div>
+            
+            {/* Content */}
+            <div className="relative p-6">
+                {/* Header with Department Name and Edit Button */}
+                <div className="flex items-start justify-between mb-6">
+                    <div className="flex-1">
+                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                            Department
+                        </h3>
+                        <h2 className="text-2xl font-bold text-gray-800">
+                            {departmentName || "Department Name"}
+                        </h2>
+                    </div>
+                    
+                    {/* Edit Button */}
+                    {canEdit && (
+                        <button
+                            onClick={onEditClick}
+                            className="
+                                flex items-center gap-2 px-4 py-2
+                                bg-gradient-to-r from-amber-400 to-amber-500 
+                                hover:from-amber-500 hover:to-amber-600
+                                text-white text-sm font-medium rounded-xl
+                                shadow-md hover:shadow-lg
+                                transition-all duration-300
+                                hover:scale-105
+                            "
+                        >
+                            <HODIcons.Pencil className="w-4 h-4" />
+                            Edit Info
+                        </button>
+                    )}
+                </div>
+                
+                {/* Info Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Zone */}
+                    <div className="
+                        p-4 rounded-2xl 
+                        bg-white/30 backdrop-blur-sm 
+                        border border-white/30
+                        hover:bg-white/40 hover:border-amber-400/30
+                        transition-all duration-300
+                    ">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-md">
+                                <HODIcons.MapPin className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase">Zone</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-800 pl-13">
+                            {zoneName || "Not assigned"}
+                        </p>
+                    </div>
+                    
+                    {/* Pastor in Charge */}
+                    <div className="
+                        p-4 rounded-2xl 
+                        bg-white/30 backdrop-blur-sm 
+                        border border-white/30
+                        hover:bg-white/40 hover:border-amber-400/30
+                        transition-all duration-300
+                    ">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-md">
+                                <HODIcons.User className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase">Pastor</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-800 pl-13">
+                            {pastorInCharge || "Not assigned"}
+                        </p>
+                    </div>
+                    
+                    {/* Total Members */}
+                    <div className="
+                        p-4 rounded-2xl 
+                        bg-white/30 backdrop-blur-sm 
+                        border border-white/30
+                        hover:bg-white/40 hover:border-amber-400/30
+                        transition-all duration-300
+                    ">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md">
+                                <HODIcons.Users className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase">Members</span>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-800 pl-13">
+                            {totalMembers ?? 0}
+                        </p>
+                    </div>
+                    
+                    {/* Total Homegroups */}
+                    <div className="
+                        p-4 rounded-2xl 
+                        bg-white/30 backdrop-blur-sm 
+                        border border-white/30
+                        hover:bg-white/40 hover:border-amber-400/30
+                        transition-all duration-300
+                    ">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
+                                <HODIcons.HomeModern className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium text-gray-500 uppercase">Homegroups</span>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-800 pl-13">
+                            {totalHomegroups ?? 0}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default {
     HODTheme,
     HODGoldButton,
@@ -555,4 +725,5 @@ export default {
     HODProfileField,
     HODDueDateIndicator,
     HODDepartmentAvatar,
+    DepartmentInfoCard,
 };

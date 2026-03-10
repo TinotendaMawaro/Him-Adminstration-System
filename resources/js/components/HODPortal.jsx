@@ -33,19 +33,19 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30">
             {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-violet-100 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
+            <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-slate-200/50 shadow-sm">
+                <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-12 md:h-16">
                         {/* Logo & Department */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                                <span className="text-white font-bold text-lg">H</span>
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-400/20">
+                                <span className="text-white font-bold text-sm md:text-lg">H</span>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400">HOD Portal</p>
-                                <p className="text-sm font-semibold text-gray-900">{user?.department?.name || "Department"}</p>
+                                <p className="hidden xs:block text-xs text-slate-400">HOD Portal</p>
+                                <p className="text-xs md:text-sm font-semibold text-slate-700">{user?.department?.name || "Department"}</p>
                             </div>
                         </div>
 
@@ -57,8 +57,8 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
                                     onClick={() => setActivePage(item.id)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                                         activePage === item.id
-                                            ? "bg-violet-100 text-violet-700"
-                                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                                            ? "bg-slate-200/50 text-slate-800"
+                                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                                     }`}
                                 >
                                     <item.Icon className="w-4 h-4" />
@@ -68,20 +68,20 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
                         </nav>
 
                         {/* User & Logout */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 rounded-xl">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
-                                    <span className="text-white font-semibold text-sm">
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 bg-slate-100 rounded-xl">
+                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
+                                    <span className="text-white font-semibold text-xs md:text-sm">
                                         {user?.name?.charAt(0) || "H"}
                                     </span>
                                 </div>
-                                <span className="text-sm font-medium text-gray-700 hidden sm:inline">
+                                <span className="text-xs md:text-sm font-medium text-slate-700 hidden sm:inline">
                                     {user?.name || "HOD"}
                                 </span>
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-xl text-xs md:text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                                 title="Logout"
                             >
                                 <HODIcons.ArrowRightOnRectangle className="w-4 h-4" />
@@ -93,15 +93,15 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
             </header>
 
             {/* Mobile Navigation */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-violet-100 px-4 py-2 flex items-center justify-around z-40">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-slate-200/50 px-2 py-2 flex items-center justify-around z-40">
                 {menuItems.map((item) => (
                     <button
                         key={item.id}
                         onClick={() => setActivePage(item.id)}
-                        className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+                        className={`flex flex-col items-center gap-1 px-2 md:px-3 py-2 rounded-xl transition-colors ${
                             activePage === item.id
-                                ? "text-violet-600"
-                                : "text-gray-400"
+                                ? "text-slate-700"
+                                : "text-slate-400"
                         }`}
                     >
                         <item.Icon className="w-5 h-5" />
@@ -111,7 +111,7 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
             </nav>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6">
+            <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 pb-24 md:pb-6">
                 {children}
             </main>
         </div>

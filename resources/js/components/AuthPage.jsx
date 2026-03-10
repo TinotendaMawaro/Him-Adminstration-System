@@ -394,6 +394,32 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     localStorage.setItem("him_user", JSON.stringify(userData));
                     onLoginSuccess(userData);
                 }
+            } else if (mode === "register") {
+                // Registration - create new member account
+                const newUser = {
+                    id: Date.now(),
+                    role: "member",
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    email: formData.email,
+                    phone: formData.phoneNumber,
+                    zone: { name: formData.zone || "IOC" },
+                    zoneName: formData.zone || "IOC",
+                    zoneId: 1,
+                    homegroup: null,
+                    homegroupId: null,
+                    department: null,
+                    departmentId: null,
+                    address: formData.physicalAddress,
+                    firstLogin: false,
+                    termsAccepted: true,
+                    tourCompleted: true,
+                };
+
+                // Save to localStorage
+                localStorage.setItem("him_user", JSON.stringify(newUser));
+
+                // Call the success callback
+                onLoginSuccess(newUser);
             } else {
                 // For other modes (login/register), still use simulation for now
                 // Simulate API call

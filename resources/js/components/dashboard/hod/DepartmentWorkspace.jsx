@@ -1,11 +1,40 @@
 // ============================================================================
 // DEPARTMENT WORKSPACE - Default landing page for HODs
-// Shows department info, stats, quick actions, and recent activity
+// Simple, Focused, Fast, Modern, Organized, Spiritual yet Professional
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
 import { HODIcons } from "./HODIcons";
 import { HODStatCard, HODQuickAction, HODActivityItem, HODCard } from "./HODComponents";
+import { HODActivityFeed } from "./HODActivityFeed";
+
+// ============================================================================
+// SPIRITUAL VERSE COMPONENT - Adds spiritual yet professional feel
+// ============================================================================
+
+const SpiritualVerse = () => {
+    const verses = [
+        { text: "Shepherd the flock of God among you, serving as overseers...", reference: "1 Peter 5:2" },
+        { text: "Let all things be done for building up.", reference: "1 Corinthians 14:26" },
+        { text: "Be diligent to present yourself approved to God...", reference: "2 Timothy 2:15" },
+        { text: "Whatever you do, work at it with all your heart...", reference: "Colossians 3:23" },
+    ];
+    
+    const [verse, setVerse] = useState(verses[0]);
+    
+    useEffect(() => {
+        // Rotate verse based on day
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+        setVerse(verses[dayOfYear % verses.length]);
+    }, []);
+    
+    return (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg">
+            <HODIcons.BookOpen className="w-4 h-4 text-white/70" />
+            <span className="text-white/80 text-xs italic">"{verse.text}" - {verse.reference}</span>
+        </div>
+    );
+};
 
 // ============================================================================
 // TIME-BASED GREETING COMPONENT
@@ -64,16 +93,20 @@ export const DepartmentBanner = ({ user, departmentName, departmentColor }) => {
         <div className="relative overflow-hidden rounded-2xl">
             <div className={`absolute inset-0 bg-gradient-to-r ${departmentColor} opacity-90`}></div>
             <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-            <div className="relative px-6 py-5">
-                <div className="flex items-center justify-between">
-                    <div>
+            <div className="relative px-4 md:px-6 py-4 md:py-5">
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
                         {/* Time-based Greeting */}
                         <div className="mb-2">
                             <TimeGreeting />
                         </div>
                         <p className="text-white/70 text-sm font-medium">Department Workspace</p>
-                        <h2 className="text-2xl font-bold text-white mt-1">{departmentName} Department</h2>
-                        <p className="text-white/70 text-sm mt-1">Head: {user?.name || "HOD Name"} (HOD)</p>
+                        <h2 className="text-xl md:text-2xl font-bold text-white mt-1">{departmentName} Department</h2>
+                        <p className="text-white/70 text-sm mt-1">Head: {user?.name || "HOD Name"}</p>
+                        {/* Spiritual Verse */}
+                        <div className="mt-3">
+                            <SpiritualVerse />
+                        </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/20 rounded-xl">
                         <HODIcons.Calendar className="w-4 h-4 text-white" />
@@ -235,7 +268,14 @@ const DepartmentWorkspace = ({ user, onNavigate }) => {
             
             <DepartmentQuickActions onNavigate={onNavigate} />
             
-            <DepartmentActivity activities={activities} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                    <DepartmentActivity activities={activities} />
+                </div>
+                <div className="lg:col-span-1">
+                    <HODActivityFeed departmentId={user?.department?.id} />
+                </div>
+            </div>
         </div>
     );
 };

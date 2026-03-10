@@ -10,13 +10,36 @@ import { HODButton, HODCard, HODBadge, HODProfileField } from "./HODComponents";
 // PROFILE AVATAR SECTION
 // ============================================================================
 
-const ProfileAvatar = ({ name, department }) => {
+const ProfileAvatar = ({ name, department, photoUrl, onPhotoChange }) => {
     return (
-        <div className="flex flex-col items-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl mb-4">
-                <span className="text-white font-bold text-3xl">{name?.charAt(0) || "H"}</span>
+        <div className="flex flex-col items-center mb-4 md:mb-6">
+            <div className="relative group">
+                {photoUrl ? (
+                    <img 
+                        src={photoUrl} 
+                        alt={name} 
+                        className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover shadow-xl border-4 border-white"
+                    />
+                ) : (
+                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl border-4 border-white">
+                        <span className="text-white font-bold text-2xl md:text-3xl">{name?.charAt(0) || "H"}</span>
+                    </div>
+                )}
+                {/* Photo upload overlay */}
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={onPhotoChange}
+                        className="hidden"
+                    />
+                    <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </label>
             </div>
-            <p className="text-lg font-semibold text-gray-900">{name || "HOD Name"}</p>
+            <p className="text-base md:text-lg font-semibold text-gray-900 mt-3">{name || "HOD Name"}</p>
             <HODBadge variant="purple">{department} Department</HODBadge>
         </div>
     );
@@ -32,6 +55,7 @@ const ProfileForm = ({ user, onSave, onCancel, isSaving }) => {
         email: user?.email || "",
         phone: user?.phone || "",
         department: user?.department?.name || "Youth",
+        zone: user?.zone?.name || "Zone 1",
     });
     const [errors, setErrors] = useState({});
 
@@ -82,6 +106,13 @@ const ProfileForm = ({ user, onSave, onCancel, isSaving }) => {
                 label="Department" 
                 value={formData.department} 
                 disabled={true}
+            />
+            
+            <HODProfileField 
+                label="Zone" 
+                value={formData.zone} 
+                disabled={true}
+                icon={HODIcons.BuildingOffice}
             />
             
             <div className="flex gap-3 mt-6">
@@ -269,12 +300,13 @@ const DepartmentProfilePage = ({ user, onUpdate }) => {
     };
 
     const departmentName = user?.department?.name || "Youth";
+    const zoneName = user?.zone?.name || "Zone 1";
 
     return (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-4 md:space-y-6 max-w-2xl">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
-                <p className="text-gray-500 mt-1">Manage your personal information</p>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900">My Profile</h2>
+                <p className="text-gray-500 mt-1 text-sm md:text-base">Manage your personal information</p>
             </div>
 
             {saved && (
@@ -287,7 +319,15 @@ const DepartmentProfilePage = ({ user, onUpdate }) => {
             <HODCard className="p-6">
                 <ProfileAvatar 
                     name={user?.name || "HOD"} 
-                    department={departmentName} 
+                    department={departmentName}
+                    photoUrl={user?.photo_url}
+                    onPhotoChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            console.log('Photo selected:', file.name);
+                            // In real app, upload to server
+                        }
+                    }}
                 />
                 
                 <ProfileForm 

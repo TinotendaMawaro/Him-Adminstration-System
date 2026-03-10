@@ -3,11 +3,17 @@ import React, { useState, useEffect, useRef } from "react";
 // Notification type icons and colors
 const getNotificationStyle = (category, type) => {
     const styles = {
-        report: { icon: '📊', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50' },
-        finance: { icon: '💰', color: 'from-emerald-400 to-green-500', bg: 'bg-emerald-50' },
-        member: { icon: '👤', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50' },
-        appointment: { icon: '🎖️', color: 'from-purple-400 to-violet-500', bg: 'bg-purple-50' },
-        system: { icon: '📢', color: 'from-gray-400 to-slate-500', bg: 'bg-gray-50' },
+        pastor: { icon: '📣', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Pastor' },
+        announcement: { icon: '📢', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Announcement' },
+        report: { icon: '📊', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50', label: 'Report' },
+        report_reminder: { icon: '⏰', color: 'from-orange-400 to-red-500', bg: 'bg-orange-50', label: 'Report Reminder' },
+        event: { icon: '📅', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50', label: 'Event' },
+        event_reminder: { icon: '🔔', color: 'from-violet-400 to-purple-500', bg: 'bg-violet-50', label: 'Event Reminder' },
+        finance: { icon: '💰', color: 'from-emerald-400 to-green-500', bg: 'bg-emerald-50', label: 'Finance' },
+        member: { icon: '👤', color: 'from-sky-400 to-blue-500', bg: 'bg-sky-50', label: 'Member' },
+        member_update: { icon: '🔄', color: 'from-cyan-400 to-teal-500', bg: 'bg-cyan-50', label: 'Member Update' },
+        appointment: { icon: '🎖️', color: 'from-purple-400 to-violet-500', bg: 'bg-purple-50', label: 'Appointment' },
+        system: { icon: '📢', color: 'from-gray-400 to-slate-500', bg: 'bg-gray-50', label: 'System' },
     };
     return styles[category] || styles.system;
 };
