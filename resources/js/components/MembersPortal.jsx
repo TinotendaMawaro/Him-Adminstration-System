@@ -10,6 +10,8 @@ const FloatingParticles = () => {
     const [offset, setOffset] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        
         const handleMouseMove = (e) => {
             const { innerWidth, innerHeight } = window;
             const x = (e.clientX - innerWidth / 2) / 80;
@@ -18,7 +20,11 @@ const FloatingParticles = () => {
         };
 
         window.addEventListener("mousemove", handleMouseMove);
-        return () => window.removeEventListener("mousemove", handleMouseMove);
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener("mousemove", handleMouseMove);
+            }
+        };
     }, []);
 
     const particles = useMemo(() => {
@@ -171,6 +177,363 @@ const Icons = {
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
     ),
+    DocumentText: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+    ),
+    FolderPlus: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+        </svg>
+    ),
+    ChatBubbleLeftRight: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+        </svg>
+    ),
+    Envelope: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        </svg>
+    ),
+    Phone: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+        </svg>
+    ),
+    Clock: ({ className }) => (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+};
+
+// ============================================================================
+// FEATURE DRAWER COMPONENT
+// ============================================================================
+
+const FeatureDrawer = ({ isOpen, onClose, title, icon: Icon, children }) => {
+    if (!isOpen) return null;
+    
+    return (
+        <>
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:cursor-pointer" onClick={onClose} />
+            <div className="fixed top-0 right-0 h-full w-full md:max-w-md bg-white shadow-2xl z-50 animate-slide-in-right overflow-y-auto">
+                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-xl z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-gold-400 to-amber-500 flex items-center justify-center shadow-lg">
+                            <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <h2 className="text-lg md:text-xl font-bold text-gray-900">{title}</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                        <Icons.XMark className="w-6 h-6 text-gray-500" />
+                    </button>
+                </div>
+                <div className="p-4 md:p-6">
+                    {children}
+                </div>
+            </div>
+            <style>{`
+                @keyframes slide-in-right {
+                    from { transform: translateX(100%); }
+                    to { transform: translateX(0); }
+                }
+                .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
+            `}</style>
+        </>
+    );
+};
+
+// ============================================================================
+// ZONE INFO DRAWER
+// ============================================================================
+
+const ZoneInfoDrawer = ({ isOpen, onClose, user }) => {
+    // Use user data from registration, fallback to default values
+    const zoneInfo = {
+        name: user?.zoneName || user?.zone?.name || 'IOC',
+        code: user?.zoneCode || 'IOC',
+        region: 'Central Region',
+        pastor: user?.pastor || 'Pastor Chipo Vutabwashe',
+        address: user?.address || '123 Main Street, City Center',
+        members: 156,
+        homegroups: 8,
+    };
+    
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="My Zone" icon={Icons.MapPin}>
+            <div className="space-y-6">
+                <div className="text-center py-4">
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-xl shadow-gold-500/30 mb-4">
+                        <span className="text-white font-bold text-3xl">{zoneInfo.code}</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">{zoneInfo.name}</h3>
+                    <p className="text-gray-500">Zone Code: {zoneInfo.code}</p>
+                </div>
+                
+                <div className="bg-gradient-to-r from-gold-50 to-amber-50 rounded-2xl p-4 border border-gold-100">
+                    <div className="flex items-center gap-3 mb-3">
+                        <Icons.User className="w-5 h-5 text-gold-600" />
+                        <span className="font-semibold text-gray-900">Zone Pastor</span>
+                    </div>
+                    <p className="text-gray-700 pl-8">{zoneInfo.pastor}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/60 rounded-xl p-4 text-center border border-gray-100">
+                        <p className="text-2xl font-bold text-gold-600">{zoneInfo.members}</p>
+                        <p className="text-gray-500 text-sm">Members</p>
+                    </div>
+                    <div className="bg-white/60 rounded-xl p-4 text-center border border-gray-100">
+                        <p className="text-2xl font-bold text-emerald-600">{zoneInfo.homegroups}</p>
+                        <p className="text-gray-500 text-sm">Homegroups</p>
+                    </div>
+                </div>
+                
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <Icons.MapPin className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm">{zoneInfo.address}</span>
+                    </div>
+                </div>
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// PASTOR & HOD INFO DRAWER
+// ============================================================================
+
+const PastorHODDrawer = ({ isOpen, onClose, user }) => {
+    // Use user data from registration, fallback to default values
+    const pastorInfo = {
+        name: user?.pastor || 'Pastor Chipo Vutabwashe',
+        role: 'Zone Pastor',
+        phone: '+263 77 123 4567',
+        email: 'pastor@him.org',
+        avatar: user?.pastor?.charAt(7) || 'P',
+    };
+    
+    const hodInfo = {
+        name: user?.hod || 'John Moyo',
+        role: `Head of Department - ${user?.departmentName || 'Youth'}`,
+        department: user?.departmentName || 'Youth Department',
+        phone: '+263 71 234 5678',
+        email: 'hod@him.org',
+        avatar: user?.hod?.charAt(0) || 'J',
+    };
+    
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Pastor & HOD Info" icon={Icons.Users}>
+            <div className="space-y-6">
+                <div className="bg-gradient-to-r from-gold-50 to-amber-50 rounded-2xl p-5 border border-gold-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="px-2 py-1 bg-gold-500 text-white text-xs font-semibold rounded-lg">PASTOR</span>
+                    </div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-xl">{pastorInfo.avatar}</span>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-gray-900 text-lg">{pastorInfo.name}</h4>
+                            <p className="text-gold-600 text-sm">{pastorInfo.role}</p>
+                        </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <Icons.Phone className="w-4 h-4 text-gray-400" />
+                            <span>{pastorInfo.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <Icons.Envelope className="w-4 h-4 text-gray-400" />
+                            <span>{pastorInfo.email}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-5 border border-purple-100">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="px-2 py-1 bg-purple-500 text-white text-xs font-semibold rounded-lg">HOD</span>
+                    </div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-xl">{hodInfo.avatar}</span>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-gray-900 text-lg">{hodInfo.name}</h4>
+                            <p className="text-purple-600 text-sm">{hodInfo.department}</p>
+                        </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <Icons.Phone className="w-4 h-4 text-gray-400" />
+                            <span>{hodInfo.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600">
+                            <Icons.Envelope className="w-4 h-4 text-gray-400" />
+                            <span>{hodInfo.email}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button className="w-full py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <Icons.ChatBubbleLeftRight className="w-5 h-5 inline-block mr-2" />
+                    Send Message
+                </button>
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// REPORTS & REQUESTS DRAWER
+// ============================================================================
+
+const ReportsDrawer = ({ isOpen, onClose }) => {
+    const [reportType, setReportType] = useState('prayer');
+    
+    const reportTypes = [
+        { id: 'prayer', label: 'Prayer Request', icon: Icons.Heart, color: 'from-pink-400 to-pink-600' },
+        { id: 'absence', label: 'Report Absence', icon: Icons.Calendar, color: 'from-red-400 to-red-600' },
+        { id: 'feedback', label: 'Give Feedback', icon: Icons.ChatBubbleLeftRight, color: 'from-sky-400 to-sky-600' },
+    ];
+    
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Submit Report/Request" icon={Icons.DocumentText}>
+            <div className="space-y-6">
+                <div className="grid grid-cols-3 gap-2">
+                    {reportTypes.map((type) => (
+                        <button
+                            key={type.id}
+                            onClick={() => setReportType(type.id)}
+                            className={`p-3 rounded-xl text-center transition-all duration-300 ${
+                                reportType === type.id 
+                                    ? 'bg-gradient-to-r ' + type.color + ' text-white shadow-lg' 
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <type.icon className="w-5 h-5 mx-auto mb-1" />
+                            <span className="text-xs font-medium">{type.label}</span>
+                        </button>
+                    ))}
+                </div>
+                
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                        <input
+                            type="text"
+                            placeholder="Brief description"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 transition-all duration-300"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Details</label>
+                        <textarea
+                            placeholder="Share more details..."
+                            rows={4}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 transition-all duration-300 resize-none"
+                        />
+                    </div>
+                    
+                    <button className="w-full py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 shadow-lg hover:shadow-xl">
+                        Submit Request
+                    </button>
+                </div>
+                
+                <div className="border-t border-gray-100 pt-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">Recent Requests</h4>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <span className="text-sm text-gray-600">Prayer for my family - Submitted</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                            <div className="w-2 h-2 bg-gold-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm text-gray-600">Absence report - Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// NOTIFICATIONS PANEL
+// ============================================================================
+
+const NotificationsPanel = ({ isOpen, onClose }) => {
+    const notifications = [
+        { id: 1, title: 'New Event', message: 'Sunday Service tomorrow at 9 AM', type: 'event', isRead: false, time: '1h ago' },
+        { id: 2, title: 'Pastor Update', message: 'Pastor Chipo shared a new message', type: 'pastor', isRead: false, time: '3h ago' },
+        { id: 3, title: 'Department News', message: 'Youth camp registration open', type: 'department', isRead: true, time: '1d ago' },
+        { id: 4, title: 'Announcement', message: 'Facility maintenance notice', type: 'general', isRead: true, time: '2d ago' },
+    ];
+    
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    
+    const typeColors = {
+        event: 'from-sky-400 to-sky-600',
+        pastor: 'from-gold-400 to-amber-500',
+        department: 'from-purple-400 to-purple-600',
+        general: 'from-gray-400 to-gray-600',
+    };
+    
+    if (!isOpen) return null;
+    
+    return (
+        <>
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
+            <div className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 animate-slide-in-right overflow-y-auto">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-xl z-10">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-gray-900">Notifications</h2>
+                        {unreadCount > 0 && (
+                            <span className="px-2 py-0.5 bg-gold-500 text-white text-xs font-semibold rounded-full animate-pulse">
+                                {unreadCount} new
+                            </span>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                        <Icons.XMark className="w-5 h-5 text-gray-500" />
+                    </button>
+                </div>
+                <div className="p-2 space-y-2">
+                    {notifications.map((notification) => (
+                        <div 
+                            key={notification.id}
+                            className={`p-4 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-md ${
+                                notification.isRead 
+                                    ? 'bg-white border border-gray-100' 
+                                    : 'bg-gradient-to-r from-gold-50/50 to-white border border-gold-200/50'
+                            }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${typeColors[notification.type]} flex items-center justify-center shadow-md flex-shrink-0`}>
+                                    {notification.type === 'event' && <Icons.Calendar className="w-5 h-5 text-white" />}
+                                    {notification.type === 'pastor' && <Icons.User className="w-5 h-5 text-white" />}
+                                    {notification.type === 'department' && <Icons.BuildingOffice className="w-5 h-5 text-white" />}
+                                    {notification.type === 'general' && <Icons.Megaphone className="w-5 h-5 text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-semibold text-gray-900 text-sm">{notification.title}</p>
+                                        {!notification.isRead && <span className="w-2 h-2 bg-gold-500 rounded-full"></span>}
+                                    </div>
+                                    <p className="text-gray-600 text-sm truncate">{notification.message}</p>
+                                    <p className="text-gray-400 text-xs mt-1">{notification.time}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
 };
 
 // ============================================================================
@@ -195,7 +558,7 @@ const GlassCard = ({ children, className = "", hoverEffect = true }) => (
         {hoverEffect && (
             <div className="absolute -inset-0.5 bg-gradient-to-r from-gold-400/20 to-sky-400/20 rounded-2xl opacity-0 group-hover:opacity-100 blur-lg transition-all duration-300" />
         )}
-        <div className={`relative bg-sky-200/20 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl ${className}`}>
+        <div className={`relative bg-white/30 backdrop-blur-xl border border-white/40 rounded-2xl shadow-xl ${className}`}>
             {children}
         </div>
     </div>
@@ -206,7 +569,6 @@ const GlassCard = ({ children, className = "", hoverEffect = true }) => (
 // ============================================================================
 
 const WelcomeCard = ({ user }) => {
-    // Get time-based greeting
     const now = new Date();
     const africaOffset = 2;
     const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -246,7 +608,6 @@ const WelcomeCard = ({ user }) => {
                     </div>
                     <p className="text-gray-600 text-lg mb-4">{randomMessage}</p>
                     
-                    {/* Member Details Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div className="bg-white/50 rounded-xl p-3">
                             <p className="text-xs text-gray-500 mb-1">Zone</p>
@@ -267,7 +628,6 @@ const WelcomeCard = ({ user }) => {
                     </div>
                 </div>
                 
-                {/* Avatar with Gold Glow */}
                 <div className="relative">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30">
                         <span className="text-white font-bold text-4xl">
@@ -284,35 +644,34 @@ const WelcomeCard = ({ user }) => {
 };
 
 // ============================================================================
-// QUICK ACTIONS COMPONENT
+// QUICK ACTIONS COMPONENT - Members Portal Requirements
 // ============================================================================
 
 const QuickActions = ({ onAction }) => {
     const actions = [
-        { id: 'join-department', icon: Icons.BuildingOffice, label: 'Join Department', description: 'Serve in a ministry', color: 'from-purple-400 to-purple-600' },
-        { id: 'view-events', icon: Icons.Calendar, label: 'View Events', description: 'Upcoming activities', color: 'from-sky-400 to-sky-600' },
-        { id: 'join-homegroup', icon: Icons.Users, label: 'Join Homegroup', description: 'Connect with others', color: 'from-emerald-400 to-emerald-600' },
-        { id: 'prayer-request', icon: Icons.Heart, label: 'Prayer Request', description: 'Share your burdens', color: 'from-pink-400 to-pink-600' },
-        { id: 'announcements', icon: Icons.Megaphone, label: 'Announcements', description: 'Stay informed', color: 'from-amber-400 to-amber-600' },
+        { id: 'view-zone', icon: Icons.MapPin, label: 'View My Zone', description: 'Zone details & info', color: 'from-gold-400 to-amber-500' },
+        { id: 'view-pastor-hod', icon: Icons.Users, label: 'Pastor & HOD Info', description: 'Contact leadership', color: 'from-purple-400 to-purple-600' },
+        { id: 'view-events', icon: Icons.Calendar, label: 'Upcoming Events', description: 'Church activities', color: 'from-sky-400 to-sky-600' },
+        { id: 'submit-reports', icon: Icons.DocumentText, label: 'Submit Reports', description: 'Requests & reports', color: 'from-emerald-400 to-emerald-600' },
     ];
 
     return (
         <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {actions.map((action, idx) => (
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {actions.map((action) => (
                     <button
                         key={action.id}
                         onClick={() => onAction(action.id)}
                         className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                     >
                         <div className={`absolute -inset-0.5 bg-gradient-to-r ${action.color} rounded-2xl opacity-0 group-hover:opacity-25 blur-lg transition-all duration-300`} />
-                        <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-4 transition-all duration-300">
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                                <action.icon className="w-6 h-6 text-white" />
+                        <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-3 md:p-4 transition-all duration-300 hover:bg-white/80">
+                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                                <action.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             </div>
-                            <p className="font-semibold text-gray-900 text-sm">{action.label}</p>
-                            <p className="text-gray-500 text-xs mt-1">{action.description}</p>
+                            <p className="font-semibold text-gray-900 text-xs md:text-sm">{action.label}</p>
+                            <p className="text-gray-500 text-xs mt-1 hidden md:block">{action.description}</p>
                         </div>
                     </button>
                 ))}
@@ -326,7 +685,6 @@ const QuickActions = ({ onAction }) => {
 // ============================================================================
 
 const HomegroupSection = ({ user, onViewHomegroup }) => {
-    // Sample homegroup data - in production this would come from API
     const homegroup = user?.homegroup || {
         name: "North A Home Group",
         leader: "John Doe",
@@ -428,55 +786,30 @@ const EventsSection = ({ onRSVP }) => {
             department: "Youth",
             color: "from-purple-400 to-purple-600"
         },
-        {
-            id: 3,
-            title: "Prayer Meeting",
-            date: "March 25, 2026",
-            time: "7:00 PM",
-            location: "Prayer Room",
-            department: "Prayer Team",
-            color: "from-sky-400 to-sky-600"
-        },
     ];
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
-                <button className="text-gold-600 hover:text-gold-700 text-sm font-medium transition-colors">
-                    View All →
-                </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {events.map((event) => (
-                    <GlassCard key={event.id} className="p-5">
-                        <div className={`h-1 bg-gradient-to-r ${event.color} rounded-full mb-4`} />
-                        <h4 className="font-bold text-gray-900 mb-2">{event.title}</h4>
-                        <div className="space-y-2 text-sm text-gray-600 mb-4">
-                            <div className="flex items-center gap-2">
-                                <Icons.Calendar className="w-4 h-4 text-gray-400" />
-                                <span>{event.date} at {event.time}</span>
+                    <GlassCard key={event.id} className="p-4">
+                        <div className="flex items-start gap-3">
+                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
+                                <Icons.Calendar className="w-6 h-6 text-white" />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Icons.MapPin className="w-4 h-4 text-gray-400" />
-                                <span>{event.location}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Icons.BuildingOffice className="w-4 h-4 text-gray-400" />
-                                <span>{event.department}</span>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                                <p className="text-sm text-gray-500">{event.date} at {event.time}</p>
+                                <p className="text-sm text-gray-400 mt-1">{event.location}</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={() => onRSVP(event.id)}
-                                className="flex-1 py-2 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 text-sm shadow-lg hover:shadow-xl"
-                            >
-                                RSVP
-                            </button>
-                            <button className="px-4 py-2 bg-white/60 text-gray-700 font-semibold rounded-xl hover:bg-white transition-all duration-300 text-sm border border-white/50">
-                                +Cal
-                            </button>
-                        </div>
+                        <button 
+                            onClick={() => onRSVP(event.id)}
+                            className="mt-3 w-full py-2 bg-gold-500 text-white text-sm font-medium rounded-lg hover:bg-gold-600 transition-colors"
+                        >
+                            RSVP
+                        </button>
                     </GlassCard>
                 ))}
             </div>
@@ -485,665 +818,96 @@ const EventsSection = ({ onRSVP }) => {
 };
 
 // ============================================================================
-// ANNOUNCEMENTS SECTION COMPONENT
-// ============================================================================
-
-const AnnouncementsSection = () => {
-    const announcements = [
-        {
-            id: 1,
-            title: "Easter Service Preparation",
-            message: "We need volunteers for the upcoming Easter service. Please sign up at the welcome desk.",
-            type: "Pastor",
-            author: "Pastor Chipo Vutabwashe",
-            date: "2 hours ago",
-            isNew: true,
-        },
-        {
-            id: 2,
-            title: "Youth Department Camp",
-            message: "The youth department camp registration is now open. Register by March 30th.",
-            type: "Department",
-            author: "Youth Department",
-            date: "1 day ago",
-            isNew: true,
-        },
-        {
-            id: 3,
-            title: "Facility Maintenance Notice",
-            message: "The parking lot will be under maintenance this Saturday. Please use alternative parking.",
-            type: "General",
-            author: "Church Administration",
-            date: "3 days ago",
-            isNew: false,
-        },
-    ];
-
-    const typeColors = {
-        Pastor: "from-gold-400 to-amber-500",
-        Department: "from-purple-400 to-purple-600",
-        General: "from-sky-400 to-sky-600",
-    };
-
-    return (
-        <div>
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Announcements</h3>
-                <span className="bg-gold-100 text-gold-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                    {announcements.filter(a => a.isNew).length} New
-                </span>
-            </div>
-            <div className="space-y-4">
-                {announcements.map((announcement) => (
-                    <div 
-                        key={announcement.id} 
-                        className={`relative rounded-2xl transition-all duration-300 cursor-pointer hover:shadow-lg ${
-                            announcement.isNew 
-                                ? 'bg-gradient-to-r from-gold-50/80 to-white border border-gold-200/50' 
-                                : 'bg-white/60 backdrop-blur-xl border border-white/40'
-                        }`}
-                    >
-                        {announcement.isNew && (
-                            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-gold-400 to-amber-500 rounded-l-2xl" />
-                        )}
-                        <div className="p-5">
-                            <div className="flex items-start justify-between gap-4 mb-2">
-                                <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-1 rounded-lg text-xs font-semibold text-white bg-gradient-to-r ${typeColors[announcement.type]}`}>
-                                        {announcement.type}
-                                    </span>
-                                    {announcement.isNew && (
-                                        <span className="w-2 h-2 bg-gold-500 rounded-full animate-pulse" />
-                                    )}
-                                </div>
-                                <span className="text-gray-400 text-xs">{announcement.date}</span>
-                            </div>
-                            <h4 className="font-bold text-gray-900 mb-2">{announcement.title}</h4>
-                            <p className="text-gray-600 text-sm">{announcement.message}</p>
-                            <p className="text-gray-400 text-xs mt-3">Posted by {announcement.author}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// ============================================================================
-// PRAYER REQUEST MODAL COMPONENT
-// ============================================================================
-
-const PrayerRequestModal = ({ isOpen, onClose, onSubmit }) => {
-    const [formData, setFormData] = useState({
-        title: '',
-        message: '',
-        isAnonymous: false
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-        
-        setTimeout(() => {
-            onSubmit(formData);
-            setFormData({ title: '', message: '', isAnonymous: false });
-            setIsSubmitted(false);
-            onClose();
-        }, 2000);
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-fade-in-scale">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-gold-400 to-amber-500 p-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                                <Icons.Heart className="w-6 h-6 text-white" />
-                            </div>
-                            <h2 className="text-xl font-bold text-white">Prayer Request</h2>
-                        </div>
-                        <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/20 transition-colors">
-                            <Icons.XMark className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
-                    <p className="text-white/80 text-sm mt-2">Share your burdens with us. We believe in the power of prayer!</p>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                    {isSubmitted ? (
-                        <div className="text-center py-8">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
-                                <Icons.Check className="w-8 h-8 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">Prayer Sent!</h3>
-                            <p className="text-gray-600">Our prayer team will lift you up in prayer.</p>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                                <input
-                                    type="text"
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="Brief title for your request"
-                                    required
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 transition-all duration-300"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Prayer Request</label>
-                                <textarea
-                                    value={formData.message}
-                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                    placeholder="Share what you'd like us to pray for..."
-                                    rows={4}
-                                    required
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 transition-all duration-300 resize-none"
-                                />
-                            </div>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.isAnonymous}
-                                    onChange={(e) => setFormData({ ...formData, isAnonymous: e.target.checked })}
-                                    className="w-5 h-5 rounded border-gray-300 text-gold-500 focus:ring-gold-400"
-                                />
-                                <span className="text-sm text-gray-600">Submit anonymously</span>
-                            </label>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full py-4 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-bold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Submitting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Icons.Heart className="w-5 h-5" />
-                                        Submit Prayer Request
-                                    </>
-                                )}
-                            </button>
-                        </form>
-                    )}
-                </div>
-            </div>
-            <style>{`
-                @keyframes fade-in-scale {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-                .animate-fade-in-scale { animation: fade-in-scale 0.3s ease-out; }
-            `}</style>
-        </div>
-    );
-};
-
-// ============================================================================
-// PROFILE DRAWER COMPONENT
-// ============================================================================
-
-const ProfileDrawer = ({ user, isOpen, onClose, onSave }) => {
-    const [formData, setFormData] = useState({
-        name: user?.name || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
-        address: user?.address || '',
-    });
-    const [isSaving, setIsSaving] = useState(false);
-
-    const handleSave = () => {
-        setIsSaving(true);
-        setTimeout(() => {
-            onSave({ ...user, ...formData });
-            setIsSaving(false);
-        }, 1000);
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <>
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
-            <div className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 animate-slide-in-right overflow-y-auto">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
-                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100">
-                        <Icons.XMark className="w-6 h-6 text-gray-500" />
-                    </button>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                    {/* Avatar */}
-                    <div className="flex flex-col items-center">
-                        <div className="relative">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30">
-                                <span className="text-white font-bold text-4xl">
-                                    {formData.name?.charAt(0) || 'M'}
-                                </span>
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-r from-gold-400 to-amber-500 rounded-full border-4 border-white flex items-center justify-center">
-                                <Icons.Check className="w-4 h-4 text-white" />
-                            </div>
-                        </div>
-                        <p className="mt-4 text-lg font-semibold">{formData.name}</p>
-                        <p className="text-gray-500">Church Member</p>
-                    </div>
-
-                    {/* Form */}
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                            <input
-                                type="tel"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                            <textarea
-                                value={formData.address}
-                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                rows={3}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 resize-none"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Info Cards */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-sky-100/50 rounded-xl p-4">
-                            <p className="text-xs text-gray-500 mb-1">Zone</p>
-                            <p className="font-semibold text-gray-900">{user?.zoneName || 'IOC'}</p>
-                        </div>
-                        <div className="bg-gold-100/50 rounded-xl p-4">
-                            <p className="text-xs text-gray-500 mb-1">Homegroup</p>
-                            <p className="font-semibold text-gray-900">{user?.homegroup?.name || 'Not Assigned'}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-6 border-t border-gray-100 space-y-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="w-full py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 disabled:opacity-50 transition-all duration-300"
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            <style>{`
-                @keyframes slide-in-right {
-                    from { transform: translateX(100%); }
-                    to { transform: translateX(0); }
-                }
-                .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
-            `}</style>
-        </>
-    );
-};
-
-// ============================================================================
 // MAIN MEMBERS PORTAL COMPONENT
 // ============================================================================
 
-export default function MembersPortal({ user: initialUser, onLogout }) {
-    const [activeItem, setActiveItem] = useState("dashboard");
-    const [user, setUser] = useState(initialUser);
-    const [showProfile, setShowProfile] = useState(false);
-    const [showPrayerModal, setShowPrayerModal] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-
-    // Detect screen size
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+export default function MembersPortal({ user, onLogout }) {
+    const [activeDrawer, setActiveDrawer] = useState(null);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
 
     const handleAction = (actionId) => {
-        switch (actionId) {
-            case 'prayer-request':
-                setShowPrayerModal(true);
-                break;
-            case 'announcements':
-                setActiveItem('announcements');
-                break;
-            case 'view-events':
-                setActiveItem('events');
-                break;
-            case 'join-homegroup':
-            case 'join-department':
-                // These would open modals or navigate to signup forms
-                alert('This feature is coming soon!');
-                break;
-            default:
-                break;
-        }
+        setActiveDrawer(actionId);
     };
 
-    const handleRSVP = (eventId) => {
-        alert(`RSVP confirmed for event ${eventId}!`);
-    };
-
-    const handleViewHomegroup = () => {
-        setActiveItem('homegroup');
-    };
-
-    const getPageContent = () => {
-        switch (activeItem) {
-            case "dashboard":
-                return (
-                    <div className="space-y-8">
-                        <WelcomeCard user={user} />
-                        <QuickActions onAction={handleAction} />
-                        <HomegroupSection user={user} onViewHomegroup={handleViewHomegroup} />
-                        <EventsSection onRSVP={handleRSVP} />
-                        <AnnouncementsSection />
-                    </div>
-                );
-            case "profile":
-                return (
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h2>
-                        <GlassCard className="p-6 max-w-2xl">
-                            <div className="flex flex-col items-center mb-6">
-                                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30 mb-4">
-                                    <span className="text-white font-bold text-5xl">
-                                        {user?.name?.charAt(0) || 'M'}
-                                    </span>
-                                </div>
-                                <h3 className="text-2xl font-bold text-gray-900">{user?.name}</h3>
-                                <p className="text-gray-500">Church Member</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white/50 rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">Email</p>
-                                    <p className="font-semibold text-gray-900">{user?.email || 'Not set'}</p>
-                                </div>
-                                <div className="bg-white/50 rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">Phone</p>
-                                    <p className="font-semibold text-gray-900">{user?.phone || 'Not set'}</p>
-                                </div>
-                                <div className="bg-white/50 rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">Zone</p>
-                                    <p className="font-semibold text-gray-900">{user?.zoneName || 'IOC'}</p>
-                                </div>
-                                <div className="bg-white/50 rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">Homegroup</p>
-                                    <p className="font-semibold text-gray-900">{user?.homegroup?.name || 'Not Assigned'}</p>
-                                </div>
-                            </div>
-                            <button 
-                                onClick={() => setShowProfile(true)}
-                                className="w-full mt-6 py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300"
-                            >
-                                Edit Profile
-                            </button>
-                        </GlassCard>
-                    </div>
-                );
-            case "homegroup":
-                return (
-                    <div className="p-6 space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">My Homegroup</h2>
-                        <HomegroupSection user={user} onViewHomegroup={() => {}} />
-                    </div>
-                );
-            case "events":
-                return (
-                    <div className="p-6 space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Church Events</h2>
-                        <EventsSection onRSVP={handleRSVP} />
-                    </div>
-                );
-            case "announcements":
-                return (
-                    <div className="p-6 space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Announcements</h2>
-                        <AnnouncementsSection />
-                    </div>
-                );
-            case "prayer":
-                return (
-                    <div className="p-6 space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Prayer Requests</h2>
-                        <GlassCard className="p-6 max-w-2xl">
-                            <div className="text-center py-8">
-                                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center shadow-lg">
-                                    <Icons.Heart className="w-10 h-10 text-white" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">Share Your Burdens</h3>
-                                <p className="text-gray-600 mb-6">We believe in the power of prayer. Submit your prayer request and our prayer team will lift you up.</p>
-                                <button 
-                                    onClick={() => setShowPrayerModal(true)}
-                                    className="py-3 px-6 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 shadow-lg hover:shadow-xl"
-                                >
-                                    Submit Prayer Request
-                                </button>
-                            </div>
-                        </GlassCard>
-                    </div>
-                );
-            default:
-                return null;
-        }
+    const closeDrawer = () => {
+        setActiveDrawer(null);
     };
 
     return (
-        <div className="relative min-h-screen">
+        <div className="min-h-screen relative">
             <FloatingParticles />
             
-            {/* Mobile Header */}
-            {isMobile && (
-                <div className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
-                                <span className="text-white font-bold">H</span>
-                            </div>
-                            <span className="font-bold text-gray-900">HIM Members</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button className="p-2 rounded-xl hover:bg-gray-100 relative">
-                                <Icons.Bell className="w-5 h-5 text-gray-600" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-gold-500 rounded-full"></span>
-                            </button>
-                            <button 
-                                onClick={() => setShowProfile(true)}
-                                className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center"
-                            >
-                                <span className="text-white font-semibold text-sm">{user?.name?.charAt(0) || 'M'}</span>
-                            </button>
-                        </div>
+            <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Members Portal</h1>
+                        <p className="text-gray-500">Welcome to your spiritual home</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => setNotificationsOpen(true)}
+                            className="relative p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                            <Icons.Bell className="w-6 h-6 text-gray-700" />
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                                2
+                            </span>
+                        </button>
+                        <button 
+                            onClick={onLogout}
+                            className="p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                            <Icons.ArrowRightOnRectangle className="w-6 h-6 text-gray-700" />
+                        </button>
                     </div>
                 </div>
-            )}
 
-            {/* Desktop Layout */}
-            <div className="flex">
-                {/* Sidebar - Desktop */}
-                <aside className={`hidden md:flex flex-col w-64 bg-white/80 backdrop-blur-xl border-r border-gray-100 fixed h-full shadow-lg z-30`}>
-                    {/* Logo */}
-                    <div className="p-6 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-lg shadow-gold-500/20">
-                                <span className="text-white font-bold text-xl">H</span>
-                            </div>
-                            <div>
-                                <p className="text-gray-900 font-bold">HIM</p>
-                                <p className="text-gray-400 text-xs">Members Portal</p>
-                            </div>
-                        </div>
-                    </div>
+                {/* Welcome Card */}
+                <WelcomeCard user={user} />
 
-                    {/* Zone Info */}
-                    <div className="p-4 mx-4 mt-4 rounded-2xl bg-gradient-to-br from-gold-50 to-amber-50 border border-gold-100">
-                        <p className="text-gray-400 text-xs mb-1">My Zone</p>
-                        <p className="text-gray-900 font-semibold">{user?.zoneName || user?.zone?.name || 'IOC'}</p>
-                    </div>
+                {/* Quick Actions */}
+                <div className="mt-8">
+                    <QuickActions onAction={handleAction} />
+                </div>
 
-                    {/* Navigation */}
-                    <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveItem(item.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 ${
-                                    activeItem === item.id
-                                        ? "bg-gradient-to-r from-gold-500/10 to-amber-500/10 text-gold-600 border border-gold-200"
-                                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                                }`}
-                            >
-                                <item.icon className={`w-5 h-5 ${activeItem === item.id ? 'text-gold-500' : 'text-gray-400'}`} />
-                                <span className="font-medium">{item.label}</span>
-                            </button>
-                        ))}
-                    </nav>
+                {/* Homegroup Section */}
+                <div className="mt-8">
+                    <HomegroupSection 
+                        user={user} 
+                        onViewHomegroup={() => handleAction('homegroup')} 
+                    />
+                </div>
 
-                    {/* Bottom Actions */}
-                    <div className="p-4 border-t border-gray-100 space-y-1">
-                        <button
-                            onClick={() => setShowProfile(true)}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                            <Icons.User className="w-5 h-5" />
-                            <span className="font-medium">Profile</span>
-                        </button>
-                        <button
-                            onClick={onLogout}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-gray-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                            <Icons.ArrowRightOnRectangle className="w-5 h-5" />
-                            <span className="font-medium">Logout</span>
-                        </button>
-                    </div>
-                </aside>
-
-                {/* Main Content */}
-                <div className={`flex-1 ${isMobile ? 'pt-20' : 'md:ml-64'} min-h-screen`}>
-                    {/* Header - Desktop */}
-                    {!isMobile && (
-                        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shadow-sm sticky top-0 z-20">
-                            <div>
-                                <h2 className="text-gray-900 font-semibold capitalize">{activeItem.replace('-', ' ')}</h2>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <button className="p-2 rounded-xl hover:bg-gray-100 relative">
-                                    <Icons.Bell className="w-5 h-5 text-gray-600" />
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-gold-500 rounded-full animate-pulse"></span>
-                                </button>
-                                <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                                    <button 
-                                        onClick={() => setShowProfile(true)}
-                                        className="flex items-center gap-3 hover:bg-gray-50 rounded-xl p-1 transition-colors"
-                                    >
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-md shadow-gold-500/20">
-                                            <span className="text-white font-semibold text-sm">{user?.name?.charAt(0) || 'M'}</span>
-                                        </div>
-                                        <div className="hidden md:block">
-                                            <p className="text-gray-900 text-sm font-medium">{user?.name || 'Member'}</p>
-                                            <p className="text-gray-400 text-xs">Church Member</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        </header>
-                    )}
-
-                    {/* Page Content */}
-                    <main className="p-4 md:p-8">
-                        {getPageContent()}
-                    </main>
+                {/* Events Section */}
+                <div className="mt-8">
+                    <EventsSection onRSVP={(id) => console.log('RSVP:', id)} />
                 </div>
             </div>
 
-            {/* Mobile Bottom Navigation */}
-            {isMobile && (
-                <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-2 py-2 z-30">
-                    <div className="flex items-center justify-around">
-                        {menuItems.slice(0, 5).map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveItem(item.id)}
-                                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${
-                                    activeItem === item.id
-                                        ? 'text-gold-600'
-                                        : 'text-gray-400'
-                                }`}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                <span className="text-xs font-medium">{item.label.split(' ')[0]}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Modals */}
-            <PrayerRequestModal 
-                isOpen={showPrayerModal} 
-                onClose={() => setShowPrayerModal(false)} 
-                onSubmit={(data) => console.log('Prayer request submitted:', data)}
+            {/* Drawers */}
+            <ZoneInfoDrawer 
+                isOpen={activeDrawer === 'view-zone'} 
+                onClose={closeDrawer} 
+                user={user}
             />
-            <ProfileDrawer 
-                user={user} 
-                isOpen={showProfile} 
-                onClose={() => setShowProfile(false)}
-                onSave={(updatedUser) => setUser(updatedUser)}
+            
+            <PastorHODDrawer 
+                isOpen={activeDrawer === 'view-pastor-hod'} 
+                onClose={closeDrawer} 
+                user={user}
+            />
+            
+            <ReportsDrawer 
+                isOpen={activeDrawer === 'submit-reports'} 
+                onClose={closeDrawer}
+            />
+
+            {/* Notifications Panel */}
+            <NotificationsPanel 
+                isOpen={notificationsOpen} 
+                onClose={() => setNotificationsOpen(false)} 
             />
         </div>
     );
 }
-

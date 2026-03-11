@@ -11,7 +11,8 @@ export default function CodeLogin({ onAuthenticated }) {
             return;
         }
 
-        // Validate code format
+        // Validate code format for pastors/HODs: R0101P01 or R0101H01
+        // R = Regional, 01 = Region, 01 = Zone, P = Pastor/HOD, 01 = Number
         const validCode = /^R\d{4}[PH]\d{2}$/;
         if (!validCode.test(code.toUpperCase())) {
             setError("Invalid code format. Example: R0101P01");
@@ -95,7 +96,7 @@ export default function CodeLogin({ onAuthenticated }) {
                             maxLength={8}
                         />
                         <p className="text-white/40 text-xs mt-2 text-center">
-                            Format: R0101P01 (Pastor) or R0101H01 (HOD)
+                            Format: R0101P01 (Pastor) or R0101H01 (HOD) - e.g., R0101P01 = Region 1, Zone 1, Pastor #1
                         </p>
                     </div>
 
