@@ -61,6 +61,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
     const [code, setCode] = useState("");
     const [isValidCode, setIsValidCode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
     const [formData, setFormData] = useState({
         username: "",
         password: "",
@@ -68,13 +69,103 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
         lastName: "",
         email: "",
         phoneNumber: "",
-        zone: "",
+        zoneCode: "",
         physicalAddress: "",
+        department: "",
         confirmPassword: "",
     });
+    // Zone data for auto-linking
+    const [zoneData, setZoneData] = useState(null);
+    const [isLoadingZone, setIsLoadingZone] = useState(false);
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
+
+    // Zone lookup mapping - Zimbabwe 10 Regions structure
+    // Format: R[Region][Zone][Type][Number] - e.g., R0101P01 = Region 1, Zone 1, Pastor #1
+    const zoneMapping = {
+        // Region 1 - IOC (International Overflow Center)
+        'IOC': { 
+            name: 'International Overflow Center (IOC)', 
+            region: 'Region 1',
+            pastor: 'Pastor Chipo Vutabwashe', 
+            department: 'General', 
+            address: '123 Main Street, City Center'
+        },
+        'R0101': { name: 'IOC Zone 1', region: 'Region 1', pastor: 'Pastor Chipo Vutabwashe', department: 'General', address: 'City Center' },
+        'R0102': { name: 'IOC Zone 2', region: 'Region 1', pastor: 'Pastor T. Magaya', department: 'Youth', address: 'East suburb' },
+        
+        // Region 2
+        'R0201': { name: 'Bulawayo Central', region: 'Region 2', pastor: 'Pastor Moyo', department: 'PIONEERS', address: 'Bulawayo' },
+        'R0202': { name: 'Bulawayo North', region: 'Region 2', pastor: 'Pastor Ndlovu', department: 'Women Ministry', address: 'North Bulawayo' },
+        
+        // Region 3
+        'R0301': { name: 'Harare East', region: 'Region 3', pastor: 'Pastor Mukoma', department: 'Men Ministry', address: 'Harare East' },
+        'R0302': { name: 'Harare West', region: 'Region 3', pastor: 'Pastor Shumba', department: 'Children Ministry', address: 'Harare West' },
+        
+        // Region 4
+        'R0401': { name: 'Mutare Zone', region: 'Region 4', pastor: 'Pastor章', department: 'Music', address: 'Mutare' },
+        
+        // Region 5
+        'R0501': { name: 'Gweru Zone', region: 'Region 5', pastor: 'Pastor Dube', department: 'Youth', address: 'Gweru' },
+        
+        // Region 6
+        'R0601': { name: 'Masvingo Zone', region: 'Region 6', pastor: 'Pastor Mhandu', department: 'PIONEERS', address: 'Masvingo' },
+        
+        // Region 7
+        'R0701': { name: 'Kwekwe Zone', region: 'Region 7', pastor: 'Pastor Hove', department: 'Women Ministry', address: 'Kwekwe' },
+        
+        // Region 8
+        'R0801': { name: 'Chinhoyi Zone', region: 'Region 8', pastor: 'Pastor Nyoni', department: 'Men Ministry', address: 'Chinhoyi' },
+        
+        // Region 9
+        'R0901': { name: 'Bindura Zone', region: 'Region 9', pastor: 'Pastor Sithole', department: 'Children Ministry', address: 'Bindura' },
+        
+        // Region 10
+        'R1001': { name: 'Beitbridge Zone', region: 'Region 10', pastor: 'Pastor Mlotshwa', department: 'Music', address: 'Beitbridge' },
+    };
+
+    // Handle zone code change with auto-linking
+    const handleZoneCodeChange = useCallback((e) => {
+        const value = e.target.value.toUpperCase();
+        setFormData((prev) => ({ ...prev, zoneCode: value }));
+        
+        // Clear error when user starts typing
+        if (errors.zoneCode) {
+            setErrors((prev) => ({ ...prev, zoneCode: "" }));
+        }
+
+        // Auto-lookup zone data when zone code is entered (at least 3 chars)
+        if (value.length >= 3) {
+            setIsLoadingZone(true);
+            // Simulate API call delay
+            setTimeout(() => {
+                const zone = zoneMapping[value] || zoneMapping['IOC']; // Default to IOC
+                setZoneData(zone);
+                setFormData(prev => ({ 
+                    ...prev, 
+                    zoneCode: value,
+                    department: zone.department 
+                }));
+                setIsLoadingZone(false);
+            }, 500);
+        } else {
+            setZoneData(null);
+        }
+    }, [errors.zoneCode, zoneMapping]);
+
+    // Get validation status for fields (green glow if valid, red if invalid)
+    const getFieldValidationClass = (fieldName, value) => {
+        if (!touched[fieldName]) return '';
+        const error = errors[fieldName];
+        if (error) {
+            return 'border-red-500 focus:border-red-500 focus:ring-red-500/20 shadow-red-500/20';
+        }
+        if (value && value.length > 0) {
+            return 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-emerald-500/20';
+        }
+        return '';
+    };
 
     // DEBUG: Check if CSS animations are loaded
     useEffect(() => {
@@ -221,6 +312,22 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     error = "Passwords do not match";
                 }
                 break;
+            case "phoneNumber":
+                if (value && value.length < 8) {
+                    error = "Please enter a valid phone number";
+                }
+                break;
+            case "zoneCode":
+                if (value && value.length < 3) {
+                    error = "Please enter a valid zone code (e.g., IOC, NORTH)";
+                }
+                break;
+            case "firstName":
+            case "lastName":
+                if (value && value.length < 2) {
+                    error = `${fieldName === 'firstName' ? 'First' : 'Last'} name must be at least 2 characters`;
+                }
+                break;
             default:
                 break;
         }
@@ -261,8 +368,8 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
             if (!formData.phoneNumber) {
                 newErrors.phoneNumber = "Phone number is required";
             }
-            if (!formData.zone) {
-                newErrors.zone = "Zone is required";
+            if (!formData.zoneCode) {
+                newErrors.zoneCode = "Zone code is required";
             }
             if (!formData.physicalAddress) {
                 newErrors.physicalAddress = "Physical address is required";
@@ -381,8 +488,9 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                         code: code,
                         role: fallbackRole,
                         name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
-                        zone: { name: "IOC (International Overflow Center)" },
-                        zoneName: "IOC (International Overflow Center)",
+                        zone: { name: zoneMapping[code]?.name || "IOC (International Overflow Center)" },
+                        zoneName: zoneMapping[code]?.name || "IOC (International Overflow Center)",
+                        zoneCode: code,
                         zoneId: 1,
                         department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
                         departmentId: fallbackRole === "hod" ? 1 : null,
@@ -395,20 +503,29 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     onLoginSuccess(userData);
                 }
             } else if (mode === "register") {
-                // Registration - create new member account
+                // Registration - create new member account (NO HOD during registration)
+                // Members join departments after registration through pastor approval
                 const newUser = {
                     id: Date.now(),
                     role: "member",
                     name: `${formData.firstName} ${formData.lastName}`,
                     email: formData.email,
                     phone: formData.phoneNumber,
-                    zone: { name: formData.zone || "IOC" },
-                    zoneName: formData.zone || "IOC",
+                    // Zone information from auto-linking
+                    zone: { name: zoneData?.name || formData.zoneCode || "IOC" },
+                    zoneName: zoneData?.name || formData.zoneCode || "IOC",
+                    zoneCode: formData.zoneCode,
                     zoneId: 1,
-                    homegroup: null,
-                    homegroupId: null,
+                    // Pastor from zone auto-linking (HOD is assigned after department joining)
+                    pastor: zoneData?.pastor || null,
+                    // Department is null - members request to join after registration
                     department: null,
                     departmentId: null,
+                    departmentName: null,
+                    // HOD is assigned when pastor approves department request
+                    hod: null,
+                    homegroup: null,
+                    homegroupId: null,
                     address: formData.physicalAddress,
                     firstLogin: false,
                     termsAccepted: true,
@@ -445,7 +562,9 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                             : role === "hod"
                               ? "John Doe"
                               : "Member",
-                    zone: "IOC (International Overflow Center)",
+                    zone: { name: zoneData?.name || formData.zoneCode || "IOC" },
+                    zoneName: zoneData?.name || formData.zoneCode || "IOC",
+                    zoneCode: formData.zoneCode || "IOC",
                     department: department,
                     firstLogin: true,
                     termsAccepted: false,
@@ -475,6 +594,8 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                 role: fallbackRole,
                 name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
                 zone: { name: "IOC" },
+                zoneName: "IOC",
+                zoneCode: code || "IOC",
                 zoneName: "IOC",
                 zoneId: 1,
                 department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
@@ -708,7 +829,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                                 : undefined
                                                         }
                                                         aria-required="true"
-                                                        className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                        className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('firstName', formData.firstName)}`}
                                                     />
                                                 </div>
                                                 <div>
@@ -744,7 +865,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                                 : undefined
                                                         }
                                                         aria-required="true"
-                                                        className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                        className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('lastName', formData.lastName)}`}
                                                     />
                                                 </div>
                                             </div>
@@ -763,7 +884,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                     !!errors.email
                                                 }
                                                 aria-required="true"
-                                                className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('email', formData.email)}`}
                                             />
                                             <input
                                                 id="phoneNumber"
@@ -780,60 +901,60 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                     !!errors.phoneNumber
                                                 }
                                                 aria-required="true"
-                                                className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('phoneNumber', formData.phoneNumber)}`}
                                             />
-                                            <select
-                                                id="zone"
-                                                name="zone"
-                                                value={formData.zone}
-                                                onChange={handleZoneChange}
-                                                onBlur={() =>
-                                                    handleBlur("zone")
-                                                }
-                                                aria-invalid={
-                                                    touched.zone &&
-                                                    !!errors.zone
-                                                }
-                                                aria-required="true"
-                                                className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
-                                            >
-                                                <option
-                                                    value=""
-                                                    className="text-gray-800"
-                                                >
-                                                    Select Zone
-                                                </option>
-                                                <option
-                                                    value="north"
-                                                    className="text-gray-800"
-                                                >
-                                                    North
-                                                </option>
-                                                <option
-                                                    value="south"
-                                                    className="text-gray-800"
-                                                >
-                                                    South
-                                                </option>
-                                                <option
-                                                    value="east"
-                                                    className="text-gray-800"
-                                                >
-                                                    East
-                                                </option>
-                                                <option
-                                                    value="west"
-                                                    className="text-gray-800"
-                                                >
-                                                    West
-                                                </option>
-                                                <option
-                                                    value="central"
-                                                    className="text-gray-800"
-                                                >
-                                                    Central
-                                                </option>
-                                            </select>
+                                            
+                                            {/* Zone Code Input with Auto-linking */}
+                                            <div className="relative">
+                                                <input
+                                                    id="zoneCode"
+                                                    type="text"
+                                                    name="zoneCode"
+                                                    placeholder="Zone Code (e.g., IOC, NORTH, SOUTH)"
+                                                    value={formData.zoneCode}
+                                                    onChange={handleZoneCodeChange}
+                                                    onBlur={() =>
+                                                        handleBlur("zoneCode")
+                                                    }
+                                                    aria-invalid={
+                                                        touched.zoneCode &&
+                                                        !!errors.zoneCode
+                                                    }
+                                                    aria-required="true"
+                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('zoneCode', formData.zoneCode)}`}
+                                                />
+                                                {isLoadingZone && (
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Auto-linked Pastor Display (NO HOD - members join departments after registration) */}
+                                            {zoneData && (
+                                                <div className="bg-white/10 border border-white/20 rounded-xl p-3 space-y-2 animate-fade-in">
+                                                    <p className="text-xs text-white/60 font-medium">Your Zone Information</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gold-400 to-amber-500 flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-white/80">Zone Pastor: <span className="text-white font-medium">{zoneData.pastor}</span></p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 pt-2 border-t border-white/10">
+                                                        <p className="text-xs text-white/50">
+                                                            💡 After registration, you can request to join a department through your portal. Your pastor will review and approve your request.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
                                             <input
                                                 id="physicalAddress"
                                                 type="text"
@@ -851,7 +972,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                     !!errors.physicalAddress
                                                 }
                                                 aria-required="true"
-                                                className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('physicalAddress', formData.physicalAddress)}`}
                                             />
                                             <div className="grid grid-cols-2 gap-2">
                                                 <input
@@ -869,7 +990,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                         !!errors.password
                                                     }
                                                     aria-required="true"
-                                                    className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('password', formData.password)}`}
                                                 />
                                                 <input
                                                     id="confirmPassword"
@@ -890,7 +1011,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                         !!errors.confirmPassword
                                                     }
                                                     aria-required="true"
-                                                    className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
+                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('confirmPassword', formData.confirmPassword)}`}
                                                 />
                                             </div>
                                             {/* Terms and Conditions Checkbox */}

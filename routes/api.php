@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DepartmentRequestController;
 use App\Http\Controllers\Api\HomeGroupApiController;
+use App\Http\Controllers\Api\HomeGroupMemberController;
 use App\Http\Controllers\Api\WeeklyReportController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ActivityController;
@@ -69,4 +71,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/pastor', [MessageController::class, 'pastorMessages']);
     Route::put('/messages/{id}/read', [MessageController::class, 'markAsRead']);
     Route::get('/messages/department-members', [MessageController::class, 'departmentMembers']);
+    
+    // Department requests routes (join departments after registration)
+    Route::get('/departments', [DepartmentRequestController::class, 'departments']);
+    Route::post('/department-request', [DepartmentRequestController::class, 'requestJoin']);
+    Route::get('/department-request/my', [DepartmentRequestController::class, 'myRequest']);
+    Route::delete('/department-request/cancel', [DepartmentRequestController::class, 'cancelRequest']);
+    
+    // Pastor/HOD approval routes
+    Route::get('/department-request/approvals', [DepartmentRequestController::class, 'pendingApprovals']);
+    Route::put('/department-request/{id}/approve', [DepartmentRequestController::class, 'approveRequest']);
+    Route::put('/department-request/{id}/reject', [DepartmentRequestController::class, 'rejectRequest']);
+    
+    // Home group membership routes
+    Route::get('/home-groups/available', [HomeGroupMemberController::class, 'availableHomeGroups']);
+    Route::get('/home-group/my', [HomeGroupMemberController::class, 'myHomeGroup']);
+    Route::post('/home-group/join', [HomeGroupMemberController::class, 'joinHomeGroup']);
+    Route::delete('/home-group/leave', [HomeGroupMemberController::class, 'leaveHomeGroup']);
+    Route::get('/home-group/{id}/members', [HomeGroupMemberController::class, 'homeGroupMembers']);
+    Route::post('/home-group/{id}/assign-leader', [HomeGroupMemberController::class, 'assignLeader']);
+    Route::delete('/home-group/{homeGroupId}/members/{memberId}', [HomeGroupMemberController::class, 'removeMember']);
 });

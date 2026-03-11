@@ -26,8 +26,10 @@ const FloatingParticles = () => {
             setOffset({ x, y });
         };
 
-        window.addEventListener("mousemove", handleMouseMove);
-        return () => window.removeEventListener("mousemove", handleMouseMove);
+        if (typeof window !== 'undefined') {
+            window.addEventListener("mousemove", handleMouseMove);
+            return () => window.removeEventListener("mousemove", handleMouseMove);
+        }
     }, []);
 
     const particles = useMemo(() => {
@@ -1475,9 +1477,11 @@ export default function PastorsPortal({ user: initialUser, onLogout }) {
             setIsTablet(width >= 768 && width < 1024);
         };
 
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        if (typeof window !== 'undefined') {
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            return () => window.removeEventListener('resize', handleResize);
+        }
     }, []);
 
     const getPageContent = () => {

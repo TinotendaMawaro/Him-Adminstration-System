@@ -6,6 +6,8 @@ export default function AnimatedBackground() {
 
   // Mouse Parallax Effect
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleMouseMove = (e) => {
       const { innerWidth, innerHeight } = window;
       const x = (e.clientX - innerWidth / 2) / 50;
@@ -14,7 +16,11 @@ export default function AnimatedBackground() {
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("mousemove", handleMouseMove);
+      }
+    };
   }, []);
 
   // Generate particles with warm, spiritual aesthetic
