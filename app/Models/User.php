@@ -2,206 +2,104 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
-        'unique_code',
-        'zone_id',
-        'home_group_id',
-        'department_id',
-        'gender_id',
-        'demography_id',
-        'phone',
-        'address',
-        'date_of_birth',
-        'is_active',
-        'terms_accepted',
-        'terms_accepted_at',
-        'first_login_at',
-        'completed_tour',
-        'profile_photo',
+        'name', 'email', 'password',
+        'role', 'unique_code',
+        'zone_id', 'home_group_id', 'department_id',
+        'gender_id', 'demography_id',
+        'phone', 'address', 'date_of_birth',
+        'is_active', 'terms_accepted', 'terms_accepted_at',
+        'first_login_at', 'completed_tour', 'profile_photo',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
+            'role'              => UserRole::class,   // ← enum cast
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'date_of_birth' => 'date',
-            'terms_accepted' => 'boolean',
-            'is_active' => 'boolean',
-            'completed_tour' => 'boolean',
+            'password'          => 'hashed',
+            'date_of_birth'     => 'date',
+            'terms_accepted'    => 'boolean',
+            'is_active'         => 'boolean',
+            'completed_tour'    => 'boolean',
             'terms_accepted_at' => 'datetime',
-            'first_login_at' => 'datetime',
+            'first_login_at'    => 'datetime',
         ];
     }
 
-    // Role checking methods
-    public function isPastor(): bool
-    {
-        return $this->role === 'pastor';
-    }
+    // ─── Role helpers ─────────────────────────────────────────────────────────
 
-    public function isMember(): bool
+    public function hasRole(UserRole|string $role): bool
     {
-        return $this->role === 'member';
-    }
-
-    public function isPartner(): bool
-    {
-        return $this->role === 'partner';
-    }
-
-    public function isHOD(): bool
-    {
-        return $this->role === 'hod';
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->role === 'admin';
-    }
-
-    public function hasRole(string $role): bool
-    {
+        $role = $role instanceof UserRole ? $role : UserRole::from($role);
         return $this->role === $role;
     }
 
     public function hasAnyRole(array $roles): bool
     {
+        $roles = array_map(
+            fn ($r) => $r instanceof UserRole ? $r : UserRole::from($r),
+            $roles
+        );
         return in_array($this->role, $roles);
     }
 
-    // Check if first time login
-    public function isFirstTimeLogin(): bool
-    {
-        return $this->first_login_at === null;
-    }
+    public function isMaster(): bool    { return $this->role === UserRole::Master; }
+    public function isHOD(): bool       { return $this->role === UserRole::HOD; }
+    public function isFinance(): bool   { return $this->role === UserRole::Finance; }
+    public function isEventRole(): bool { return $this->role === UserRole::Event; }
+    public function isPastor(): bool    { return $this->role === UserRole::Pastor; }
+    public function isPartner(): bool   { return $this->role === UserRole::Partner; }
+    public function isMember(): bool    { return $this->role === UserRole::Member; }
 
-    // Check if terms not accepted
-    public function needsToAcceptTerms(): bool
-    {
-        return !$this->terms_accepted;
-    }
+    public function isFilamentUser(): bool { return $this->role->isFilamentRole(); }
+    public function isPortalUser(): bool   { return $this->role->isPortalRole(); }
 
-    // Gender relationship
-    public function gender()
-    {
-        return $this->belongsTo(Gender::class);
-    }
+    public function isFirstTimeLogin(): bool   { return $this->first_login_at === null; }
+    public function needsToAcceptTerms(): bool { return !$this->terms_accepted; }
 
-    // Demography relationship
-    public function demography()
-    {
-        return $this->belongsTo(Demography::class);
-    }
+    // ─── Relationships ────────────────────────────────────────────────────────
 
-    // Zone relationship
-    public function zone()
-    {
-        return $this->belongsTo(Zone::class);
-    }
+    public function gender(): BelongsTo     { return $this->belongsTo(Gender::class); }
+    public function demography(): BelongsTo { return $this->belongsTo(Demography::class); }
+    public function zone(): BelongsTo       { return $this->belongsTo(Zone::class); }
+    public function homeGroup(): BelongsTo  { return $this->belongsTo(HomeGroup::class); }
+    public function department(): BelongsTo { return $this->belongsTo(Department::class); }
 
-    // Home group relationship
-    public function home_group()
-    {
-        return $this->belongsTo(HomeGroup::class);
-    }
+    public function contact(): HasOne  { return $this->hasOne(Contact::class); }
+    public function pastor(): HasOne   { return $this->hasOne(Pastor::class); }
+    public function member(): HasOne   { return $this->hasOne(Member::class); }
+    public function partner(): HasOne  { return $this->hasOne(Partner::class); }
 
-    // Department relationship
-    public function department()
-    {
-        return $this->belongsTo(Department::class);
-    }
+    public function zoneHistories(): HasMany      { return $this->hasMany(ZoneHistory::class, 'pastor_id'); }
+    public function reports(): HasMany            { return $this->hasMany(Report::class); }
+    public function notifications(): HasMany      { return $this->hasMany(Notification::class); }
+    public function unreadNotifications(): HasMany { return $this->notifications()->where('is_read', false); }
+    public function appointments(): HasMany       { return $this->hasMany(Appointment::class, 'user_id'); }
+    public function payments(): HasMany           { return $this->hasMany(Payment::class); }
+    public function recordedPayments(): HasMany   { return $this->hasMany(Payment::class, 'recorded_by'); }
+    public function createdEvents(): HasMany      { return $this->hasMany(Event::class, 'created_by'); }
+    public function eventRegistrations(): HasMany { return $this->hasMany(EventRegistration::class); }
 
-    // Zone history relationship (as pastor)
-    public function zoneHistories()
-    {
-        return $this->hasMany(ZoneHistory::class, 'pastor_id');
-    }
+    // ─── Filament access gate ─────────────────────────────────────────────────
 
-    // Reports created by user
-    public function reports()
+    public function canAccessPanel(\Filament\Panel $panel): bool
     {
-        return $this->hasMany(Report::class);
-    }
-
-    // Notifications received
-    public function notifications()
-    {
-        return $this->hasMany(Notification::class);
-    }
-
-    // Unread notifications
-    public function unreadNotifications()
-    {
-        return $this->notifications()->where('is_read', false);
-    }
-
-    // Appointments (as the appointed person)
-    public function appointments()
-    {
-        return $this->hasMany(Appointment::class, 'user_id');
-    }
-
-    // Appointments made by user
-    public function appointedUsers()
-    {
-        return $this->hasMany(Appointment::class, 'appointed_by');
-    }
-
-    // Active appointment
-    public function activeAppointment()
-    {
-        return $this->appointments()->where('status', 'active')->first();
-    }
-
-    // Wedding as groom
-    public function weddingsAsGroom()
-    {
-        return $this->hasMany(Wedding::class, 'groom_id');
-    }
-
-    // Wedding as bride
-    public function weddingsAsBride()
-    {
-        return $this->hasMany(Wedding::class, 'bride_id');
-    }
-
-    // Wedding as officiating pastor
-    public function weddingsOfficiated()
-    {
-        return $this->hasMany(Wedding::class, 'officiating_pastor_id');
+        return $this->role->isFilamentRole() && $this->is_active;
     }
 }
