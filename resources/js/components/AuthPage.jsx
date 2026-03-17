@@ -1,1174 +1,377 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { CSSTransition, SwitchTransition } from "react-transition-group";
 import AnimatedBackground from "./AnimatedBackground";
 import "./authAnimations.css";
+import api from "../lib/api";
 
-// DEBUG: Log when CSS is loaded
-console.log(
-    "[DEBUG] authAnimations.css imported - checking goldGradient class",
-);
-if (typeof window !== "undefined") {
-    const style = document.createElement("style");
-    style.textContent = `.test-gold { background: linear-gradient(90deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent; }`;
-    document.head.appendChild(style);
-    console.log(
-        "[DEBUG] Test style injected - checking if goldGradient class exists in computed styles",
-    );
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Validation functions
-const validateCode = (code) => {
-    const pattern = /^R\d{4}[PH]\d{2}$/;
-    return pattern.test(code);
-};
+const validateEmail    = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const validatePassword = (v) => v.length >= 6;
 
-const validateEmail = (email) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(email);
-};
-
-const validatePassword = (password) => {
-    return password.length >= 6;
-};
-
-// Loading Spinner Component
 const LoadingSpinner = () => (
-    <svg
-        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-    >
-        <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-        />
-        <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
+    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
     </svg>
 );
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function AuthPage({ onLoginSuccess = () => {} }) {
-    const [mode, setMode] = useState("code");
-    const [code, setCode] = useState("");
-    const [isValidCode, setIsValidCode] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [mode, setMode]                   = useState("code");
+    const [isLoading, setIsLoading]         = useState(false);
+    const [errors, setErrors]               = useState({});
+    const [touched, setTouched]             = useState({});
     const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
-    const [formData, setFormData] = useState({
-        username: "",
-        password: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        phoneNumber: "",
-        zoneCode: "",
-        physicalAddress: "",
-        department: "",
-        confirmPassword: "",
+
+    const [code, setCode]               = useState("");
+    const [emailLogin, setEmailLogin]   = useState({ email: "", password: "" });
+    const [formData, setFormData]       = useState({
+        firstName: "", lastName: "", email: "",
+        phoneNumber: "", physicalAddress: "",
+        password: "", confirmPassword: "",
     });
-    // Zone data for auto-linking
-    const [zoneData, setZoneData] = useState(null);
-    const [isLoadingZone, setIsLoadingZone] = useState(false);
     const [acceptTerms, setAcceptTerms] = useState(false);
-    const [errors, setErrors] = useState({});
-    const [touched, setTouched] = useState({});
-
-    // Zone lookup mapping - Zimbabwe 10 Regions structure
-    // Format: R[Region][Zone][Type][Number] - e.g., R0101P01 = Region 1, Zone 1, Pastor #1
-    const zoneMapping = {
-        // Region 1 - IOC (International Overflow Center)
-        'IOC': { 
-            name: 'International Overflow Center (IOC)', 
-            region: 'Region 1',
-            pastor: 'Pastor Chipo Vutabwashe', 
-            department: 'General', 
-            address: '123 Main Street, City Center'
-        },
-        'R0101': { name: 'IOC Zone 1', region: 'Region 1', pastor: 'Pastor Chipo Vutabwashe', department: 'General', address: 'City Center' },
-        'R0102': { name: 'IOC Zone 2', region: 'Region 1', pastor: 'Pastor T. Magaya', department: 'Youth', address: 'East suburb' },
-        
-        // Region 2
-        'R0201': { name: 'Bulawayo Central', region: 'Region 2', pastor: 'Pastor Moyo', department: 'PIONEERS', address: 'Bulawayo' },
-        'R0202': { name: 'Bulawayo North', region: 'Region 2', pastor: 'Pastor Ndlovu', department: 'Women Ministry', address: 'North Bulawayo' },
-        
-        // Region 3
-        'R0301': { name: 'Harare East', region: 'Region 3', pastor: 'Pastor Mukoma', department: 'Men Ministry', address: 'Harare East' },
-        'R0302': { name: 'Harare West', region: 'Region 3', pastor: 'Pastor Shumba', department: 'Children Ministry', address: 'Harare West' },
-        
-        // Region 4
-        'R0401': { name: 'Mutare Zone', region: 'Region 4', pastor: 'Pastor章', department: 'Music', address: 'Mutare' },
-        
-        // Region 5
-        'R0501': { name: 'Gweru Zone', region: 'Region 5', pastor: 'Pastor Dube', department: 'Youth', address: 'Gweru' },
-        
-        // Region 6
-        'R0601': { name: 'Masvingo Zone', region: 'Region 6', pastor: 'Pastor Mhandu', department: 'PIONEERS', address: 'Masvingo' },
-        
-        // Region 7
-        'R0701': { name: 'Kwekwe Zone', region: 'Region 7', pastor: 'Pastor Hove', department: 'Women Ministry', address: 'Kwekwe' },
-        
-        // Region 8
-        'R0801': { name: 'Chinhoyi Zone', region: 'Region 8', pastor: 'Pastor Nyoni', department: 'Men Ministry', address: 'Chinhoyi' },
-        
-        // Region 9
-        'R0901': { name: 'Bindura Zone', region: 'Region 9', pastor: 'Pastor Sithole', department: 'Children Ministry', address: 'Bindura' },
-        
-        // Region 10
-        'R1001': { name: 'Beitbridge Zone', region: 'Region 10', pastor: 'Pastor Mlotshwa', department: 'Music', address: 'Beitbridge' },
-    };
-
-    // Handle zone code change with auto-linking
-    const handleZoneCodeChange = useCallback((e) => {
-        const value = e.target.value.toUpperCase();
-        setFormData((prev) => ({ ...prev, zoneCode: value }));
-        
-        // Clear error when user starts typing
-        if (errors.zoneCode) {
-            setErrors((prev) => ({ ...prev, zoneCode: "" }));
-        }
-
-        // Auto-lookup zone data when zone code is entered (at least 3 chars)
-        if (value.length >= 3) {
-            setIsLoadingZone(true);
-            // Simulate API call delay
-            setTimeout(() => {
-                const zone = zoneMapping[value] || zoneMapping['IOC']; // Default to IOC
-                setZoneData(zone);
-                setFormData(prev => ({ 
-                    ...prev, 
-                    zoneCode: value,
-                    department: zone.department 
-                }));
-                setIsLoadingZone(false);
-            }, 500);
-        } else {
-            setZoneData(null);
-        }
-    }, [errors.zoneCode, zoneMapping]);
-
-    // Get validation status for fields (green glow if valid, red if invalid)
-    const getFieldValidationClass = (fieldName, value) => {
-        if (!touched[fieldName]) return '';
-        const error = errors[fieldName];
-        if (error) {
-            return 'border-red-500 focus:border-red-500 focus:ring-red-500/20 shadow-red-500/20';
-        }
-        if (value && value.length > 0) {
-            return 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20 shadow-emerald-500/20';
-        }
-        return '';
-    };
-
-    // DEBUG: Check if CSS animations are loaded
-    useEffect(() => {
-        // Check if the CSS file was loaded
-        const stylesheets = document.styleSheets;
-        let foundGoldGradient = false;
-        try {
-            for (let i = 0; i < stylesheets.length; i++) {
-                const rules = stylesheets[i].cssRules || stylesheets[i].rules;
-                if (rules) {
-                    for (let j = 0; j < rules.length; j++) {
-                        if (
-                            rules[j].selectorText &&
-                            rules[j].selectorText.includes(
-                                "animate-goldGradient",
-                            )
-                        ) {
-                            foundGoldGradient = true;
-                            console.log(
-                                "[DEBUG] Found animate-goldGradient CSS rule:",
-                                rules[j].cssText.substring(0, 200),
-                            );
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            console.log(
-                "[DEBUG] Could not access stylesheets (cross-origin or security):",
-                e.message,
-            );
-        }
-
-        if (!foundGoldGradient) {
-            console.warn(
-                "[DEBUG] WARNING: animate-goldGradient CSS class NOT FOUND in any stylesheet!",
-            );
-        } else {
-            console.log(
-                "[DEBUG] SUCCESS: animate-goldGradient CSS class is loaded!",
-            );
-        }
-
-        // Check the actual element's computed styles
-        const titleElement = document.querySelector(".animate-goldGradient");
-        if (titleElement) {
-            const computedStyle = window.getComputedStyle(titleElement);
-            console.log("[DEBUG] Title element computed styles:");
-            console.log("  - color:", computedStyle.color);
-            console.log("  - background-image:", computedStyle.backgroundImage);
-            console.log(
-                "  - -webkit-background-clip:",
-                computedStyle.webkitBackgroundClip,
-            );
-            console.log("  - animation:", computedStyle.animation);
-        } else {
-            console.warn(
-                "[DEBUG] Could not find .animate-goldGradient element in DOM",
-            );
-        }
-    }, []);
-
-    // Handle checkbox change
-    const handleCheckboxChange = useCallback(
-        (e) => {
-            setAcceptTerms(e.target.checked);
-            if (errors.acceptTerms) {
-                setErrors((prev) => ({ ...prev, acceptTerms: "" }));
-            }
-        },
-        [errors.acceptTerms],
-    );
-
     const inputRef = useRef(null);
 
-    // Handle input changes
-    const handleInputChange = useCallback(
-        (e) => {
-            const { name, value } = e.target;
-            setFormData((prev) => ({ ...prev, [name]: value }));
+    // ─── Validation ───────────────────────────────────────────────────────────
 
-            // Clear error when user starts typing
-            if (errors[name]) {
-                setErrors((prev) => ({ ...prev, [name]: "" }));
-            }
-        },
-        [errors],
-    );
-
-    // Handle zone selection
-    const handleZoneChange = useCallback(
-        (e) => {
-            const { value } = e.target;
-            setFormData((prev) => ({ ...prev, zone: value }));
-            if (errors.zone) {
-                setErrors((prev) => ({ ...prev, zone: "" }));
-            }
-        },
-        [errors.zone],
-    );
-
-    // Handle code change
-    const handleCodeChange = (e) => {
-        const value = e.target.value.toUpperCase();
-        setCode(value);
-        setIsValidCode(validateCode(value));
-
-        // Clear error when valid
-        if (validateCode(value)) {
-            setErrors((prev) => ({ ...prev, code: "" }));
-        }
+    const getFieldClass = (fieldName, value) => {
+        if (!touched[fieldName]) return "";
+        if (errors[fieldName])   return "border-red-500 focus:ring-red-500/20";
+        if (value?.length > 0)   return "border-emerald-500 focus:ring-emerald-500/20";
+        return "";
     };
 
-    // Handle blur for validation
-    const handleBlur = (fieldName) => {
-        setTouched((prev) => ({ ...prev, [fieldName]: true }));
-        validateField(fieldName);
+    const handleBlur = (field) => {
+        setTouched((p) => ({ ...p, [field]: true }));
     };
 
-    // Validate individual field
-    const validateField = (fieldName) => {
-        let error = "";
-        const value = fieldName === "code" ? code : formData[fieldName];
-
-        switch (fieldName) {
-            case "code":
-                if (value && !validateCode(value)) {
-                    error = "Invalid code format! Example: R0101P01 or R0101H01";
-                }
-                break;
-            case "email":
-                if (value && !validateEmail(value)) {
-                    error = "Please enter a valid email address";
-                }
-                break;
-            case "password":
-                if (value && !validatePassword(value)) {
-                    error = "Password must be at least 6 characters";
-                }
-                break;
-            case "confirmPassword":
-                if (value !== formData.password) {
-                    error = "Passwords do not match";
-                }
-                break;
-            case "phoneNumber":
-                if (value && value.length < 8) {
-                    error = "Please enter a valid phone number";
-                }
-                break;
-            case "zoneCode":
-                if (value && value.length < 3) {
-                    error = "Please enter a valid zone code (e.g., IOC, NORTH)";
-                }
-                break;
-            case "firstName":
-            case "lastName":
-                if (value && value.length < 2) {
-                    error = `${fieldName === 'firstName' ? 'First' : 'Last'} name must be at least 2 characters`;
-                }
-                break;
-            default:
-                break;
-        }
-
-        setErrors((prev) => ({ ...prev, [fieldName]: error }));
-        return !error;
-    };
-
-    // Validate all form fields
     const validateForm = () => {
-        const newErrors = {};
-
+        const e = {};
         if (mode === "code") {
-            if (!code) {
-                newErrors.code = "Code is required";
-            } else if (!validateCode(code)) {
-                newErrors.code = "Invalid code format! Example: R0101P01 or R0101H01";
-            }
-        } else if (mode === "login") {
-            if (!formData.username) {
-                newErrors.username = "Username is required";
-            }
-            if (!formData.password) {
-                newErrors.password = "Password is required";
-            }
-        } else if (mode === "register") {
-            if (!formData.firstName) {
-                newErrors.firstName = "First name is required";
-            }
-            if (!formData.lastName) {
-                newErrors.lastName = "Last name is required";
-            }
-            if (!formData.email) {
-                newErrors.email = "Email address is required";
-            } else if (!validateEmail(formData.email)) {
-                newErrors.email = "Please enter a valid email address";
-            }
-            if (!formData.phoneNumber) {
-                newErrors.phoneNumber = "Phone number is required";
-            }
-            if (!formData.zoneCode) {
-                newErrors.zoneCode = "Zone code is required";
-            }
-            if (!formData.physicalAddress) {
-                newErrors.physicalAddress = "Physical address is required";
-            }
-            if (!formData.password) {
-                newErrors.password = "Password is required";
-            } else if (!validatePassword(formData.password)) {
-                newErrors.password = "Password must be at least 6 characters";
-            }
-            if (formData.password !== formData.confirmPassword) {
-                newErrors.confirmPassword = "Passwords do not match";
-            }
-            if (!acceptTerms) {
-                newErrors.acceptTerms =
-                    "You must accept the terms and conditions";
-            }
+            if (!code.trim()) e.code = "Code is required";
         }
-
-        setErrors(newErrors);
-        setTouched({
-            username: true,
-            password: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phoneNumber: true,
-            zone: true,
-            physicalAddress: true,
-            confirmPassword: true,
-            acceptTerms: true,
-            code: true,
-        });
-
-        return Object.keys(newErrors).length === 0;
+        if (mode === "email") {
+            if (!emailLogin.email || !validateEmail(emailLogin.email)) e.emailLoginEmail = "Valid email is required";
+            if (!emailLogin.password) e.emailLoginPassword = "Password is required";
+        }
+        if (mode === "register") {
+            if (!formData.firstName) e.firstName = "First name is required";
+            if (!formData.lastName)  e.lastName  = "Last name is required";
+            if (!formData.email || !validateEmail(formData.email)) e.email = "Valid email is required";
+            if (!formData.phoneNumber || formData.phoneNumber.length < 7) e.phoneNumber = "Valid phone number is required";
+            if (!formData.physicalAddress) e.physicalAddress = "Physical address is required";
+            if (!formData.password || !validatePassword(formData.password)) e.password = "Password must be at least 6 characters";
+            if (formData.password !== formData.confirmPassword) e.confirmPassword = "Passwords do not match";
+            if (!acceptTerms) e.acceptTerms = "You must accept the terms and conditions";
+        }
+        setErrors(e);
+        setTouched({ code:true, email:true, password:true, firstName:true, lastName:true, phoneNumber:true, physicalAddress:true, confirmPassword:true, acceptTerms:true, emailLoginEmail:true, emailLoginPassword:true });
+        return Object.keys(e).length === 0;
     };
 
-    // Handle form submission
+    // ─── Change handlers ──────────────────────────────────────────────────────
+
+    const handleInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setFormData((p) => ({ ...p, [name]: value }));
+        if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
+    }, [errors]);
+
+    const handleEmailLoginChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setEmailLogin((p) => ({ ...p, [name]: value }));
+        const k = name === "email" ? "emailLoginEmail" : "emailLoginPassword";
+        if (errors[k]) setErrors((p) => ({ ...p, [k]: "" }));
+    }, [errors]);
+
+    // ─── Login response handler ───────────────────────────────────────────────
+
+    const handleLoginResponse = (data) => {
+        localStorage.setItem("him_token", data.token);
+        localStorage.setItem("him_user",  JSON.stringify(data.user));
+        onLoginSuccess(data.user);
+    };
+
+    // ─── Submit ───────────────────────────────────────────────────────────────
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
 
         setIsLoading(true);
+        setErrors((p) => ({ ...p, submit: "" }));
 
         try {
             if (mode === "code") {
-                // Call the actual API
-                const response = await fetch("/api/login/code", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({ unique_code: code }),
+                const { data } = await api.post("/login/code", { unique_code: code.trim() });
+                if (data.success) {
+                    handleLoginResponse(data);
+                } else {
+                    setErrors({ submit: data.message || "Invalid code. Please try again." });
+                }
+
+            } else if (mode === "email") {
+                const { data } = await api.post("/login", { email: emailLogin.email, password: emailLogin.password });
+                if (data.success) {
+                    handleLoginResponse(data);
+                } else {
+                    setErrors({ submit: data.message || "Invalid credentials." });
+                }
+
+            } else if (mode === "register") {
+                const { data } = await api.post("/register", {
+                    name:     `${formData.firstName} ${formData.lastName}`,
+                    email:    formData.email,
+                    password: formData.password,
+                    password_confirmation: formData.confirmPassword,
+                    phone:    formData.phoneNumber,
+                    address:  formData.physicalAddress,
                 });
 
-                // Check if response is ok
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log("[DEBUG] API Response:", data);
-
                 if (data.success) {
-                    // Store token
-                    localStorage.setItem("him_token", data.token);
-
-                    // Create user object from API response - pass zone as object for consistency
-                    const userData = {
-                        id: data.user.id,
-                        code: code,
-                        role: data.user.role,
-                        name: data.user.name,
-                        // Pass zone as object with name property
-                        zone: data.user.zone
-                            ? { name: data.user.zone.name }
-                            : null,
-                        zoneName: data.user.zone ? data.user.zone.name : null,
-                        zoneId: data.user.zone_id,
-                        // Include department info for HOD users
-                        department: data.user.department
-                            ? { name: data.user.department.name, id: data.user.department.id }
-                            : null,
-                        departmentId: data.user.department_id,
-                        email: data.user.email,
-                        firstLogin: data.is_first_time,
-                        termsAccepted: !data.needs_terms_acceptance,
-                        tourCompleted: data.user.completed_tour || false,
-                    };
-
-                    // Save to localStorage
-                    localStorage.setItem("him_user", JSON.stringify(userData));
-
-                    // Call the success callback
-                    onLoginSuccess(userData);
+                    setShowRegisterSuccess(true);
+                    setTimeout(() => handleLoginResponse(data), 1500);
                 } else {
-                    // API returned error - determine role from code and use fallback
-                    console.log(
-                        "[DEBUG] API Error, using fallback:",
-                        data.message,
-                    );
-
-                    // Determine role from code (RXXXXPXX = Pastor, RXXXXHXX = HOD)
-                    let fallbackRole = "member";
-                    if (code.includes("P")) {
-                        fallbackRole = "pastor";
-                    } else if (code.includes("H")) {
-                        fallbackRole = "hod";
+                    if (data.errors) {
+                        const mapped = {};
+                        if (data.errors.email)    mapped.email    = data.errors.email[0];
+                        if (data.errors.password) mapped.password = data.errors.password[0];
+                        if (data.errors.name)     mapped.firstName = data.errors.name[0];
+                        setErrors(mapped);
+                    } else {
+                        setErrors({ submit: data.message || "Registration failed." });
                     }
-
-                    // Code R0101P01 belongs to Chipo Vutabwashe (Regional Leader - P01)
-                    const userData = {
-                        code: code,
-                        role: fallbackRole,
-                        name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
-                        zone: { name: zoneMapping[code]?.name || "IOC (International Overflow Center)" },
-                        zoneName: zoneMapping[code]?.name || "IOC (International Overflow Center)",
-                        zoneCode: code,
-                        zoneId: 1,
-                        department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
-                        departmentId: fallbackRole === "hod" ? 1 : null,
-                        firstLogin: false,
-                        termsAccepted: true,
-                        tourCompleted: true,
-                    };
-
-                    localStorage.setItem("him_user", JSON.stringify(userData));
-                    onLoginSuccess(userData);
                 }
-            } else if (mode === "register") {
-                // Registration - create new member account (NO HOD during registration)
-                // Members join departments after registration through pastor approval
-                const newUser = {
-                    id: Date.now(),
-                    role: "member",
-                    name: `${formData.firstName} ${formData.lastName}`,
-                    email: formData.email,
-                    phone: formData.phoneNumber,
-                    // Zone information from auto-linking
-                    zone: { name: zoneData?.name || formData.zoneCode || "IOC" },
-                    zoneName: zoneData?.name || formData.zoneCode || "IOC",
-                    zoneCode: formData.zoneCode,
-                    zoneId: 1,
-                    // Pastor from zone auto-linking (HOD is assigned after department joining)
-                    pastor: zoneData?.pastor || null,
-                    // Department is null - members request to join after registration
-                    department: null,
-                    departmentId: null,
-                    departmentName: null,
-                    // HOD is assigned when pastor approves department request
-                    hod: null,
-                    homegroup: null,
-                    homegroupId: null,
-                    address: formData.physicalAddress,
-                    firstLogin: false,
-                    termsAccepted: true,
-                    tourCompleted: true,
-                };
-
-                // Save to localStorage
-                localStorage.setItem("him_user", JSON.stringify(newUser));
-
-                // Call the success callback
-                onLoginSuccess(newUser);
-            } else {
-                // For other modes (login/register), still use simulation for now
-                // Simulate API call
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-
-                // Determine user role from code
-                let role = "member";
-                let department = null;
-                if (mode === "code" && code.includes("P")) {
-                    role = "pastor";
-                } else if (mode === "code" && code.includes("H")) {
-                    role = "hod";
-                    department = { name: "Youth", id: 1 };
-                }
-
-                // Create user object
-                const userData = {
-                    code: code,
-                    role: role,
-                    name:
-                        role === "pastor"
-                            ? "Pastor C Vutabwashe"
-                            : role === "hod"
-                              ? "John Doe"
-                              : "Member",
-                    zone: { name: zoneData?.name || formData.zoneCode || "IOC" },
-                    zoneName: zoneData?.name || formData.zoneCode || "IOC",
-                    zoneCode: formData.zoneCode || "IOC",
-                    department: department,
-                    firstLogin: true,
-                    termsAccepted: false,
-                    tourCompleted: false,
-                };
-
-                // Save to localStorage
-                localStorage.setItem("him_user", JSON.stringify(userData));
-
-                // Call the success callback
-                onLoginSuccess(userData);
             }
         } catch (err) {
-            console.error("[DEBUG] Login error:", err);
-
-            // Fallback: determine role from code when API is unavailable
-            let fallbackRole = "member";
-            if (code.includes("P")) {
-                fallbackRole = "pastor";
-            } else if (code.includes("H")) {
-                fallbackRole = "hod";
+            if (err.response?.status === 422) {
+                const apiErrors = err.response.data?.errors || {};
+                const mapped = {};
+                if (apiErrors.email)       mapped.email    = apiErrors.email[0];
+                if (apiErrors.password)    mapped.password = apiErrors.password[0];
+                if (apiErrors.name)        mapped.firstName = apiErrors.name[0];
+                if (apiErrors.unique_code) mapped.code     = apiErrors.unique_code[0];
+                setErrors(Object.keys(mapped).length ? mapped : { submit: err.response.data?.message || "Validation failed." });
+            } else if (err.response?.status === 401) {
+                setErrors({ submit: mode === "code" ? "Invalid code. Please check and try again." : "Invalid email or password." });
+            } else {
+                setErrors({ submit: "Unable to connect. Please check your connection and try again." });
             }
-
-            // Code R0101P01 belongs to Chipo Vutabwashe (Regional Leader - P01)
-            const userData = {
-                code: code,
-                role: fallbackRole,
-                name: fallbackRole === "hod" ? "John Doe (HOD)" : fallbackRole === "pastor" ? "Chipo Vutabwashe" : "Member",
-                zone: { name: "IOC" },
-                zoneName: "IOC",
-                zoneCode: code || "IOC",
-                zoneName: "IOC",
-                zoneId: 1,
-                department: fallbackRole === "hod" ? { name: "Youth", id: 1 } : null,
-                departmentId: fallbackRole === "hod" ? 1 : null,
-                firstLogin: false,
-                termsAccepted: true,
-                tourCompleted: true,
-            };
-
-            localStorage.setItem("him_user", JSON.stringify(userData));
-            onLoginSuccess(userData);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Get submit button text
-    const getSubmitButtonText = () => {
-        if (isLoading) return "Signing in.....";
-        switch (mode) {
-            case "code":
-                return "LOGIN";
-            case "register":
-                return "REGISTER";
-            default:
-                return "LOGIN TO DASHBOARD";
-        }
+    const getSubmitText = () => {
+        if (isLoading)            return "Signing in…";
+        if (showRegisterSuccess)  return "Redirecting…";
+        if (mode === "register")  return "REGISTER";
+        return "LOGIN TO DASHBOARD";
     };
 
+    // ─── JSX ──────────────────────────────────────────────────────────────────
+
+    const inputBase = "px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
+
     return (
-        <div
-            className="relative flex justify-center items-center min-h-screen font-sans bg-slate-900 overflow-hidden"
-            role="main"
-            aria-label="Authentication Page"
-        >
-            {/* Animated Background with Mouse Parallax */}
+        <div className="relative flex justify-center items-center min-h-screen font-sans bg-slate-900 overflow-hidden" role="main" aria-label="Authentication Page">
             <AnimatedBackground />
 
             <div className="relative w-full max-w-4xl flex rounded-2xl overflow-hidden shadow-2xl">
-                {/* Left Form Panel - Glass Morphism Container */}
-                <div className="w-2/3 p-4 flex flex-col justify-between backdrop-blur-md bg-white/10 border border-white/10 rounded-l-2xl shadow-2xl relative overflow-hidden h-[550px] md:h-[500px] transition-all duration-500 scrollbar-hide">
-                    {/* Fixed Title */}
+
+                {/* ── Left panel ────────────────────────────────────────────── */}
+                <div className="w-2/3 p-4 flex flex-col justify-between backdrop-blur-md bg-white/10 border border-white/10 rounded-l-2xl shadow-2xl relative overflow-hidden h-[570px] md:h-[530px] transition-all duration-500">
+
+                    {/* Header */}
                     <div className="text-center mb-3">
-                        <img
-                            src="/images/logo.webp"
-                            alt="Heartfelt International Ministries Logo"
-                            className="h-16 mx-auto mb-2 object-contain animate-bounce"
-                        />
-                        <h1
-                            className="text-xl md:text-2xl font-extrabold text-center bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-transparent tracking-wide"
-                            style={{
-                                fontFamily:
-                                    '"Playfair Display", "Cormorant Garamond", Georgia, serif',
-                            }}
-                        >
+                        <img src="/images/logo.webp" alt="HIM Logo" className="h-16 mx-auto mb-2 object-contain animate-bounce" />
+                        <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-transparent tracking-wide"
+                            style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>
                             Heartfelt International Ministry
                         </h1>
-                        {(mode === "login" || mode === "code") && (
-                            <p
-                                className="text-center font-bold text-base md:text-lg tracking-wide text-white/80 pt-6"
-                                style={{
-                                    fontFamily:
-                                        '"Cormorant Garamond", Georgia, serif',
-                                }}
-                            >
+                        {mode !== "register" && (
+                            <p className="font-bold text-base md:text-lg tracking-wide text-white/80 pt-4"
+                               style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>
                                 Welcome Back
                             </p>
                         )}
+                        {mode === "register" && (
+                            <p className="text-sm text-white/60 pt-2">Create your member account</p>
+                        )}
                     </div>
 
-                    {/* Switching Form Content - Only this part animates */}
-                    <div className="flex-1 flex flex-col justify-center">
+                    {/* Forms */}
+                    <div className="flex-1 flex flex-col justify-center overflow-y-auto">
                         <SwitchTransition mode="out-in">
-                            <CSSTransition
-                                key={mode}
-                                timeout={300}
-                                classNames="fade"
-                                unmountOnExit
-                            >
-                                <form
-                                    onSubmit={handleSubmit}
-                                    className="flex flex-col space-y-2 px-1"
-                                    noValidate
-                                    aria-label={`${mode} form`}
-                                >
-                                    {/* Code Login */}
+                            <CSSTransition key={mode} timeout={300} classNames="fade" unmountOnExit>
+                                <form onSubmit={handleSubmit} className="flex flex-col space-y-2 px-1" noValidate>
+
+                                    {/* Code */}
                                     {mode === "code" && (
                                         <>
-                                            <div className="relative group">
-                                                <label
-                                                    htmlFor="code-input"
-                                                    className="sr-only"
-                                                >
-                                                    CODE LOGIN (Pastors & HODs)
-                                                </label>
-                                                <input
-                                                    ref={inputRef}
-                                                    id="code-input"
-                                                    type="text"
-                                                    name="code"
-                                                    placeholder="Enter unique identifier only"
-                                                    value={code}
-                                                    onChange={handleCodeChange}
-                                                    onBlur={() =>
-                                                        handleBlur("code")
-                                                    }
-                                                    aria-invalid={
-                                                        touched.code &&
-                                                        !!errors.code
-                                                    }
-                                                    aria-describedby={
-                                                        errors.code
-                                                            ? "code-error"
-                                                            : "code-hint"
-                                                    }
-                                                    aria-required="true"
-                                                    className={`px-2 py-1.5 rounded text-xs font-mono w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 transition-all duration-300
-                            ${
-                                code === ""
-                                    ? "border-white/20 focus:ring-blue-500"
-                                    : isValidCode
-                                      ? "border-yellow-500/50 focus:ring-yellow-500/50 shadow-[#FFD700]/30"
-                                      : "border-red-500 focus:ring-red-500 shadow-red-500/20"
-                            }
-                          `}
-                                                />
-                                            </div>
+                                            <p className="text-xs text-white/50 text-center">Pastors — Enter your unique code</p>
+                                            <input
+                                                ref={inputRef} type="text" placeholder="Enter unique identifier"
+                                                value={code}
+                                                onChange={(e) => { setCode(e.target.value.toUpperCase()); if (errors.code) setErrors((p) => ({ ...p, code: "" })); }}
+                                                onBlur={() => handleBlur("code")}
+                                                className={`${inputBase} text-center tracking-widest text-base font-mono ${errors.code ? "border-red-500" : code ? "border-yellow-500/50" : ""}`}
+                                            />
+                                            {errors.code && <p className="text-red-400 text-xs text-center" role="alert">{errors.code}</p>}
                                         </>
                                     )}
 
-                                    {/* Email Login */}
-                                    {mode === "login" && (
+                                    {/* Email login */}
+                                    {mode === "email" && (
                                         <>
+                                            <p className="text-xs text-white/50 text-center">Members &amp; Partners — Sign in with email</p>
                                             <div>
-                                                <label
-                                                    htmlFor="username"
-                                                    className="sr-only"
-                                                >
-                                                    Username
-                                                </label>
-                                                <input
-                                                    id="username"
-                                                    type="text"
-                                                    name="username"
-                                                    placeholder="Username"
-                                                    value={formData.username}
-                                                    onChange={handleInputChange}
-                                                    onBlur={() =>
-                                                        handleBlur("username")
-                                                    }
-                                                    aria-invalid={
-                                                        touched.username &&
-                                                        !!errors.username
-                                                    }
-                                                    aria-describedby={
-                                                        errors.username
-                                                            ? "username-error"
-                                                            : undefined
-                                                    }
-                                                    aria-required="true"
-                                                    className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
-                                                />
+                                                <input type="email" name="email" placeholder="Email Address" value={emailLogin.email} onChange={handleEmailLoginChange} onBlur={() => handleBlur("emailLoginEmail")}
+                                                       className={`${inputBase} ${errors.emailLoginEmail ? "border-red-500" : ""}`} />
+                                                {errors.emailLoginEmail && <p className="text-red-400 text-xs mt-0.5" role="alert">{errors.emailLoginEmail}</p>}
                                             </div>
                                             <div>
-                                                <label
-                                                    htmlFor="password"
-                                                    className="sr-only"
-                                                >
-                                                    Password
-                                                </label>
-                                                <input
-                                                    id="password"
-                                                    type="password"
-                                                    name="password"
-                                                    placeholder="Password"
-                                                    value={formData.password}
-                                                    onChange={handleInputChange}
-                                                    onBlur={() =>
-                                                        handleBlur("password")
-                                                    }
-                                                    aria-invalid={
-                                                        touched.password &&
-                                                        !!errors.password
-                                                    }
-                                                    aria-describedby={
-                                                        errors.password
-                                                            ? "password-error"
-                                                            : undefined
-                                                    }
-                                                    aria-required="true"
-                                                    className="px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300"
-                                                />
+                                                <input type="password" name="password" placeholder="Password" value={emailLogin.password} onChange={handleEmailLoginChange} onBlur={() => handleBlur("emailLoginPassword")}
+                                                       className={`${inputBase} ${errors.emailLoginPassword ? "border-red-500" : ""}`} />
+                                                {errors.emailLoginPassword && <p className="text-red-400 text-xs mt-0.5" role="alert">{errors.emailLoginPassword}</p>}
                                             </div>
                                         </>
                                     )}
 
-                                    {/* Registration Form */}
+                                    {/* Register */}
                                     {mode === "register" && (
                                         <>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label
-                                                        htmlFor="firstName"
-                                                        className="sr-only"
-                                                    >
-                                                        First Name
-                                                    </label>
-                                                    <input
-                                                        id="firstName"
-                                                        type="text"
-                                                        name="firstName"
-                                                        placeholder="First Name"
-                                                        value={
-                                                            formData.firstName
-                                                        }
-                                                        onChange={
-                                                            handleInputChange
-                                                        }
-                                                        onBlur={() =>
-                                                            handleBlur(
-                                                                "firstName",
-                                                            )
-                                                        }
-                                                        aria-invalid={
-                                                            touched.firstName &&
-                                                            !!errors.firstName
-                                                        }
-                                                        aria-describedby={
-                                                            errors.firstName
-                                                                ? "firstName-error"
-                                                                : undefined
-                                                        }
-                                                        aria-required="true"
-                                                        className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('firstName', formData.firstName)}`}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label
-                                                        htmlFor="lastName"
-                                                        className="sr-only"
-                                                    >
-                                                        Last Name
-                                                    </label>
-                                                    <input
-                                                        id="lastName"
-                                                        type="text"
-                                                        name="lastName"
-                                                        placeholder="Last Name"
-                                                        value={
-                                                            formData.lastName
-                                                        }
-                                                        onChange={
-                                                            handleInputChange
-                                                        }
-                                                        onBlur={() =>
-                                                            handleBlur(
-                                                                "lastName",
-                                                            )
-                                                        }
-                                                        aria-invalid={
-                                                            touched.lastName &&
-                                                            !!errors.lastName
-                                                        }
-                                                        aria-describedby={
-                                                            errors.lastName
-                                                                ? "lastName-error"
-                                                                : undefined
-                                                        }
-                                                        aria-required="true"
-                                                        className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('lastName', formData.lastName)}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <input
-                                                id="email"
-                                                type="email"
-                                                name="email"
-                                                placeholder="Email Address"
-                                                value={formData.email}
-                                                onChange={handleInputChange}
-                                                onBlur={() =>
-                                                    handleBlur("email")
-                                                }
-                                                aria-invalid={
-                                                    touched.email &&
-                                                    !!errors.email
-                                                }
-                                                aria-required="true"
-                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('email', formData.email)}`}
-                                            />
-                                            <input
-                                                id="phoneNumber"
-                                                type="tel"
-                                                name="phoneNumber"
-                                                placeholder="Phone Number"
-                                                value={formData.phoneNumber}
-                                                onChange={handleInputChange}
-                                                onBlur={() =>
-                                                    handleBlur("phoneNumber")
-                                                }
-                                                aria-invalid={
-                                                    touched.phoneNumber &&
-                                                    !!errors.phoneNumber
-                                                }
-                                                aria-required="true"
-                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('phoneNumber', formData.phoneNumber)}`}
-                                            />
-                                            
-                                            {/* Zone Code Input with Auto-linking */}
-                                            <div className="relative">
-                                                <input
-                                                    id="zoneCode"
-                                                    type="text"
-                                                    name="zoneCode"
-                                                    placeholder="Zone Code (e.g., IOC, NORTH, SOUTH)"
-                                                    value={formData.zoneCode}
-                                                    onChange={handleZoneCodeChange}
-                                                    onBlur={() =>
-                                                        handleBlur("zoneCode")
-                                                    }
-                                                    aria-invalid={
-                                                        touched.zoneCode &&
-                                                        !!errors.zoneCode
-                                                    }
-                                                    aria-required="true"
-                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('zoneCode', formData.zoneCode)}`}
-                                                />
-                                                {isLoadingZone && (
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                                        </svg>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Auto-linked Pastor Display (NO HOD - members join departments after registration) */}
-                                            {zoneData && (
-                                                <div className="bg-white/10 border border-white/20 rounded-xl p-3 space-y-2 animate-fade-in">
-                                                    <p className="text-xs text-white/60 font-medium">Your Zone Information</p>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gold-400 to-amber-500 flex items-center justify-center">
-                                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                                            </svg>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-white/80">Zone Pastor: <span className="text-white font-medium">{zoneData.pastor}</span></p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="mt-2 pt-2 border-t border-white/10">
-                                                        <p className="text-xs text-white/50">
-                                                            💡 After registration, you can request to join a department through your portal. Your pastor will review and approve your request.
-                                                        </p>
-                                                    </div>
+                                            {showRegisterSuccess && (
+                                                <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-xl p-3 text-center">
+                                                    <p className="text-emerald-300 text-sm font-semibold">✓ Account created! Redirecting…</p>
                                                 </div>
                                             )}
-                                            
-                                            <input
-                                                id="physicalAddress"
-                                                type="text"
-                                                name="physicalAddress"
-                                                placeholder="Physical Address"
-                                                value={formData.physicalAddress}
-                                                onChange={handleInputChange}
-                                                onBlur={() =>
-                                                    handleBlur(
-                                                        "physicalAddress",
-                                                    )
-                                                }
-                                                aria-invalid={
-                                                    touched.physicalAddress &&
-                                                    !!errors.physicalAddress
-                                                }
-                                                aria-required="true"
-                                                className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('physicalAddress', formData.physicalAddress)}`}
-                                            />
                                             <div className="grid grid-cols-2 gap-2">
-                                                <input
-                                                    id="register-password"
-                                                    type="password"
-                                                    name="password"
-                                                    placeholder="Password"
-                                                    value={formData.password}
-                                                    onChange={handleInputChange}
-                                                    onBlur={() =>
-                                                        handleBlur("password")
-                                                    }
-                                                    aria-invalid={
-                                                        touched.password &&
-                                                        !!errors.password
-                                                    }
-                                                    aria-required="true"
-                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('password', formData.password)}`}
-                                                />
-                                                <input
-                                                    id="confirmPassword"
-                                                    type="password"
-                                                    name="confirmPassword"
-                                                    placeholder="Confirm Password"
-                                                    value={
-                                                        formData.confirmPassword
-                                                    }
-                                                    onChange={handleInputChange}
-                                                    onBlur={() =>
-                                                        handleBlur(
-                                                            "confirmPassword",
-                                                        )
-                                                    }
-                                                    aria-invalid={
-                                                        touched.confirmPassword &&
-                                                        !!errors.confirmPassword
-                                                    }
-                                                    aria-required="true"
-                                                    className={`px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300 ${getFieldValidationClass('confirmPassword', formData.confirmPassword)}`}
-                                                />
+                                                <div>
+                                                    <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleInputChange} onBlur={() => handleBlur("firstName")}
+                                                           className={`${inputBase} ${getFieldClass("firstName", formData.firstName)}`} />
+                                                    {errors.firstName && <p className="text-red-400 text-xs mt-0.5">{errors.firstName}</p>}
+                                                </div>
+                                                <div>
+                                                    <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleInputChange} onBlur={() => handleBlur("lastName")}
+                                                           className={`${inputBase} ${getFieldClass("lastName", formData.lastName)}`} />
+                                                    {errors.lastName && <p className="text-red-400 text-xs mt-0.5">{errors.lastName}</p>}
+                                                </div>
                                             </div>
-                                            {/* Terms and Conditions Checkbox */}
-                                            <div className="flex items-center gap-1">
-                                                <label
-                                                    htmlFor="acceptTerms"
-                                                    className="relative flex items-center cursor-pointer group"
-                                                >
-                                                    <input
-                                                        id="acceptTerms"
-                                                        type="checkbox"
-                                                        checked={acceptTerms}
-                                                        onChange={
-                                                            handleCheckboxChange
-                                                        }
-                                                        onBlur={() =>
-                                                            handleBlur(
-                                                                "acceptTerms",
-                                                            )
-                                                        }
-                                                        aria-invalid={
-                                                            touched.acceptTerms &&
-                                                            !!errors.acceptTerms
-                                                        }
-                                                        aria-describedby={
-                                                            errors.acceptTerms
-                                                                ? "acceptTerms-error"
-                                                                : undefined
-                                                        }
-                                                        aria-required="true"
-                                                        className="peer sr-only"
-                                                    />
-                                                    <div
-                                                        className={`w-5 h-5 rounded border-2 transition-all duration-300 flex items-center justify-center
-                              ${
-                                  acceptTerms
-                                      ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 border-blue-600"
-                                      : "bg-white/10 border-white/30 group-hover:border-white/50"
-                              }`}
-                                                    >
+                                            <div>
+                                                <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} onBlur={() => handleBlur("email")}
+                                                       className={`${inputBase} ${getFieldClass("email", formData.email)}`} />
+                                                {errors.email && <p className="text-red-400 text-xs mt-0.5">{errors.email}</p>}
+                                            </div>
+                                            <div>
+                                                <input type="tel" name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleInputChange} onBlur={() => handleBlur("phoneNumber")}
+                                                       className={`${inputBase} ${getFieldClass("phoneNumber", formData.phoneNumber)}`} />
+                                                {errors.phoneNumber && <p className="text-red-400 text-xs mt-0.5">{errors.phoneNumber}</p>}
+                                            </div>
+                                            <div>
+                                                <input type="text" name="physicalAddress" placeholder="Physical Address" value={formData.physicalAddress} onChange={handleInputChange} onBlur={() => handleBlur("physicalAddress")}
+                                                       className={`${inputBase} ${getFieldClass("physicalAddress", formData.physicalAddress)}`} />
+                                                {errors.physicalAddress && <p className="text-red-400 text-xs mt-0.5">{errors.physicalAddress}</p>}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleInputChange} onBlur={() => handleBlur("password")}
+                                                           className={`${inputBase} ${getFieldClass("password", formData.password)}`} />
+                                                    {errors.password && <p className="text-red-400 text-xs mt-0.5">{errors.password}</p>}
+                                                </div>
+                                                <div>
+                                                    <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleInputChange} onBlur={() => handleBlur("confirmPassword")}
+                                                           className={`${inputBase} ${getFieldClass("confirmPassword", formData.confirmPassword)}`} />
+                                                    {errors.confirmPassword && <p className="text-red-400 text-xs mt-0.5">{errors.confirmPassword}</p>}
+                                                </div>
+                                            </div>
+
+                                            {/* Terms */}
+                                            <div className="flex items-center gap-2">
+                                                <label htmlFor="acceptTerms" className="relative flex items-center cursor-pointer group">
+                                                    <input id="acceptTerms" type="checkbox" checked={acceptTerms}
+                                                           onChange={(e) => { setAcceptTerms(e.target.checked); if (errors.acceptTerms) setErrors((p) => ({ ...p, acceptTerms: "" })); }}
+                                                           className="peer sr-only" />
+                                                    <div className={`w-5 h-5 rounded border-2 transition-all duration-300 flex items-center justify-center
+                                                        ${acceptTerms ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 border-blue-600" : "bg-white/10 border-white/30 group-hover:border-white/50"}`}>
                                                         {acceptTerms && (
-                                                            <svg
-                                                                className="w-3 h-3 text-white animate-scaleIn"
-                                                                fill="currentColor"
-                                                                viewBox="0 0 20 20"
-                                                            >
-                                                                <path
-                                                                    fillRule="evenodd"
-                                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                    clipRule="evenodd"
-                                                                />
+                                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                             </svg>
                                                         )}
                                                     </div>
                                                 </label>
                                                 <span className="text-sm text-white/70">
-                                                    I accept the{" "}
-                                                    <a
-                                                        href="#"
-                                                        className="text-blue-400 hover:text-blue-300 underline transition-colors"
-                                                    >
-                                                        Terms and Conditions
-                                                    </a>
+                                                    I accept the <a href="#" className="text-blue-400 hover:text-blue-300 underline transition-colors">Terms and Conditions</a>
                                                 </span>
                                             </div>
-                                            {errors.acceptTerms &&
-                                                touched.acceptTerms && (
-                                                    <p
-                                                        id="acceptTerms-error"
-                                                        className="text-red-400 text-xs mt-1"
-                                                        role="alert"
-                                                    >
-                                                        {errors.acceptTerms}
-                                                    </p>
-                                                )}
+                                            {errors.acceptTerms && <p className="text-red-400 text-xs" role="alert">{errors.acceptTerms}</p>}
                                         </>
                                     )}
 
-                                    {/* Submit Error */}
+                                    {/* Submit error */}
                                     {errors.submit && (
-                                        <p
-                                            className="text-red-400 text-sm"
-                                            role="alert"
-                                        >
-                                            {errors.submit}
-                                        </p>
+                                        <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-2">
+                                            <p className="text-red-300 text-xs text-center" role="alert">{errors.submit}</p>
+                                        </div>
                                     )}
 
-                                    {/* Smooth Blue Submit Button */}
+                                    {/* Submit button */}
                                     <button
                                         type="submit"
-                                        disabled={isLoading}
-                                        className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white font-bold py-1.5 px-3 rounded shadow-lg hover:scale-[1.02] hover:shadow-xl hover:from-blue-500 hover:via-blue-600 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-1 text-xs"
-                                        aria-disabled={isLoading}
+                                        disabled={isLoading || showRegisterSuccess}
+                                        className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white font-bold py-1.5 px-3 rounded shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-xs"
                                     >
                                         {isLoading && <LoadingSpinner />}
-                                        {getSubmitButtonText()}
+                                        {getSubmitText()}
                                     </button>
                                 </form>
                             </CSSTransition>
                         </SwitchTransition>
                     </div>
 
-                    {/* Fixed Footer at bottom */}
+                    {/* Footer */}
                     <div className="text-center text-white/40 text-xs pt-2 border-t border-white/5">
-                        <p className="text-[10px]">
-                            Email:{" "}
-                            <span className="text-white/60">
-                                support@heartfeltonline.org
-                            </span>
-                        </p>
-                        <p className="text-[10px]">
-                            © 2026 Heartfelt International Ministries — All
-                            rights reserved
-                        </p>
+                        <p className="text-[10px]">Email: <span className="text-white/60">support@heartfeltonline.org</span></p>
+                        <p className="text-[10px]">© 2026 Heartfelt International Ministries — All rights reserved</p>
                     </div>
                 </div>
 
-                {/* Right Quick Access Panel */}
-                <div
-                    className="w-1/3 p-4 md:p-8 flex flex-col justify-center items-center backdrop-blur-md bg-white/10 border border-white/10 rounded-r-2xl shadow-2xl h-[600px] md:h-[500px] transition-all duration-500"
-                    role="navigation"
-                    aria-label="Quick Access"
-                >
-                    <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 tracking-wide text-white/80">
-                        Quick Access
-                    </h3>
+                {/* ── Right panel ───────────────────────────────────────────── */}
+                <div className="w-1/3 p-4 md:p-8 flex flex-col justify-center items-center backdrop-blur-md bg-white/10 border border-white/10 rounded-r-2xl shadow-2xl" role="navigation">
+                    <h3 className="font-bold text-base md:text-lg mb-4 tracking-wide text-white/80">Quick Access</h3>
                     <div className="space-y-2 md:space-y-3 w-full">
-                        {["login", "register", "code"].map((m, idx) => (
-                            <CSSTransition
-                                key={m}
-                                in={true}
-                                appear={true}
-                                timeout={300 + idx * 100}
-                                classNames="floatUp"
-                            >
+                        {[
+                            { key: "code",     label: "Login With Code",  sub: "Pastors" },
+                            { key: "email",    label: "Login With Email", sub: "Members & Partners" },
+                            { key: "register", label: "Register",         sub: "New Members" },
+                        ].map(({ key, label, sub }, idx) => (
+                            <CSSTransition key={key} in appear timeout={300 + idx * 100} classNames="floatUp">
                                 <button
-                                    onClick={() => setMode(m)}
-                                    aria-pressed={mode === m}
-                                    aria-label={`Switch to ${m === "code" ? "login with code" : m} mode`}
+                                    onClick={() => { setMode(key); setErrors({}); setTouched({}); }}
+                                    aria-pressed={mode === key}
                                     className={`w-full py-2 md:py-3 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg
-                    ${
-                        mode === m
-                            ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30 hover:from-blue-500 hover:via-blue-600 hover:to-blue-700"
-                            : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"
-                    }
-                  `}
+                                        ${mode === key
+                                        ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30"
+                                        : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"}`}
                                 >
-                                    {m === "code"
-                                        ? "Login With Code"
-                                        : m.charAt(0).toUpperCase() +
-                                          m.slice(1)}
+                                    <div>{label}</div>
+                                    <div className="text-[10px] opacity-60 font-normal mt-0.5">{sub}</div>
                                 </button>
                             </CSSTransition>
                         ))}
                     </div>
+
+                    <div className="mt-6 text-center">
+                        {mode === "code"     && <p className="text-white/30 text-[10px] leading-relaxed">Your unique code was<br />provided by admin</p>}
+                        {mode === "email"    && <p className="text-white/30 text-[10px] leading-relaxed">Use your registered<br />email and password</p>}
+                        {mode === "register" && <p className="text-white/30 text-[10px] leading-relaxed">After registering you can<br />request to join a department</p>}
+                    </div>
                 </div>
+
             </div>
         </div>
     );
