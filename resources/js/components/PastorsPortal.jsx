@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+import api from "../lib/api.js";
 import { useCurrentUser, useUser } from "../context/UserContext";
 
 import ZoneTab from "./dashboard/ZoneTab.jsx";
@@ -11,6 +13,7 @@ import WeeklyReportForm from "./reports/WeeklyReportForm.jsx";
 import ReportsHistory from "./reports/ReportsHistory.jsx";
 import NotificationBell from "./notifications/NotificationBell.jsx";
 import ProfileSection from "./dashboard/sections/ProfileSection.jsx";
+import DashboardStats from "./dashboard/DashboardStats.jsx";
 
 // ============================================================================
 // PREMIUM FLOATING PARTICLES BACKGROUND COMPONENT
@@ -475,13 +478,91 @@ const Header = ({ title, user, onLogout, onOpenProfile, onNavigate }) => {
 // ============================================================================
 
 const DashboardContent = ({ user, onNavigate }) => {
-    const stats = { members: 245, homeGroups: 12, departments: 8 };
-    const activities = [
-        { icon: Icons.Users,         title: "New Member Registered",  description: "Sarah Johnson joined North A Home Group", time: "2h ago", color: "from-sky-400 to-sky-600"    },
-        { icon: Icons.DocumentChart, title: "Weekly Report Submitted", description: "Week 9 statistics have been recorded",      time: "5h ago", color: "from-emerald-400 to-emerald-600" },
-        { icon: Icons.BuildingOffice,title: "New HOD Appointed",       description: "John Doe as Youth Department Head",        time: "1d ago", color: "from-purple-400 to-purple-600" },
-        { icon: Icons.Achievements,  title: "Wedding Scheduled",       description: "March 15, 2026 at Main Sanctuary",         time: "2d ago", color: "from-pink-400 to-pink-600"   },
-    ];
+    const queryClient = useQueryClient();
+    
+    // Function to manually refresh all dashboard data
+    const refreshDashboard = () => {
+        queryClient.invalidateQueries({ queryKey: ['pastor-zone-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['pastor-dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['pastor-activities'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    };
+    
+    // Fetch zone summary with caching - refetches every 30 seconds and on window focus
+    const { data: summaryData, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useQuery({
+        queryKey: ['pastor-zone-summary'],
+        queryFn: async () => {
+            const res = await api.get('/pastors/zone-summary');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            return res.data.data;
+        },
+        staleTime: 30000, // 30 seconds cache
+        refetchOnWindowFocus: true,
+        retry: 1,
+    });
+    
+    // Fetch comprehensive dashboard data
+    const { data: dashboardData, isLoading: dashLoading, error: dashError } = useQuery({
+        queryKey: ['pastor-dashboard'],
+        queryFn: async () => {
+            const res = await api.get('/pastors/dashboard');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            return res.data.data;
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: true,
+    });
+    
+    // Fetch recent activities
+    const { data: activitiesData, isLoading: actsLoading, error: actsError } = useQuery({
+        queryKey: ['pastor-activities'],
+        queryFn: async () => {
+            const res = await api.get('/pastors/activities');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            return res.data.data;
+        },
+        staleTime: 15000, // 15 seconds for activities
+        refetchOnWindowFocus: true,
+    });
+    
+    // Derive state from queries
+    const stats = summaryData ? {
+        members: summaryData.total_members,
+        homeGroups: summaryData.total_home_groups,
+        departments: summaryData.total_departments,
+        memberTrend: summaryData.member_trend,
+        homeGroupTrend: summaryData.home_group_trend,
+        departmentTrend: summaryData.department_trend,
+    } : { members: 0, homeGroups: 0, departments: 0, memberTrend: 0, homeGroupTrend: 0, departmentTrend: 0 };
+    
+    const dashboard = dashboardData || null;
+    const activities = activitiesData || [];
+    
+    // Loading state - true if ANY query is still loading
+    const loading = summaryLoading || dashLoading || actsLoading;
+    
+    // Error state - combine all errors
+    const error = summaryError?.message || dashError?.message || actsError?.message || (summaryLoading && 'Failed to load dashboard');
+
+    // Transform API activities to UI format
+    const activityIcons = {
+        new_member: Icons.Users,
+        weekly_report: Icons.DocumentChart,
+        event: Icons.Calendar,
+    };
+    const activityColors = {
+        new_member: 'from-sky-400 to-sky-600',
+        weekly_report: 'from-emerald-400 to-emerald-600',
+        event: 'from-purple-400 to-purple-600',
+    };
+
+    const renderActivities = activities.length > 0 ? activities.map((act) => ({
+        icon: activityIcons[act.type] || Icons.Achievements,
+        title: act.title,
+        description: act.description,
+        time: act.time,
+        color: activityColors[act.type] || 'from-gray-400 to-gray-600',
+    })) : [];
 
     return (
         <div className="p-8 space-y-8">
@@ -532,9 +613,56 @@ const DashboardContent = ({ user, onNavigate }) => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard title="Total Members"    value={stats.members}    subtitle="Across all home groups"  icon={Icons.Users}         color="from-sky-400 to-sky-600"      trend={5}   delay={0}   />
-                <StatCard title="Total Home Groups" value={stats.homeGroups} subtitle="Active groups"           icon={Icons.HomeGroup}     color="from-emerald-400 to-emerald-600" trend={12}  delay={50}  />
-                <StatCard title="Total Departments" value={stats.departments} subtitle="With appointed HODs"   icon={Icons.BuildingOffice} color="from-purple-400 to-purple-600"             delay={100} />
+                {loading ? (
+                    <>
+                        <div className="relative overflow-hidden rounded-2xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl p-6">
+                            <div className="animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                            </div>
+                        </div>
+                        <div className="relative overflow-hidden rounded-2xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl p-6">
+                            <div className="animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                            </div>
+                        </div>
+                        <div className="relative overflow-hidden rounded-2xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl p-6">
+                            <div className="animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                            </div>
+                        </div>
+                    </>
+                ) : error ? (
+                    <>
+                        <div className="relative overflow-hidden rounded-2xl bg-red-50 backdrop-blur-xl border border-red-200 shadow-xl p-6">
+                            <div className="text-red-600">
+                                <h3 className="font-semibold">Error Loading Stats</h3>
+                                <p className="text-sm mt-1">{error}</p>
+                            </div>
+                        </div>
+                        <div className="relative overflow-hidden rounded-2xl bg-red-50 backdrop-blur-xl border border-red-200 shadow-xl p-6">
+                            <div className="text-red-600">
+                                <h3 className="font-semibold">Error Loading Stats</h3>
+                                <p className="text-sm mt-1">{error}</p>
+                            </div>
+                        </div>
+                        <div className="relative overflow-hidden rounded-2xl bg-red-50 backdrop-blur-xl border border-red-200 shadow-xl p-6">
+                            <div className="text-red-600">
+                                <h3 className="font-semibold">Error Loading Stats</h3>
+                                <p className="text-sm mt-1">{error}</p>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <DashboardStats onNavigate={onNavigate} />
+                    </>
+                )}
             </div>
 
             {/* Quick Actions */}
@@ -555,11 +683,18 @@ const DashboardContent = ({ user, onNavigate }) => {
                         <div className="px-6 py-5 border-b border-gray-100">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-                                <button className="text-gold-600 hover:text-gold-700 text-sm font-medium transition-colors">View All →</button>
+                                <button 
+                                    onClick={() => onNavigate("members")}
+                                    className="text-gold-600 hover:text-gold-700 text-sm font-medium transition-colors"
+                                >
+                                    View All →
+                                </button>
                             </div>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {activities.map((activity, idx) => (
+                            {(renderActivities.length > 0 ? renderActivities : [
+                                { icon: Icons.Achievements, title: "No Recent Activity", description: "Activity will appear here", time: "", color: "from-gray-400 to-gray-600" }
+                            ]).map((activity, idx) => (
                                 <ActivityItem key={idx} {...activity} delay={400 + idx * 50} />
                             ))}
                         </div>
@@ -579,14 +714,21 @@ const DashboardContent = ({ user, onNavigate }) => {
                                 { title: "100% Attendance Goal",    department: "Prayer Team", date: "March 5",  status: "approved" },
                                 { title: "New Converts Milestone",  department: "Evangelism",  date: "Feb 28",   status: "pending"  },
                             ].map((achievement, idx) => (
-                                <div key={idx} className="p-4 rounded-2xl bg-white/60 hover:bg-white transition-colors duration-200 cursor-pointer">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="font-semibold text-gray-900">{achievement.title}</p>
-                                        <Badge variant={achievement.status === "approved" ? "success" : "warning"}>{achievement.status}</Badge>
+                                <div key={idx} className="group relative bg-white/60 hover:bg-white transition-all duration-300 cursor-pointer rounded-2xl overflow-hidden">
+                                    {/* Animated border glow on hover */}
+                                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <div className="absolute inset-[-2px] rounded-2xl bg-gradient-to-r from-gold-400 via-amber-400 to-gold-400 animate-pulse" />
                                     </div>
-                                    <div className="flex items-center gap-3 text-gray-500 text-sm">
-                                        <Icons.BuildingOffice className="w-4 h-4" />
-                                        <span>{achievement.department}</span>
+                                    {/* Inner content */}
+                                    <div className="relative p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="font-semibold text-gray-900">{achievement.title}</p>
+                                            <Badge variant={achievement.status === "approved" ? "success" : "warning"}>{achievement.status}</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-gray-500 text-sm">
+                                            <Icons.BuildingOffice className="w-4 h-4" />
+                                            <span>{achievement.department}</span>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

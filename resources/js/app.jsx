@@ -21,9 +21,24 @@ const queryClient = new QueryClient({
 
 // ─── Portal router — reads user from context internally ──────────────────────
 function PortalRouter({ onLogout }) {
-    const { user } = useUser();
+    const { user, loading } = useUser();
 
-    switch (user?.role) {
+    if (loading) {
+        return <LoadingScreen />;
+    }
+
+    if (!user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center p-8">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Fetching user data</h2>
+                    <p className="text-gray-500">Please wait while we restore your session.</p>
+                </div>
+            </div>
+        );
+    }
+
+    switch (user.role) {
         case "pastor":  return <PastorsPortal  onLogout={onLogout} />;
         case "partner": return <PartnerPortal  onLogout={onLogout} />;
         case "member":  return <MembersPortal  onLogout={onLogout} />;
@@ -61,7 +76,7 @@ function AppInner() {
             else setAppState("dashboard");
         }
 
-        const onUnauth = () => handleLogout();
+        const onUnauth = () => handleLogout({ shouldLogoutApi: false });
         window.addEventListener("him:unauthenticated", onUnauth);
         return () => window.removeEventListener("him:unauthenticated", onUnauth);
     }, []);
@@ -70,8 +85,13 @@ function AppInner() {
     useEffect(() => {
         if (appState !== "loading") return;
         const timer = setTimeout(() => {
-            if (!user?.terms_accepted)  setAppState("terms");
-            else if (!user?.completed_tour) setAppState("tour");
+            if (!user) {
+                // If for some reason user is not ready yet, fallback to auth.
+                setAppState("auth");
+                return;
+            }
+            if (!user.terms_accepted)  setAppState("terms");
+            else if (!user.completed_tour) setAppState("tour");
             else setAppState("dashboard");
         }, 2200);
         return () => clearTimeout(timer);
@@ -79,18 +99,32 @@ function AppInner() {
 
     const handleAuthenticated = (userData) => {
         // userData already saved to localStorage by AuthPage
+        updateUser(userData);
         setAppState("loading");
     };
 
-    const handleTermsAccept = () => {
+    const handleTermsAccept = async () => {
         updateUser({ terms_accepted: true });
-        // Also persist to backend
-        api.post("/terms/accept").catch(() => {});
+
+        try {
+            await api.post("/terms/accept");
+        } catch (error) {
+            console.warn("Terms acceptance API failed:", error);
+        }
+
         setAppState("tour");
     };
 
-    const handleTermsSkip = () => {
+    const handleTermsSkip = async () => {
         updateUser({ terms_accepted: true, completed_tour: true });
+
+        try {
+            await api.post("/terms/accept");
+            await api.post("/tour/complete");
+        } catch (error) {
+            console.warn("Skipping terms/tour API failed:", error);
+        }
+
         setAppState("dashboard");
     };
 
@@ -100,8 +134,21 @@ function AppInner() {
         setAppState("dashboard");
     };
 
-    const handleLogout = () => {
-        api.post("/logout").catch(() => {});
+    const handleLogout = async ({ shouldLogoutApi = true } = {}) => {
+        if (shouldLogoutApi) {
+            const token = localStorage.getItem("him_token");
+            if (token) {
+                try {
+                    await api.post("/logout");
+                } catch (error) {
+                    // 401 is expected if the token is already invalid; avoid cascading logout events
+                    if (error.response?.status !== 401) {
+                        console.warn("Logout request failed:", error);
+                    }
+                }
+            }
+        }
+
         localStorage.removeItem("him_user");
         localStorage.removeItem("him_token");
         queryClient.clear();
@@ -157,5 +204,10 @@ function App() {
 }
 
 const container = document.getElementById("react-app");
-if (container) createRoot(container).render(<App />);
+if (container) {
+    if (!window.__HIM_ADMIN_ROOT__) {
+        window.__HIM_ADMIN_ROOT__ = createRoot(container);
+    }
+    window.__HIM_ADMIN_ROOT__.render(<App />);
+}
 export default App;

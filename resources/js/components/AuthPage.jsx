@@ -174,6 +174,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
 
     // ─── JSX ──────────────────────────────────────────────────────────────────
 
+    const transitionRef = useRef(null);
     const inputBase = "px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
 
     return (
@@ -206,8 +207,8 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                     {/* Forms */}
                     <div className="flex-1 flex flex-col justify-center overflow-y-auto">
                         <SwitchTransition mode="out-in">
-                            <CSSTransition key={mode} timeout={300} classNames="fade" unmountOnExit>
-                                <form onSubmit={handleSubmit} className="flex flex-col space-y-2 px-1" noValidate>
+                        <CSSTransition key={mode} nodeRef={transitionRef} timeout={300} classNames="fade" unmountOnExit>
+                            <form ref={transitionRef} onSubmit={handleSubmit} className="flex flex-col space-y-2 px-1" noValidate>
 
                                     {/* Code */}
                                     {mode === "code" && (
@@ -348,20 +349,19 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                             { key: "code",     label: "Login With Code",  sub: "Pastors" },
                             { key: "email",    label: "Login With Email", sub: "Members & Partners" },
                             { key: "register", label: "Register",         sub: "New Members" },
-                        ].map(({ key, label, sub }, idx) => (
-                            <CSSTransition key={key} in appear timeout={300 + idx * 100} classNames="floatUp">
-                                <button
-                                    onClick={() => { setMode(key); setErrors({}); setTouched({}); }}
-                                    aria-pressed={mode === key}
-                                    className={`w-full py-2 md:py-3 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg
-                                        ${mode === key
-                                        ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30"
-                                        : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"}`}
-                                >
-                                    <div>{label}</div>
-                                    <div className="text-[10px] opacity-60 font-normal mt-0.5">{sub}</div>
-                                </button>
-                            </CSSTransition>
+                        ].map(({ key, label, sub }) => (
+                            <button
+                                key={key}
+                                onClick={() => { setMode(key); setErrors({}); setTouched({}); }}
+                                aria-pressed={mode === key}
+                                className={`w-full py-2 md:py-3 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg
+                                    ${mode === key
+                                    ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30"
+                                    : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"}`}
+                            >
+                                <div>{label}</div>
+                                <div className="text-[10px] opacity-60 font-normal mt-0.5">{sub}</div>
+                            </button>
                         ))}
                     </div>
 

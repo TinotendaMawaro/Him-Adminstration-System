@@ -301,15 +301,21 @@ const Tour = ({ onComplete, onSkip }) => {
         }
     };
 
+    const stepRef = useRef(null);
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center">
                 <CSSTransition
                     key={currentStep}
+                    nodeRef={stepRef}
                     timeout={300}
                     classNames="fade"
+                    in
+                    appear
+                    unmountOnExit
                 >
-                    <div className="text-center">
+                    <div ref={stepRef} className="text-center">
                         <div className="mb-6 flex justify-center">
                             {steps[currentStep].icon}
                         </div>
