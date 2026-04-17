@@ -5,18 +5,19 @@ export default function TermsModal({ onAccept, onSkip }) {
   const contentRef = useRef(null);
 
   useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+
     const handleScroll = () => {
-      if (contentRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
-        const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
-        setScrollProgress(Math.min(progress, 100));
-      }
+      const { scrollTop, scrollHeight, clientHeight } = element;
+      const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
+      setScrollProgress(Math.min(progress, 100));
     };
 
-    if (contentRef.current) {
-      contentRef.current.addEventListener('scroll', handleScroll);
-      return () => contentRef.current.removeEventListener('scroll', handleScroll);
-    }
+    element.addEventListener('scroll', handleScroll);
+    return () => {
+      element.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   return (

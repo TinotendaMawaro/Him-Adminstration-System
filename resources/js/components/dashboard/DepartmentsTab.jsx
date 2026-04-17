@@ -304,8 +304,10 @@ function DepartmentCard({ department, onAppointHOD, onDemoteHOD, onViewDetails }
 
   return (
     <div className="group relative bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => onViewDetails(department)}>
-      {/* Hover glow */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+      {/* Animated border glow on hover */}
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-[-2px] rounded-3xl bg-gradient-to-r from-gold-400 via-amber-400 to-gold-400 animate-pulse" />
+      </div>
       
       <div className="relative p-6">
         {/* Header */}

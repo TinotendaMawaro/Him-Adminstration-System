@@ -48,7 +48,7 @@ export function UserProvider({ children, initialUser = null, token = null }) {
 
     const updateUser = useCallback((partial) => {
         setUser((prev) => {
-            const updated = { ...prev, ...partial };
+            const updated = { ...(prev || {}), ...partial };
             localStorage.setItem("him_user", JSON.stringify(updated));
             return updated;
         });
@@ -69,7 +69,17 @@ export function UserProvider({ children, initialUser = null, token = null }) {
 /** Hook — throws if used outside <UserProvider> */
 export function useUser() {
     const ctx = useContext(UserContext);
-    if (!ctx) throw new Error("useUser must be used inside <UserProvider>");
+    if (!ctx) {
+        console.warn("useUser called outside UserProvider; returning fallback");
+        return {
+            user: null,
+            loading: false,
+            error: null,
+            refreshUser: async () => {},
+            updateUser: () => {},
+            clearUser: () => {},
+        };
+    }
     return ctx;
 }
 

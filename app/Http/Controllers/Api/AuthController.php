@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +20,11 @@ class AuthController extends Controller
      */
     public function loginWithCode(Request $request): JsonResponse
     {
+        \Log::info('Login attempt', [
+            'input' => $request->all(),
+            'headers' => $request->headers->all(),
+        ]);
+        
         $request->validate(['unique_code' => 'required|string']);
 
         $user = User::where('unique_code', $request->unique_code)

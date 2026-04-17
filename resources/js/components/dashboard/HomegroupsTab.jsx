@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "../../lib/api.js";
 
 // Ripple Effect Button Component
 function RippleButton({ children, onClick, className = "", variant = "primary", shakeOnClick = false, disabled = false }) {
@@ -571,8 +573,7 @@ function FloatingAddButton({ onClick, label }) {
 
 // Main Homegroups Tab Component
 export default function HomegroupsTab() {
-  const [homegroups, setHomegroups] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDemoteModal, setShowDemoteModal] = useState(false);
@@ -582,26 +583,29 @@ export default function HomegroupsTab() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [demoteLoading, setDemoteLoading] = useState(false);
 
-  useEffect(() => {
-    fetchHomegroups();
-  }, []);
+  // Use react-query to fetch homegroups from pastor's zone endpoint
+  const { data: homegroupsData, isLoading, error, refetch } = useQuery({
+    queryKey: ['pastor-homegroups'],
+    queryFn: async () => {
+      const res = await api.get('/pastors/home-groups');
+      if (!res.data.success) throw new Error(res.data.message || 'Failed');
+      // Map members_count to members for component compatibility
+      return res.data.data.map((hg) => ({
+        ...hg,
+        members: hg.members_count,
+      }));
+    },
+    staleTime: 30000, // 30 seconds cache
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
 
-  const fetchHomegroups = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/homegroups', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setHomegroups(data.homegroups);
-      }
-    } catch (err) {
-      console.error('Error fetching homegroups:', err);
-    } finally {
-      setLoading(false);
-    }
+  const homegroups = homegroupsData || [];
+  const loading = isLoading;
+
+  // Manual refresh function
+  const refreshHomegroups = () => {
+    queryClient.invalidateQueries({ queryKey: ['pastor-homegroups'] });
   };
 
   const handleAssignLeader = (homegroup) => {
@@ -630,7 +634,7 @@ export default function HomegroupsTab() {
       const data = await response.json();
       
       if (data.success) {
-        fetchHomegroups();
+        refreshHomegroups();
         setShowDemoteModal(false);
         setSelectedHomegroup(null);
       }
@@ -678,8 +682,24 @@ export default function HomegroupsTab() {
 
       {/* Grid of Homegroup Cards */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Skeleton loaders */}
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-5 animate-pulse">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-gray-200"></div>
+                <div className="h-6 w-20 rounded-full bg-gray-200"></div>
+              </div>
+              <div className="mb-4">
+                <div className="h-5 w-3/4 rounded bg-gray-200 mb-2"></div>
+                <div className="h-4 w-1/2 rounded bg-gray-200"></div>
+              </div>
+              <div className="bg-gray-100/50 rounded-xl p-3">
+                <div className="h-3 w-1/3 rounded bg-gray-200 mb-2"></div>
+                <div className="h-4 w-1/2 rounded bg-gray-200"></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : homegroups.length === 0 ? (
         <div className="text-center py-20 bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40">
@@ -713,7 +733,7 @@ export default function HomegroupsTab() {
       <CreateHomegroupModal 
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
-        onSuccess={fetchHomegroups}
+        onSuccess={refreshHomegroups}
       />
 
       <AssignLeaderModal 
@@ -721,7 +741,7 @@ export default function HomegroupsTab() {
         onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
         homegroupName={selectedHomegroup?.name}
         homegroupId={selectedHomegroup?.id}
-        onSuccess={fetchHomegroups}
+        onSuccess={refreshHomegroups}
       />
 
       <DemoteConfirmationModal 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import api from "../../lib/api";
 
 // Notification type icons and colors
 const getNotificationStyle = (category, type) => {
@@ -353,19 +354,8 @@ export default function NotificationBell({ userId }) {
         try {
             setIsLoading(true);
             setError(null);
-            const response = await fetch("/api/notifications", {
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                credentials: "include",
-            });
+            const { data } = await api.get("/notifications");
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
             setNotifications(data.notifications || []);
             setUnreadCount(data.unread_count || 0);
             console.log("[Notifications] Fetched:", data.unread_count, "unread");
@@ -380,25 +370,15 @@ export default function NotificationBell({ userId }) {
     // Mark single notification as read
     const handleMarkAsRead = async (notificationId) => {
         try {
-            const response = await fetch(`/api/notifications/${notificationId}/read`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                credentials: "include",
-            });
+            const { data } = await api.put(`/notifications/${notificationId}/read`);
 
-            if (response.ok) {
-                const data = await response.json();
-                setNotifications((prev) =>
-                    prev.map((n) =>
-                        n.id === notificationId ? { ...n, is_read: true, read_at: data.notification?.read_at } : n
-                    )
-                );
-                setUnreadCount((prev) => Math.max(0, prev - 1));
-                console.log("[Notifications] Marked as read:", notificationId);
-            }
+        setNotifications((prev) =>
+            prev.map((n) =>
+                n.id === notificationId ? { ...n, is_read: true, read_at: data.notification?.read_at } : n
+            )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        console.log("[Notifications] Marked as read:", notificationId);
         } catch (err) {
             console.error("[Notifications] Mark as read error:", err);
         }
@@ -407,20 +387,10 @@ export default function NotificationBell({ userId }) {
     // Mark all as read
     const handleMarkAllRead = async () => {
         try {
-            const response = await fetch("/api/notifications/read-all", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                credentials: "include",
-            });
-
-            if (response.ok) {
-                setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
-                setUnreadCount(0);
-                console.log("[Notifications] All marked as read");
-            }
+            await api.put("/notifications/read-all");
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
+        setUnreadCount(0);
+        console.log("[Notifications] All marked as read");
         } catch (err) {
             console.error("[Notifications] Mark all as read error:", err);
         }
@@ -429,23 +399,13 @@ export default function NotificationBell({ userId }) {
     // Delete notification
     const handleDelete = async (notificationId) => {
         try {
-            const response = await fetch(`/api/notifications/${notificationId}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                credentials: "include",
-            });
-
-            if (response.ok) {
-                const wasUnread = notifications.find((n) => n.id === notificationId && !n.is_read);
-                setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-                if (wasUnread) {
-                    setUnreadCount((prev) => Math.max(0, prev - 1));
-                }
-                console.log("[Notifications] Deleted:", notificationId);
-            }
+            await api.delete(`/notifications/${notificationId}`);
+        const wasUnread = notifications.find((n) => n.id === notificationId && !n.is_read);
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+        if (wasUnread) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+        console.log("[Notifications] Deleted:", notificationId);
         } catch (err) {
             console.error("[Notifications] Delete error:", err);
         }

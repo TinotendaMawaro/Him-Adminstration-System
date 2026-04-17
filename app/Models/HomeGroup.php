@@ -46,4 +46,12 @@ class HomeGroup extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get members belonging to this home group
+     */
+    public function members()
+    {
+        return $this->hasMany(Member::class, 'home_group_id');
+    }
 }
