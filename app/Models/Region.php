@@ -33,4 +33,9 @@ class Region extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function pastors()
+    {
+        return $this->users()->where('role', 'pastor');
+    }
 }

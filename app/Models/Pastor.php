@@ -20,6 +20,8 @@ class Pastor extends Model
         'ordained_date',
         'title',
         'is_zone_pastor',
+        'is_regional_leader',
+        'region_id',
     ];
 
     protected function casts(): array
@@ -27,6 +29,7 @@ class Pastor extends Model
         return [
             'ordained_date'  => 'date',
             'is_zone_pastor' => 'boolean',
+            'is_regional_leader' => 'boolean'
         ];
     }
 
@@ -38,6 +41,11 @@ class Pastor extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
     }
 
     public function getFullNameAttribute(): string

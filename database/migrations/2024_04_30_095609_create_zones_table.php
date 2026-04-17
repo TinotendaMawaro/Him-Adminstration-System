@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('zones', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('code');
             $table->integer('region_id')->unsigned();
             $table->timestamps();
         });
