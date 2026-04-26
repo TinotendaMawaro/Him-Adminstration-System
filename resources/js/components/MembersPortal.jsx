@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "../context/UserContext";
+import api from "../lib/api";
+import StatCard from "./dashboard/StatCard";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND COMPONENT
@@ -531,6 +534,20 @@ const EventsSection = ({ onRSVP }) => {
 export default function MembersPortal({ onLogout }) {
     const user = useCurrentUser();
 
+    // Fetch member dashboard data
+    const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
+        queryKey: ['member-dashboard'],
+        queryFn: async () => {
+            const res = await api.get('/api/member/dashboard');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
+            return res.data.data;
+        },
+        staleTime: 30000,
+        cacheTime: 300000,
+        refetchOnWindowFocus: true,
+        retry: 1,
+    });
+
     const [activeDrawer,       setActiveDrawer]       = useState(null);
     const [notificationsOpen,  setNotificationsOpen]  = useState(false);
 
@@ -560,6 +577,38 @@ export default function MembersPortal({ onLogout }) {
                 </div>
 
                 <WelcomeCard user={user} />
+                
+                {/* Member Stats */}
+                <div className="mt-8">
+                    {memberLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <StatCard title="Upcoming Events" value={0} icon={<Icons.Calendar className="w-6 h-6" />} color="sky" loading />
+                            <StatCard title="Home Group Members" value={0} icon={<Icons.Users className="w-6 h-6" />} color="emerald" loading />
+                        </div>
+                    ) : memberError ? (
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700">
+                            Error loading your statistics.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <StatCard
+                                title="Upcoming Events"
+                                value={memberData?.my_events_upcoming ?? 0}
+                                icon={<Icons.Calendar className="w-6 h-6" />}
+                                color="sky"
+                                aria-label={`Upcoming events: ${memberData?.my_events_upcoming ?? 0}`}
+                            />
+                            <StatCard
+                                title="Home Group Members"
+                                value={memberData?.my_home_group?.total_members ?? 0}
+                                icon={<Icons.Users className="w-6 h-6" />}
+                                color="emerald"
+                                aria-label={`Home group members: ${memberData?.my_home_group?.total_members ?? 0}`}
+                            />
+                        </div>
+                    )}
+                </div>
+
                 <div className="mt-8"><QuickActions onAction={handleAction} /></div>
                 <div className="mt-8"><HomegroupSection user={user} onViewHomegroup={() => handleAction('homegroup')} /></div>
                 <div className="mt-8"><EventsSection onRSVP={(id) => console.log('RSVP:', id)} /></div>

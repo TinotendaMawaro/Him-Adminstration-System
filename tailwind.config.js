@@ -108,33 +108,9 @@ export default {
             
             // Animation keyframes
             keyframes: {
-                // Floating animation
-                floatUp: {
-                    "0%": {
-                        transform: "translateY(100vh) translateX(0px)",
-                        opacity: "0",
-                    },
-                    "10%": {
-                        opacity: "0.15",
-                    },
-                    "90%": {
-                        opacity: "0.15",
-                    },
-                    "100%": {
-                        transform: "translateY(-100vh) translateX(50px)",
-                        opacity: "0",
-                    },
-                },
-                
-                // Soft glow pulse
-                'soft-glow': {
-                    '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
-                    '50%': { opacity: '1', transform: 'scale(1.05)' },
-                },
-                
                 // Fade in up (Apple-style entrance)
                 'fade-in-up': {
-                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '0%': { opacity: '0', transform: 'translateY(12px)' },
                     '100%': { opacity: '1', transform: 'translateY(0)' },
                 },
                 

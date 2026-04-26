@@ -4,9 +4,11 @@
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { HODIcons } from "./HODIcons";
 import { HODStatCard, HODQuickAction, HODActivityItem, HODCard } from "./HODComponents";
 import { HODActivityFeed } from "./HODActivityFeed";
+import api from "../../../lib/api";
 
 // ============================================================================
 // SPIRITUAL VERSE COMPONENT - Adds spiritual yet professional feel
@@ -239,16 +241,22 @@ const DepartmentWorkspace = ({ user, onNavigate }) => {
     // Get department from user or use default
     const departmentName = user?.department?.name || "Youth";
     const departmentColor = user?.department?.color || "from-violet-400 to-purple-600";
-    
-    // Sample stats - in real app, these would come from API
-    const stats = {
-        members: 45,
-        attendance: 32,
-        newConverts: 3,
-        thisWeek: 5,
-    };
 
-    // Sample activities
+    // Fetch HOD dashboard data
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['hod-dashboard'],
+        queryFn: async () => {
+            const res = await api.get('/api/hod/dashboard');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch dashboard');
+            return res.data.data;
+        },
+        staleTime: 30000,
+        cacheTime: 300000,
+        refetchOnWindowFocus: true,
+        retry: 1,
+    });
+
+    // Sample activities (static for now)
     const activities = [
         { icon: HODIcons.Users, title: "New Member Registered", description: "Tatenda Moyo joined the department", time: "2h ago", color: "from-violet-400 to-purple-600" },
         { icon: HODIcons.DocumentChart, title: "Weekly Report Submitted", description: "Week 12 statistics recorded", time: "5h ago", color: "from-emerald-400 to-emerald-600" },
@@ -264,7 +272,56 @@ const DepartmentWorkspace = ({ user, onNavigate }) => {
                 departmentColor={departmentColor} 
             />
             
-            <DepartmentStats stats={stats} />
+            {/* Dashboard Stats */}
+            {isLoading ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[1,2,3,4].map(i => (
+                        <div key={i} className="bg-white/40 rounded-2xl p-5 animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                    ))}
+                </div>
+            ) : error ? (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700">
+                    Error loading dashboard statistics.
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <HODStatCard
+                        title="Department Members"
+                        value={data?.my_department_members ?? 0}
+                        subtitle="Total members"
+                        icon={HODIcons.Users}
+                        color="from-violet-400 to-purple-600"
+                        delay={0}
+                    />
+                    <HODStatCard
+                        title="Active This Month"
+                        value={data?.active_members_this_month ?? 0}
+                        subtitle="Active members"
+                        icon={HODIcons.CheckCircle}
+                        color="from-emerald-400 to-emerald-600"
+                        delay={50}
+                    />
+                    <HODStatCard
+                        title="Pending Approvals"
+                        value={data?.pending_approvals ?? 0}
+                        subtitle="Requests"
+                        icon={HODIcons.DocumentChart}
+                        color="from-amber-400 to-amber-600"
+                        delay={100}
+                    />
+                    <HODStatCard
+                        title="Zone Groups"
+                        value={data?.department_groups ?? 0}
+                        subtitle="Home groups"
+                        icon={HODIcons.BuildingOffice}
+                        color="from-rose-400 to-rose-600"
+                        delay={150}
+                    />
+                </div>
+            )}
             
             <DepartmentQuickActions onNavigate={onNavigate} />
             

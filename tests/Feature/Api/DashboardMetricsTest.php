@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Api;
 
-use App\Models\User;
+use App\Models\Department;
 use App\Models\HomeGroup;
 use App\Models\Member;
-use App\Models\Department;
+use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,10 +19,10 @@ class DashboardMetricsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Seed the database with required data
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
-        
+
         // Create required hierarchy for testing (country -> region -> zone)
         $country = \App\Models\Country::create(['name' => 'Test Country', 'country_code' => 'TC']);
         $region = \App\Models\Region::create(['name' => 'Test Region', 'country_id' => $country->id]);
@@ -65,6 +65,9 @@ class DashboardMetricsTest extends TestCase
                     'groups_with_active_members',
                     'total_departments',
                     'departments_with_hod',
+                    'total_zones',
+                    'total_pastors',
+                    'total_regions',
                 ],
                 'timestamp',
             ]);
@@ -89,7 +92,9 @@ class DashboardMetricsTest extends TestCase
         ]);
 
         // Create 5 home groups in the zone
-        HomeGroup::factory()->count(5)->create(['zone_id' => $this->zone->id]);
+        for ($i = 1; $i <= 5; $i++) {
+            HomeGroup::create(['name' => "Test Group $i", 'zone_id' => $this->zone->id]);
+        }
 
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/dashboard/metrics');
@@ -121,8 +126,8 @@ class DashboardMetricsTest extends TestCase
         ]);
         Member::create([
             'user_id' => $activeMember->id,
-            'name' => $activeMember->name,
-            'surname' => $activeMember->surname,
+            'name' => 'Active',
+            'surname' => 'Member',
             'status' => 'active',
             'zone_id' => $this->zone->id,
             'home_group_id' => $group1->id,
@@ -136,8 +141,8 @@ class DashboardMetricsTest extends TestCase
         ]);
         Member::create([
             'user_id' => $inactiveMember->id,
-            'name' => $inactiveMember->name,
-            'surname' => $inactiveMember->surname,
+            'name' => 'Inactive',
+            'surname' => 'Member',
             'status' => 'inactive',
             'zone_id' => $this->zone->id,
             'home_group_id' => $group2->id,
@@ -149,7 +154,7 @@ class DashboardMetricsTest extends TestCase
             ->getJson('/api/dashboard/metrics');
 
         $response->assertStatus(200);
-        
+
         // Only 1 group should have active members
         $this->assertEquals(1, $response->json('data.groups_with_active_members'));
     }
@@ -191,7 +196,7 @@ class DashboardMetricsTest extends TestCase
             ->getJson('/api/dashboard/metrics');
 
         $response->assertStatus(200);
-        
+
         // Only 1 department should have active HOD
         $this->assertEquals(1, $response->json('data.departments_with_hod'));
     }
@@ -216,8 +221,8 @@ class DashboardMetricsTest extends TestCase
         ]);
         Member::create([
             'user_id' => $activeUser->id,
-            'name' => $activeUser->name,
-            'surname' => $activeUser->surname,
+            'name' => 'Active',
+            'surname' => 'Member',
             'status' => 'active',
             'zone_id' => $this->zone->id,
             'home_group_id' => $group->id,
@@ -231,8 +236,8 @@ class DashboardMetricsTest extends TestCase
         ]);
         Member::create([
             'user_id' => $deactivatedUser->id,
-            'name' => $deactivatedUser->name,
-            'surname' => $deactivatedUser->surname,
+            'name' => 'Deactivated',
+            'surname' => 'Member',
             'status' => 'active', // status is active but user is deactivated
             'zone_id' => $this->zone->id,
             'home_group_id' => $group->id,
@@ -242,7 +247,7 @@ class DashboardMetricsTest extends TestCase
             ->getJson('/api/dashboard/metrics');
 
         $response->assertStatus(200);
-        
+
         // Should only count 1 active member (not the deactivated one)
         $this->assertEquals(1, $response->json('data.total_active_members'));
     }
@@ -261,7 +266,7 @@ class DashboardMetricsTest extends TestCase
             ->getJson('/api/dashboard/metrics');
 
         $response->assertStatus(200);
-        
+
         // All values should be integers, not null
         $data = $response->json('data');
         $this->assertIsInt($data['total_active_members']);
