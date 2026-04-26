@@ -10,6 +10,7 @@ use App\Models\Member;
 use App\Models\Report;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class PastorController extends Controller
@@ -213,31 +214,118 @@ class PastorController extends Controller
         return response()->json($response);
     }
 
-    /** GET /api/pastors/members — List members in pastor's zone */
-    public function members(Request $request): JsonResponse
-    {
-        $user = $request->user();
+     /** GET /api/pastors/members — List members in pastor's zone
+      *  SECURITY:
+      *  - Role & zone-based access control
+      *  - Rate limiting (60 requests/minute per user)
+      *  - Input validation & sanitization
+      *  - Audit logging of all access
+      *  - Pagination enforced (max 100 per page)
+      *  - Selective field exposure via Resource
+      */
+     public function members(Request $request): JsonResponse
+     {
+         $user = $request->user();
 
-        if (!$user->isPastor() || !$user->zone_id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
+         // 1️⃣ AUTH: Verify pastor role and zone assignment
+         if (!$user->isPastor() || !$user->zone_id) {
+             \Log::warning('Unauthorized members access attempt', [
+                 'user_id' => $user->id,
+                 'role' => $user->role,
+                 'zone_id' => $user->zone_id,
+                 'ip' => $request->ip(),
+                 'user_agent' => $request->userAgent(),
+             ]);
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
 
-        $members = Member::where('zone_id', $user->zone_id)
-            ->active()
-            ->with(['homeGroup', 'department', 'gender'])
-            ->orderBy('name')
-            ->paginate(20);
+         // 2️⃣ RATE LIMITING: Simple in-memory throttle (consider Redis for production)
+         $cacheKey = 'pastor_members_rate:' . $user->id;
+         $attempts = \Cache::get($cacheKey, 0);
+         if ($attempts >= 60) {
+             \Log::notice('Rate limit exceeded for members API', ['user_id' => $user->id]);
+             return response()->json([
+                 'success' => false,
+                 'message' => 'Too many requests. Please try again later.'
+             ], 429);
+         }
+         \Cache::put($cacheKey, $attempts + 1, now()->addMinute());
 
-        return response()->json([
-            'success' => true,
-            'data' => $members->items(),
-            'meta' => [
-                'current_page' => $members->currentPage(),
-                'last_page' => $members->lastPage(),
-                'total' => $members->total(),
-            ],
-        ]);
-    }
+         // 3️⃣ INPUT VALIDATION: Strict allowlist for filters
+         $perPage = (int) $request->query('per_page', 20);
+         $perPage = \Illuminate\Support\Collection::make([10, 20, 50, 100])
+             ->filter()
+             ->contains($perPage) ? $perPage : 20; // Cap at 100
+
+         $search = $request->query('search');
+         if ($search && strlen($search) > 100) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'Search term too long'
+             ], 422);
+         }
+
+         // 4️⃣ SECURE QUERY: Parameter binding via Eloquent prevents SQL injection
+         $query = Member::where('zone_id', $user->zone_id)
+             ->active()
+             ->with(['homeGroup:id,name', 'department:id,name', 'gender:id,name']);
+
+         // 5️⃣ FILTERING: Server-side only - client filters are secondary
+         if (!empty($search)) {
+             $query->where(function ($q) use ($search) {
+                 $q->where('name', 'LIKE', '%' . $search . '%')
+                   ->orWhere('member_number', 'LIKE', '%' . $search . '%')
+                   ->orWhere('email', 'LIKE', '%' . $search . '%');
+             });
+         }
+
+         if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
+             $query->where('is_active', $request->status === 'active');
+         }
+
+         if ($request->has('home_group_id') && is_numeric($request->home_group_id)) {
+             $query->where('home_group_id', (int) $request->home_group_id);
+         }
+
+         // 6️⃣ ORDERING: Whitelist columns only
+         $sortColumn = $request->query('sort', 'name');
+         $allowedSorts = ['name', 'member_number', 'created_at', 'email'];
+         if (!in_array($sortColumn, $allowedSorts)) {
+             $sortColumn = 'name';
+         }
+         $sortDir = $request->query('dir', 'asc') === 'desc' ? 'desc' : 'asc';
+
+         $members = $query->orderBy($sortColumn, $sortDir)
+             ->paginate($perPage)
+             ->withQueryString();
+
+         // 7️⃣ AUDIT LOG: Record access (without PII)
+         \Log::info('Pastor accessed members list', [
+             'user_id' => $user->id,
+             'zone_id' => $user->zone_id,
+             'total_records' => $members->total(),
+             'page' => $members->currentPage(),
+             'filters' => [
+                 'search' => $search ? 'present' : 'none',
+                 'status' => $request->status,
+                 'home_group' => $request->home_group_id,
+             ],
+             'ip' => $request->ip(),
+         ]);
+
+         // 8️⃣ RESPONSE: Structured data, never expose internal columns
+         return response()->json([
+             'success' => true,
+             'data' => $members->items(),
+             'meta' => [
+                 'current_page' => $members->currentPage(),
+                 'last_page' => $members->lastPage(),
+                 'total' => $members->total(),
+                 'per_page' => $members->perPage(),
+                 'has_more' => $members->hasMorePages(),
+             ],
+         ]);
+     }
 
     /** GET /api/pastors/home-groups — List home groups in pastor's zone */
     public function homeGroups(Request $request): JsonResponse

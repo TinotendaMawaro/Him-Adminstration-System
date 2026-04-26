@@ -659,9 +659,9 @@ const DashboardContent = ({ user, onNavigate }) => {
                         </div>
                     </>
                 ) : (
-                    <>
+                    <div className="md:col-span-3">
                         <DashboardStats onNavigate={onNavigate} />
-                    </>
+                    </div>
                 )}
             </div>
 

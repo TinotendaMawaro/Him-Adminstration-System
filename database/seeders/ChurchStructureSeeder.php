@@ -424,8 +424,8 @@ class ChurchStructureSeeder extends Seeder
     public function run(): void
     {
         $countryIds = $this->seedCountries();
-        $regionIds  = $this->seedRegions($countryIds);
-        $zoneIds    = $this->seedZones($regionIds);
+        $regionIds = $this->seedRegions($countryIds);
+        $zoneIds = $this->seedZones($regionIds);
         $this->seedPastors($zoneIds, $regionIds);
     }
 
@@ -446,10 +446,10 @@ class ChurchStructureSeeder extends Seeder
                 $ids[$country['country_code']] = $existing->id;
             } else {
                 $ids[$country['country_code']] = DB::table('countries')->insertGetId([
-                    'name'         => $country['name'],
+                    'name' => $country['name'],
                     'country_code' => $country['country_code'],
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -472,7 +472,7 @@ class ChurchStructureSeeder extends Seeder
                 $ids[$key] = $existing->id;
             } else {
                 $ids[$key] = DB::table('regions')->insertGetId([
-                    'name'       => $name,
+                    'name' => $name,
                     'country_id' => $countryIds[$countryCode],
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -498,9 +498,9 @@ class ChurchStructureSeeder extends Seeder
                 $ids[$code] = $existing->id;
             } else {
                 $ids[$code] = DB::table('zones')->insertGetId([
-                    'name'       => $name,
-                    'code'       => $code,
-                    'region_id'  => $regionIds[$regionKey],
+                    'name' => $name,
+                    'code' => $code,
+                    'region_id' => $regionIds[$regionKey],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -516,8 +516,8 @@ class ChurchStructureSeeder extends Seeder
     private function seedPastors(array $zoneIds, array $regionIds): void
     {
         foreach ($this->pastors as [$code, $fullName, $zoneOverride]) {
-            $parts     = explode(' ', $fullName, 2);
-            $surname   = $parts[0];
+            $parts = explode(' ', $fullName, 2);
+            $surname = $parts[0];
             $firstName = $parts[1] ?? '';
 
             // Derive zone code: use override if provided, else first 5 chars of pastor code.
@@ -526,21 +526,21 @@ class ChurchStructureSeeder extends Seeder
             // Derive region key: chars 1–2 of the zone code (e.g. R0101 → '01').
             $regionKey = substr($zoneCode, 1, 2);
 
-            $zoneId   = $zoneIds[$zoneCode]    ?? null;
-            $regionId = $regionIds[$regionKey]  ?? null;
+            $zoneId = $zoneIds[$zoneCode] ?? null;
+            $regionId = $regionIds[$regionKey] ?? null;
 
             $isRegionalLeader = in_array($code, $this->regionalLeaderCodes, true);
 
-            $email = strtolower($code) . '@heartfelt.church';
+            $email = strtolower($code).'@heartfelt.church';
 
             $user = User::updateOrCreate(
                 ['email' => $email],
                 [
-                    'name'           => $fullName,
-                    'password'       => Hash::make('password'),
-                    'role'           => 'pastor',
-                    'unique_code'    => $code,
-                    'is_active'      => true,
+                    'name' => $fullName,
+                    'password' => Hash::make('password'),
+                    'role' => 'pastor',
+                    'unique_code' => $code,
+                    'is_active' => true,
                     'terms_accepted' => true,
                     'completed_tour' => true,
                 ]
@@ -549,13 +549,13 @@ class ChurchStructureSeeder extends Seeder
             Pastor::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'name'               => $firstName,
-                    'surname'            => $surname,
-                    'code'               => $code,
-                    'title'              => 'Pastor',
-                    'zone_id'            => $zoneId,
-                    'region_id'          => $regionId,
-                    'is_zone_pastor'     => true,
+                    'name' => $firstName,
+                    'surname' => $surname,
+                    'code' => $code,
+                    'title' => 'Pastor',
+                    'zone_id' => $zoneId,
+                    'region_id' => $regionId,
+                    'is_zone_pastor' => true,
                     'is_regional_leader' => $isRegionalLeader,
                 ]
             );
