@@ -14,13 +14,13 @@ const HomeGroupSelector = ({ user, onClose }) => {
         fetchMyHomeGroup();
     }, []);
 
-    const fetchHomeGroups = async () => {
-        try {
-            const response = await fetch("/api/home-groups/available", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+     const fetchHomeGroups = async () => {
+         try {
+             const response = await fetch("/api/home-groups/available", {
+                 headers: {
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+             });
             const data = await response.json();
             if (data.success) {
                 setHomeGroups(data.home_groups);
@@ -30,13 +30,13 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
-    const fetchMyHomeGroup = async () => {
-        try {
-            const response = await fetch("/api/home-group/my", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+     const fetchMyHomeGroup = async () => {
+         try {
+             const response = await fetch("/api/home-group/my", {
+                 headers: {
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+             });
             const data = await response.json();
             if (data.success && data.member) {
                 setMyHomeGroup(data.member);
@@ -55,15 +55,15 @@ const HomeGroupSelector = ({ user, onClose }) => {
         setLoading(true);
         setError("");
 
-        try {
-            const response = await fetch("/api/home-group/join", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify({ home_group_id: selectedGroup }),
-            });
+         try {
+             const response = await fetch("/api/home-group/join", {
+                 method: "POST",
+                 headers: {
+                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+                 body: JSON.stringify({ home_group_id: selectedGroup }),
+             });
             const data = await response.json();
 
             if (data.success) {
@@ -79,15 +79,15 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
-    const handleLeaveHomeGroup = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch("/api/home-group/leave", {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+     const handleLeaveHomeGroup = async () => {
+         setLoading(true);
+         try {
+             const response = await fetch("/api/home-group/leave", {
+                 method: "DELETE",
+                 headers: {
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+             });
             const data = await response.json();
             if (data.success) {
                 setMyHomeGroup(null);

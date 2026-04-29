@@ -435,12 +435,12 @@ export default function WeeklyReportForm({ user, onBack, onSuccess }) {
         setIsSubmitting(true);
         
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch('/api/reports', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                 },
                 body: JSON.stringify(formData),
             });

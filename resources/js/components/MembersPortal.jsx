@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "../context/UserContext";
 import api from "../lib/api";
 import StatCard from "./dashboard/StatCard";
+import InvitationsManager from "./InvitationsManager";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND COMPONENT
@@ -437,13 +438,14 @@ const WelcomeCard = ({ user }) => {
 // QUICK ACTIONS
 // ============================================================================
 
-const QuickActions = ({ onAction }) => {
-    const actions = [
-        { id: 'view-zone',       icon: Icons.MapPin,       label: 'View My Zone',    description: 'Zone details & info',   color: 'from-gold-400 to-amber-500' },
-        { id: 'view-pastor-hod', icon: Icons.Users,        label: 'Pastor & HOD',    description: 'Contact leadership',    color: 'from-purple-400 to-purple-600' },
-        { id: 'view-events',     icon: Icons.Calendar,     label: 'Upcoming Events', description: 'Church activities',     color: 'from-sky-400 to-sky-600' },
-        { id: 'submit-reports',  icon: Icons.DocumentText, label: 'Submit Reports',  description: 'Requests & reports',    color: 'from-emerald-400 to-emerald-600' },
-    ];
+const QuickActions = ({ onAction, pendingInvitations = 0 }) => {
+  const actions = [
+      { id: 'view-invitations', icon: Icons.Envelope, label: 'Invitations', description: 'Accept or decline homegroup invites', color: 'from-rose-400 to-red-500', badge: pendingInvitations },
+      { id: 'view-zone',       icon: Icons.MapPin,    label: 'View My Zone',   description: 'Zone details & info',          color: 'from-gold-400 to-amber-500' },
+      { id: 'view-pastor-hod', icon: Icons.Users,      label: 'Pastor & HOD',   description: 'Contact leadership',           color: 'from-purple-400 to-purple-600' },
+      { id: 'view-events',     icon: Icons.Calendar,   label: 'Upcoming Events',description: 'Church activities',            color: 'from-sky-400 to-sky-600' },
+      { id: 'submit-reports',  icon: Icons.DocumentText,label: 'Submit Reports', description: 'Requests & reports',           color: 'from-emerald-400 to-emerald-600' },
+  ];
     return (
         <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
@@ -452,8 +454,13 @@ const QuickActions = ({ onAction }) => {
                     <button key={action.id} onClick={() => onAction(action.id)} className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className={`absolute -inset-0.5 bg-gradient-to-r ${action.color} rounded-2xl opacity-0 group-hover:opacity-25 blur-lg transition-all duration-300`} />
                         <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-3 md:p-4 transition-all duration-300 hover:bg-white/80">
-                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300 relative`}>
                                 <action.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                {action.badge > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[14px] h-4 px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm animate-pulse">
+                                        {action.badge > 9 ? '9+' : action.badge}
+                                    </span>
+                                )}
                             </div>
                             <p className="font-semibold text-gray-900 text-xs md:text-sm">{action.label}</p>
                             <p className="text-gray-500 text-xs mt-1 hidden md:block">{action.description}</p>
@@ -534,19 +541,33 @@ const EventsSection = ({ onRSVP }) => {
 export default function MembersPortal({ onLogout }) {
     const user = useCurrentUser();
 
-    // Fetch member dashboard data
-    const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
-        queryKey: ['member-dashboard'],
-        queryFn: async () => {
-            const res = await api.get('/api/member/dashboard');
-            if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
-            return res.data.data;
-        },
-        staleTime: 30000,
-        cacheTime: 300000,
-        refetchOnWindowFocus: true,
-        retry: 1,
-    });
+  // Fetch member dashboard data
+  const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
+      queryKey: ['member-dashboard'],
+      queryFn: async () => {
+          const res = await api.get('/api/member/dashboard');
+          if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
+          return res.data.data;
+      },
+      staleTime: 30000,
+      cacheTime: 300000,
+      refetchOnWindowFocus: true,
+      retry: 1,
+  });
+
+  // Fetch pending invitations count for badge
+  const { data: invitationsData } = useQuery({
+      queryKey: ['homegroup-invitations-count'],
+      queryFn: async () => {
+          const res = await api.get('/homegroup-invitations');
+          if (!res.data.success) throw new Error();
+          return res.data.invitations || [];
+      },
+      staleTime: 15000,
+      refetchInterval: 30000,
+  });
+
+  const pendingInvitationsCount = invitationsData?.filter(inv => inv.status === 'pending').length || 0;
 
     const [activeDrawer,       setActiveDrawer]       = useState(null);
     const [notificationsOpen,  setNotificationsOpen]  = useState(false);
@@ -609,15 +630,16 @@ export default function MembersPortal({ onLogout }) {
                     )}
                 </div>
 
-                <div className="mt-8"><QuickActions onAction={handleAction} /></div>
+                <div className="mt-8"><QuickActions onAction={handleAction} pendingInvitations={pendingInvitationsCount} /></div>
                 <div className="mt-8"><HomegroupSection user={user} onViewHomegroup={() => handleAction('homegroup')} /></div>
                 <div className="mt-8"><EventsSection onRSVP={(id) => console.log('RSVP:', id)} /></div>
             </div>
 
-            <ZoneInfoDrawer    isOpen={activeDrawer === 'view-zone'}       onClose={closeDrawer} user={user} />
-            <PastorHODDrawer   isOpen={activeDrawer === 'view-pastor-hod'} onClose={closeDrawer} user={user} />
-            <ReportsDrawer     isOpen={activeDrawer === 'submit-reports'}  onClose={closeDrawer} />
-            <NotificationsPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+            <ZoneInfoDrawer       isOpen={activeDrawer === 'view-zone'}         onClose={closeDrawer} user={user} />
+            <PastorHODDrawer      isOpen={activeDrawer === 'view-pastor-hod'}  onClose={closeDrawer} user={user} />
+            <ReportsDrawer        isOpen={activeDrawer === 'submit-reports'}    onClose={closeDrawer} />
+            <InvitationsManager   isOpen={activeDrawer === 'view-invitations'} onClose={closeDrawer} userId={user?.id} />
+            <NotificationsPanel  isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
         </div>
     );
 }

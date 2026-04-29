@@ -14,13 +14,6 @@ class MemberSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get a default user id (e.g., master admin) for user_id not null constraint
-        $defaultUser = DB::table('users')->where('role', 'master')->first();
-        if (!$defaultUser) {
-            $defaultUser = DB::table('users')->first();
-        }
-        $defaultUserId = $defaultUser->id ?? 1;
-
         // Map zone names to IDs from zones table
         $zoneMap = [
             'IOC Zone' => 1,       // IOC
@@ -38,19 +31,31 @@ class MemberSeeder extends Seeder
         $data = [];
         foreach ($members as $index => $member) {
             $code = sprintf('ME%02d', $index + 1);
+            
+            // Create a simple user for each member
+            $email = strtolower(str_replace(' ', '.', $member['name'])) . '@test.local';
+            $userId = DB::table('users')->insertGetId([
+                'name' => $member['name'],
+                'email' => $email,
+                'password' => Hash::make('password'),
+                'role' => 'member',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             $data[] = [
                 'member_code' => $code,
                 'name'        => $member['name'],
-                'surname'     => '', // empty string allowed
-                'member_number' => null, // nullable
+                'surname'     => '',
+                'member_number' => null,
                 'zone_id'     => $zoneMap[$member['zone']],
-                'user_id'     => $defaultUserId,
+                'user_id'     => $userId,
                 'status'      => 'active',
                 'is_baptised' => 0,
                 'can_be_partner' => 1,
                 'created_at'  => now(),
                 'updated_at'  => now(),
-                // other nullable columns can be left null
             ];
         }
 

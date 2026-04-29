@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
+import MemberDrawer from "./MemberDrawer";
 
 // ============================================================================
 // SECURE MEMBERS TAB COMPONENT
@@ -120,9 +121,20 @@ export default function MembersTab() {
   // --------------------------------------------------------------------------
   // Action handlers
   // --------------------------------------------------------------------------
-  const handleViewMember = (member) => {
-    setSelectedMember(member);
-    setShowDrawer(true);
+  const handleViewMember = async (member) => {
+    // Fetch full member details with all relationships
+    try {
+      const response = await api.get(`/members/${member.id}`);
+      if (response.data.success) {
+        setSelectedMember(response.data.data);
+        setShowDrawer(true);
+      }
+    } catch (err) {
+      console.error('Error fetching member details:', err);
+      // Fallback to basic member data
+      setSelectedMember(member);
+      setShowDrawer(true);
+    }
   };
 
    const handleRefresh = async () => {
@@ -373,27 +385,10 @@ export default function MembersTab() {
         </div>
       )}
 
-      {/* Member Drawer - Pass through to parent or implement inline */}
-      {showDrawer && selectedMember && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDrawer(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Member Details</h3>
-                <button onClick={() => setShowDrawer(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <pre className="text-sm bg-gray-50 p-4 rounded overflow-auto max-h-[60vh]">
-                {JSON.stringify(selectedMember, null, 2)}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* Member Drawer */}
+       {showDrawer && selectedMember && (
+         <MemberDrawer member={selectedMember} onClose={() => setShowDrawer(false)} />
+       )}
 
       {/* Register Modal placeholder */}
       {showRegisterModal && (

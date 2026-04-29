@@ -16,7 +16,7 @@ const PastorDepartmentApproval = ({ user, onClose }) => {
         try {
             const response = await fetch("/api/department-request/approvals", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();
@@ -40,7 +40,7 @@ const PastorDepartmentApproval = ({ user, onClose }) => {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();
@@ -66,7 +66,7 @@ const PastorDepartmentApproval = ({ user, onClose }) => {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
                 body: JSON.stringify({ notes: notes || null }),
             });

@@ -179,74 +179,81 @@ class HomeGroupMemberController extends Controller
         ]);
     }
 
-    /**
-     * Assign leader to home group (Pastors only)
-     */
-    public function assignLeader(Request $request, int $id): JsonResponse
-    {
-        $validated = $request->validate([
-            'member_id' => 'required|exists:users,id',
-        ]);
+     /**
+      * Assign leader to home group (Pastors only)
+      */
+     public function assignLeader(Request $request, int $id): JsonResponse
+     {
+         $validated = $request->validate([
+             'member_id' => 'required|exists:users,id',
+         ]);
 
-        $user = $request->user();
+         $user = $request->user();
 
-        // Only pastors can assign leaders
-        if (!$user->isPastor()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Only pastors can assign home group leaders.',
-            ], 403);
-        }
+         // Only pastors can assign leaders
+         if (!$user->isPastor()) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'Unauthorized. Only pastors can assign home group leaders.',
+             ], 403);
+         }
 
-        $homeGroup = HomeGroup::find($id);
+         $homeGroup = HomeGroup::find($id);
 
-        if (!$homeGroup) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Home group not found.',
-            ], 404);
-        }
+         if (!$homeGroup) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'Home group not found.',
+             ], 404);
+         }
 
-        // Verify pastor oversees this zone
-        if ($homeGroup->zone_id !== $user->zone_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only assign leaders for home groups in your zone.',
-            ], 403);
-        }
+         // Verify pastor oversees this zone
+         if ($homeGroup->zone_id !== $user->zone_id) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'You can only assign leaders for home groups in your zone.',
+             ], 403);
+         }
 
-        // Verify the member belongs to this home group
-        $member = User::find($validated['member_id']);
-        
-        if ($member->home_group_id !== $id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'The selected member does not belong to this home group.',
-            ], 400);
-        }
+         // Verify the member belongs to this zone
+         $member = User::where('id', $validated['member_id'])
+             ->where('zone_id', $user->zone_id)
+             ->first();
 
-        // Demote current leader if exists
-        if ($homeGroup->leader_id) {
-            // Current leader becomes a regular member
-        }
+         if (!$member) {
+             return response()->json([
+                 'success' => false,
+                 'message' => 'The selected member does not belong to your zone.',
+             ], 400);
+         }
 
-        // Assign new leader
-        $homeGroup->update([
-            'leader_id' => $validated['member_id'],
-        ]);
+         // Demote current leader if exists (they remain as regular member)
+         // No special action needed; leader_id will be overwritten
 
-        Log::info('Home group leader assigned', [
-            'home_group_id' => $id,
-            'new_leader_id' => $validated['member_id'],
-            'assigned_by' => $user->id,
-        ]);
+         // Assign new leader and ensure they belong to this homegroup
+         $homeGroup->update([
+             'leader_id' => $validated['member_id'],
+         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Home group leader assigned successfully.',
-            'home_group' => $homeGroup->fresh('leader'),
-        ]);
-    }
+         // Add member to homegroup if not already a member
+         if ($member->home_group_id !== $id) {
+             $member->update([
+                 'home_group_id' => $id,
+             ]);
+         }
+
+         Log::info('Home group leader assigned', [
+             'home_group_id' => $id,
+             'new_leader_id' => $validated['member_id'],
+             'assigned_by' => $user->id,
+         ]);
+
+         return response()->json([
+             'success' => true,
+             'message' => 'Home group leader assigned successfully.',
+             'home_group' => $homeGroup->fresh('leader'),
+         ]);
+     }
 
     /**
      * Remove member from home group (Leader/Pastor only)

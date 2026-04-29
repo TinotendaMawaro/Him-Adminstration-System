@@ -20,7 +20,7 @@ const DepartmentRequest = ({ user, onClose }) => {
         try {
             const response = await fetch("/api/departments", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();
@@ -36,7 +36,7 @@ const DepartmentRequest = ({ user, onClose }) => {
         try {
             const response = await fetch("/api/department-request/my", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();
@@ -69,7 +69,7 @@ const DepartmentRequest = ({ user, onClose }) => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
                 body: JSON.stringify({
                     department_id: selectedDept,
@@ -97,7 +97,7 @@ const DepartmentRequest = ({ user, onClose }) => {
             const response = await fetch("/api/department-request/cancel", {
                 method: "DELETE",
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();

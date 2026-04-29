@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
+import InviteMemberModal from "./InviteMemberModal.jsx";
 
 // Ripple Effect Button Component
 function RippleButton({ children, onClick, className = "", variant = "primary", shakeOnClick = false, disabled = false }) {
@@ -135,7 +136,7 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
     setError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('him_token');
       const response = await fetch('/api/homegroups', {
         method: 'POST',
         headers: {
@@ -250,13 +251,13 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
     }
   }, [isOpen, homegroupId]);
 
-  const fetchMembers = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/homegroups/${homegroupId}/available-members`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+   const fetchMembers = async () => {
+     setLoading(true);
+     try {
+       const token = localStorage.getItem('him_token');
+       const response = await fetch(`/api/homegroups/${homegroupId}/available-members`, {
+         headers: { Authorization: `Bearer ${token}` }
+       });
       const data = await response.json();
       if (data.success) {
         setMembers(data.members);
@@ -279,7 +280,7 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
     setError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('him_token');
       const response = await fetch(`/api/homegroups/${homegroupId}/assign-leader`, {
         method: 'POST',
         headers: {
@@ -373,11 +374,11 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
         </div>
       </div>
     </div>
-  );
-}
+   );
+ }
 
-// Demote Leader Confirmation Modal
-function DemoteConfirmationModal({ isOpen, onClose, onConfirm, leaderName, homegroupName, loading }) {
+ // Demote Leader Confirmation Modal
+ function DemoteConfirmationModal({ isOpen, onClose, onConfirm, leaderName, homegroupName, loading }) {
   if (!isOpen) return null;
 
   return (
@@ -452,7 +453,7 @@ function ViewMembersModal({ isOpen, onClose, homegroupName, members, loading }) 
 }
 
 // Homegroup Card with Animated Hover Border Glow
-function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onViewMembers }) {
+function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMember, onViewMembers }) {
   return (
     <div 
       className="group relative bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300"
@@ -523,33 +524,47 @@ function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onViewMember
         )}
 
         {/* Actions */}
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          {homegroup.leader ? (
-            <>
+        <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-2">
+            {homegroup.leader ? (
+              <>
+                <RippleButton 
+                  variant="secondary" 
+                  className="flex-1 text-sm"
+                  onClick={() => onAssignLeader(homegroup)}
+                >
+                  Replace Leader
+                </RippleButton>
+                <RippleButton 
+                  variant="danger" 
+                  className="text-sm"
+                  shakeOnClick={true}
+                  onClick={() => onDemoteLeader(homegroup)}
+                >
+                  Demote
+                </RippleButton>
+              </>
+            ) : (
               <RippleButton 
-                variant="secondary" 
                 className="flex-1 text-sm"
                 onClick={() => onAssignLeader(homegroup)}
               >
-                Replace Leader
+                Assign Leader
               </RippleButton>
-              <RippleButton 
-                variant="danger" 
-                className="text-sm"
-                shakeOnClick={true}
-                onClick={() => onDemoteLeader(homegroup)}
-              >
-                Demote
-              </RippleButton>
-            </>
-          ) : (
-            <RippleButton 
-              className="flex-1 text-sm"
-              onClick={() => onAssignLeader(homegroup)}
-            >
-              Assign Leader
-            </RippleButton>
-          )}
+            )}
+          </div>
+          <RippleButton
+            variant="secondary"
+            className="w-full text-sm"
+            onClick={() => onInviteMember(homegroup)}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Invite Member
+            </span>
+          </RippleButton>
         </div>
       </div>
     </div>
@@ -576,12 +591,15 @@ export default function HomegroupsTab() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showDemoteModal, setShowDemoteModal] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedHomegroup, setSelectedHomegroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [demoteLoading, setDemoteLoading] = useState(false);
+  const [inviteSearch, setInviteSearch] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   // Use react-query to fetch homegroups from pastor's zone endpoint
   const { data: homegroupsData, isLoading, error, refetch } = useQuery({
@@ -618,19 +636,24 @@ export default function HomegroupsTab() {
     setShowDemoteModal(true);
   };
 
-  const handleConfirmDemote = async () => {
-    if (!selectedHomegroup) return;
+  const handleInviteMember = (homegroup) => {
+    setSelectedHomegroup(homegroup);
+    setShowInviteModal(true);
+  };
 
-    setDemoteLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/homegroups/${selectedHomegroup.id}/demote-leader`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        }
-      });
+   const handleConfirmDemote = async () => {
+     if (!selectedHomegroup) return;
+
+     setDemoteLoading(true);
+     try {
+       const token = localStorage.getItem('him_token');
+       const response = await fetch(`/api/homegroups/${selectedHomegroup.id}/demote-leader`, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}` 
+         }
+       });
       const data = await response.json();
       
       if (data.success) {
@@ -645,16 +668,16 @@ export default function HomegroupsTab() {
     }
   };
 
-  const handleViewMembers = async (homegroup) => {
-    setSelectedHomegroup(homegroup);
-    setMembersLoading(true);
-    setShowMembersModal(true);
+   const handleViewMembers = async (homegroup) => {
+     setSelectedHomegroup(homegroup);
+     setMembersLoading(true);
+     setShowMembersModal(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/homegroups/${homegroup.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+     try {
+       const token = localStorage.getItem('him_token');
+       const response = await fetch(`/api/homegroups/${homegroup.id}`, {
+         headers: { Authorization: `Bearer ${token}` }
+       });
       const data = await response.json();
       if (data.success) {
         setMembers(data.homegroup.members || []);
@@ -720,6 +743,7 @@ export default function HomegroupsTab() {
               homegroup={homegroup}
               onAssignLeader={handleAssignLeader}
               onDemoteLeader={handleDemoteLeader}
+              onInviteMember={handleInviteMember}
               onViewMembers={handleViewMembers}
             />
           ))}
@@ -736,15 +760,23 @@ export default function HomegroupsTab() {
         onSuccess={refreshHomegroups}
       />
 
-      <AssignLeaderModal 
-        isOpen={showAssignModal} 
-        onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
-        homegroupName={selectedHomegroup?.name}
-        homegroupId={selectedHomegroup?.id}
-        onSuccess={refreshHomegroups}
-      />
+       <AssignLeaderModal 
+         isOpen={showAssignModal} 
+         onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
+         homegroupName={selectedHomegroup?.name}
+         homegroupId={selectedHomegroup?.id}
+         onSuccess={refreshHomegroups}
+       />
 
-      <DemoteConfirmationModal 
+       <InviteMemberModal
+         isOpen={showInviteModal}
+         onClose={() => { setShowInviteModal(false); setSelectedHomegroup(null); }}
+         homegroupName={selectedHomegroup?.name}
+         homegroupId={selectedHomegroup?.id}
+         onSuccess={refreshHomegroups}
+       />
+
+       <DemoteConfirmationModal 
         isOpen={showDemoteModal}
         onClose={() => { setShowDemoteModal(false); setSelectedHomegroup(null); }}
         onConfirm={handleConfirmDemote}

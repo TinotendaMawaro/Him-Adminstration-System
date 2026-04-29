@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepartmentRequestController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\HomeGroupApiController;
+use App\Http\Controllers\Api\HomeGroupInvitationController;
 use App\Http\Controllers\Api\HomeGroupMemberController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MessageController;
@@ -92,15 +93,25 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/me/summary', [PartnerController::class, 'mySummary']);
     });
 
-    // ── Home Groups ────────────────────────────────────────────────────────────
-    Route::get('/homegroups', [HomeGroupApiController::class, 'index']);
-    Route::post('/homegroups', [HomeGroupApiController::class, 'store']);
-    Route::get('/homegroups/{id}', [HomeGroupApiController::class, 'show']);
-    Route::put('/homegroups/{id}', [HomeGroupApiController::class, 'update']);
-    Route::delete('/homegroups/{id}', [HomeGroupApiController::class, 'destroy']);
-    Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
-    Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
-    Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
+     // ── Home Groups ────────────────────────────────────────────────────────────
+     Route::get('/homegroups', [HomeGroupApiController::class, 'index']);
+     Route::post('/homegroups', [HomeGroupApiController::class, 'store']);
+     Route::get('/homegroups/{id}', [HomeGroupApiController::class, 'show']);
+     Route::put('/homegroups/{id}', [HomeGroupApiController::class, 'update']);
+     Route::delete('/homegroups/{id}', [HomeGroupApiController::class, 'destroy']);
+     Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
+     Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
+     Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
+     
+     // Home Group Invitations (Pastor invites, Member responds)
+     Route::post('/homegroups/{id}/invite', [HomeGroupInvitationController::class, 'invite']);
+     Route::get('/homegroup-invitations', [HomeGroupInvitationController::class, 'index']);
+     Route::get('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'show']);
+     Route::post('/homegroup-invitations/{id}/accept', [HomeGroupInvitationController::class, 'accept']);
+     Route::post('/homegroup-invitations/{id}/decline', [HomeGroupInvitationController::class, 'decline']);
+     Route::delete('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'destroy']);
+     Route::get('/pastors/homegroup-invitations', [HomeGroupInvitationController::class, 'pastorInvitations']);
+     Route::get('/pastors/homegroup-invitations/pending-count', [HomeGroupInvitationController::class, 'pendingCount']);
 
     Route::get('/home-groups/available', [HomeGroupMemberController::class, 'availableHomeGroups']);
     Route::get('/home-group/my', [HomeGroupMemberController::class, 'myHomeGroup']);

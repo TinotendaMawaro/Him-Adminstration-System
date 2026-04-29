@@ -352,10 +352,10 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
         setError(null);
         
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch('/api/reports/history', {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                 },
             });
             
