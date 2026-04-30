@@ -110,14 +110,14 @@ const HomeGroupSelector = ({ user, onClose }) => {
                     <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg mb-4">
                         <Icons.Users className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">{myHomeGroup.home_group?.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900">{(myHomeGroup.home_group && myHomeGroup.home_group.name) ? myHomeGroup.home_group.name : 'Not Assigned'}</h3>
                     <p className="text-gray-500">
                         {myHomeGroup.role === "leader" ? "You are the leader" : "You are a member"}
                     </p>
                 </div>
 
                 <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 space-y-3">
-                    {myHomeGroup.home_group?.leader && (
+                    {myHomeGroup.home_group && myHomeGroup.home_group.leader && (
                         <div className="flex items-center gap-3">
                             <Icons.User className="w-5 h-5 text-emerald-600" />
                             <div>

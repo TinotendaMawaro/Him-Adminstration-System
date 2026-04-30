@@ -344,7 +344,7 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
                   key={member.id}
                   onClick={() => setSelectedMember(member)}
                   className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${
-                    selectedMember?.id === member.id 
+                    selectedMember && selectedMember.id === member.id 
                       ? 'bg-emerald-50 border-2 border-emerald-400' 
                       : 'bg-white border-2 border-transparent hover:bg-gray-50'
                   }`}
@@ -356,7 +356,7 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
                     <p className="font-semibold text-gray-900">{member.name}</p>
                     <p className="text-sm text-gray-500">{member.role || 'Member'}</p>
                   </div>
-                  {selectedMember?.id === member.id && (
+                  {selectedMember && selectedMember.id === member.id && (
                     <svg className="w-5 h-5 text-emerald-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -760,19 +760,19 @@ export default function HomegroupsTab() {
         onSuccess={refreshHomegroups}
       />
 
-       <AssignLeaderModal 
-         isOpen={showAssignModal} 
-         onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
-         homegroupName={selectedHomegroup?.name}
-         homegroupId={selectedHomegroup?.id}
-         onSuccess={refreshHomegroups}
-       />
+        <AssignLeaderModal
+          isOpen={showAssignModal}
+          onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
+          homegroupName={selectedHomegroup && selectedHomegroup.name}
+          homegroupId={selectedHomegroup && selectedHomegroup.id}
+          onSuccess={refreshHomegroups}
+        />
 
-       <InviteMemberModal
-         isOpen={showInviteModal}
-         onClose={() => { setShowInviteModal(false); setSelectedHomegroup(null); }}
-         homegroupName={selectedHomegroup?.name}
-         homegroupId={selectedHomegroup?.id}
+        <InviteMemberModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          homegroupName={selectedHomegroup && selectedHomegroup.name}
+          homegroupId={selectedHomegroup && selectedHomegroup.id}
          onSuccess={refreshHomegroups}
        />
 
@@ -780,15 +780,15 @@ export default function HomegroupsTab() {
         isOpen={showDemoteModal}
         onClose={() => { setShowDemoteModal(false); setSelectedHomegroup(null); }}
         onConfirm={handleConfirmDemote}
-        leaderName={selectedHomegroup?.leader?.name}
-        homegroupName={selectedHomegroup?.name}
+        leaderName={selectedHomegroup && selectedHomegroup.leader && selectedHomegroup.leader.name}
+        homegroupName={selectedHomegroup && selectedHomegroup.name}
         loading={demoteLoading}
       />
 
-      <ViewMembersModal 
+      <ViewMembersModal
         isOpen={showMembersModal}
         onClose={() => { setShowMembersModal(false); setSelectedHomegroup(null); setMembers([]); }}
-        homegroupName={selectedHomegroup?.name}
+        homegroupName={selectedHomegroup && selectedHomegroup.name}
         members={members}
         loading={membersLoading}
       />

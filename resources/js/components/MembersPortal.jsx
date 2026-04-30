@@ -157,9 +157,9 @@ const FeatureDrawer = ({ isOpen, onClose, title, icon: Icon, children }) => {
 // ============================================================================
 
 const ZoneInfoDrawer = ({ isOpen, onClose, user }) => {
-    const zoneName    = user?.zone?.name            || '—';
-    const pastorName  = user?.pastor?.user?.name    || 'Not Assigned';
-    const address     = user?.member?.address       || user?.address || '—';
+    const zoneName    = user && user.zone && user.zone.name            || '—';
+    const pastorName  = user && user.pastor && user.pastor.user && user.pastor.user.name    || 'Not Assigned';
+    const address     = user && user.member && user.member.address       || (user && user.address) || '—';
 
     return (
         <FeatureDrawer isOpen={isOpen} onClose={onClose} title="My Zone" icon={Icons.MapPin}>
@@ -193,13 +193,13 @@ const ZoneInfoDrawer = ({ isOpen, onClose, user }) => {
 // ============================================================================
 
 const PastorHODDrawer = ({ isOpen, onClose, user }) => {
-    const pastorName  = user?.pastor?.user?.name    || 'Not Assigned';
-    const pastorPhone = user?.pastor?.user?.phone   || '—';
-    const pastorEmail = user?.pastor?.user?.email   || '—';
+    const pastorName  = (user && user.pastor && user.pastor.user && user.pastor.user.name) || 'Not Assigned';
+    const pastorPhone = (user && user.pastor && user.pastor.user && user.pastor.user.phone) || '—';
+    const pastorEmail = (user && user.pastor && user.pastor.user && user.pastor.user.email) || '—';
 
     // HOD info lives inside the member relationship if your API exposes it
-    const hodName  = user?.member?.hod_name         || 'Not Assigned';
-    const hodDept  = user?.department?.name         || '—';
+    const hodName  = (user && user.member && user.member.hod_name) || 'Not Assigned';
+    const hodDept  = (user && user.department && user.department.name) || '—';
 
     return (
         <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Pastor & HOD Info" icon={Icons.Users}>
@@ -392,7 +392,7 @@ const WelcomeCard = ({ user }) => {
                             }
                         </span>
                         <h2 className="text-2xl font-bold text-gray-900">
-                            Good {greeting}, {user?.name?.split(' ')[0] || 'Beloved'}!
+                            Good {greeting}, {(user && user.name && user.name.split(' ')[0]) || 'Beloved'}!
                         </h2>
                     </div>
                     <p className="text-gray-600 text-lg mb-4">{msg}</p>
@@ -401,28 +401,22 @@ const WelcomeCard = ({ user }) => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div className="bg-white/50 rounded-xl p-3">
                             <p className="text-xs text-gray-500 mb-1">Zone</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.zone?.name || '—'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Homegroup</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.home_group?.name || 'Not Assigned'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Department</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.department?.name || 'None'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Role</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.role_label || user?.role || '—'}</p>
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.zone && user.zone.name) || '—'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.home_group && user.home_group.name) || 'Not Assigned'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.department && user.department.name) || 'None'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.role_label) || (user && user.role) || '—'}</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="relative flex-shrink-0">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30 overflow-hidden">
-                        {user?.profile_photo
+                        {user && user.profile_photo
                             ? <img src={user.profile_photo} alt={user.name} className="w-full h-full object-cover" />
-                            : <span className="text-white font-bold text-4xl">{user?.name?.charAt(0) || 'M'}</span>
+                            : <span className="text-white font-bold text-4xl">{(user && user.name && user.name.charAt(0)) || 'M'}</span>
                         }
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
@@ -477,7 +471,7 @@ const QuickActions = ({ onAction, pendingInvitations = 0 }) => {
 // ============================================================================
 
 const HomegroupSection = ({ user, onViewHomegroup }) => {
-    const hg = user?.home_group;
+    const hg = user && user.home_group;
     return (
         <div>
             <div className="flex items-center justify-between mb-4">
@@ -490,7 +484,7 @@ const HomegroupSection = ({ user, onViewHomegroup }) => {
                         <Icons.Users className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-gray-900 text-lg">{hg?.name || 'Not Assigned'}</h4>
+                        <h4 className="font-bold text-gray-900 text-lg">{hg && hg.name ? hg.name : 'Not Assigned'}</h4>
                         <p className="text-gray-500 text-sm">{hg ? 'Active Group' : 'You have not been assigned a homegroup yet'}</p>
                     </div>
                 </div>
@@ -567,7 +561,7 @@ export default function MembersPortal({ onLogout }) {
       refetchInterval: 30000,
   });
 
-  const pendingInvitationsCount = invitationsData?.filter(inv => inv.status === 'pending').length || 0;
+   const pendingInvitationsCount = (invitationsData && invitationsData.filter ? invitationsData.filter(inv => inv.status === 'pending').length : 0) || 0;
 
     const [activeDrawer,       setActiveDrawer]       = useState(null);
     const [notificationsOpen,  setNotificationsOpen]  = useState(false);
@@ -614,17 +608,17 @@ export default function MembersPortal({ onLogout }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <StatCard
                                 title="Upcoming Events"
-                                value={memberData?.my_events_upcoming ?? 0}
+                                value={(memberData && memberData.my_events_upcoming) || 0}
                                 icon={<Icons.Calendar className="w-6 h-6" />}
                                 color="sky"
-                                aria-label={`Upcoming events: ${memberData?.my_events_upcoming ?? 0}`}
+                                aria-label={`Upcoming events: ${(memberData && memberData.my_events_upcoming) || 0}`}
                             />
                             <StatCard
                                 title="Home Group Members"
-                                value={memberData?.my_home_group?.total_members ?? 0}
+                                value={(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}
                                 icon={<Icons.Users className="w-6 h-6" />}
                                 color="emerald"
-                                aria-label={`Home group members: ${memberData?.my_home_group?.total_members ?? 0}`}
+                                aria-label={`Home group members: ${(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}`}
                             />
                         </div>
                     )}
@@ -638,7 +632,7 @@ export default function MembersPortal({ onLogout }) {
             <ZoneInfoDrawer       isOpen={activeDrawer === 'view-zone'}         onClose={closeDrawer} user={user} />
             <PastorHODDrawer      isOpen={activeDrawer === 'view-pastor-hod'}  onClose={closeDrawer} user={user} />
             <ReportsDrawer        isOpen={activeDrawer === 'submit-reports'}    onClose={closeDrawer} />
-            <InvitationsManager   isOpen={activeDrawer === 'view-invitations'} onClose={closeDrawer} userId={user?.id} />
+            <InvitationsManager   isOpen={activeDrawer === 'view-invitations'} onClose={closeDrawer} userId={(user && user.id) || 0} />
             <NotificationsPanel  isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
         </div>
     );

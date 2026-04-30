@@ -12,12 +12,12 @@ import { HODGlassCard, HODGoldButton, HODSkyButton, HODInput, HODTextarea, HODBa
 
 const ActivityFormDrawer = ({ isOpen, onClose, onSubmit, activity, isSubmitting }) => {
     const [formData, setFormData] = useState({
-        title: activity?.title || "",
-        date: activity?.date || "",
-        location: activity?.location || "",
-        description: activity?.description || "",
-        type: activity?.type || "activity",
-        status: activity?.status || "draft",
+        title: (activity && activity.title) || "",
+        date: (activity && activity.date) || "",
+        location: (activity && activity.location) || "",
+        description: (activity && activity.description) || "",
+        type: (activity && activity.type) || "activity",
+        status: (activity && activity.status) || "draft",
     });
 
     useEffect(() => {

@@ -83,7 +83,32 @@ class DepartmentRequestController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        // TODO: Notify the pastor/HOD about the new request
+        // Notify the pastor and HOD about the new request
+        $department = Department::find($validated['department_id']);
+        $hod = $department ? $department->hodUser : null;
+
+        // Notify HOD if exists
+        if ($hod) {
+            $hod->notifications()->create([
+                'title' => 'New Department Join Request',
+                'message' => "{$user->name} has requested to join {$department->name}. Please review the request.",
+                'type' => 'department',
+                'category' => 'join_request',
+            ]);
+        }
+
+        // Also notify pastors in the zone
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $user->zone_id)
+            ->get();
+        foreach ($pastors as $pastor) {
+            $pastor->notifications()->create([
+                'title' => 'New Department Join Request',
+                'message' => "{$user->name} has requested to join {$department->name}.",
+                'type' => 'department',
+                'category' => 'join_request',
+            ]);
+        }
 
         Log::info('Department join request created', [
             'user_id' => $user->id,
@@ -266,14 +291,16 @@ class DepartmentRequestController extends Controller
         // Approve the request
         $departmentRequest->approve($user, $validated['notes'] ?? null);
 
-        Log::info('Department request approved', [
-            'request_id' => $id,
-            'approved_by' => $user->id,
-            'user_id' => $departmentRequest->user_id,
-            'department_id' => $departmentRequest->department_id,
-        ]);
+        // Notify the member about approval
+        $member = $departmentRequest->user;
+        $department = $departmentRequest->department;
 
-        // TODO: Notify the member about approval
+        $member->notifications()->create([
+            'title' => 'Department Request Approved',
+            'message' => "Congratulations! Your request to join {$department->name} has been approved.",
+            'type' => 'department',
+            'category' => 'join_approved',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -326,6 +353,18 @@ class DepartmentRequestController extends Controller
 
         // Reject the request
         $departmentRequest->reject($user, $validated['notes'] ?? null);
+
+        // Notify the member about rejection
+        $member = $departmentRequest->user;
+        $department = $departmentRequest->department;
+
+        $notesMessage = $validated['notes'] ?? 'Please contact your pastor for more information.';
+        $member->notifications()->create([
+            'title' => 'Department Request Rejected',
+            'message' => "Your request to join {$department->name} has been rejected. {$notesMessage}",
+            'type' => 'department',
+            'category' => 'join_rejected',
+        ]);
 
         Log::info('Department request rejected', [
             'request_id' => $id,

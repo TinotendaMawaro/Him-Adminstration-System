@@ -78,6 +78,30 @@ class User extends Authenticatable
     public function homeGroup(): BelongsTo  { return $this->belongsTo(HomeGroup::class); }
     public function department(): BelongsTo { return $this->belongsTo(Department::class); }
 
+    // Many-to-many relationship through pivot table
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class, 'department_members')
+            ->withPivot(['role', 'status', 'joined_at', 'left_at'])
+            ->withTimestamps();
+    }
+
+    // Get HOD departments
+    public function hodDepartments()
+    {
+        return $this->departments()
+            ->wherePivot('role', 'hod')
+            ->wherePivot('status', 'active');
+    }
+
+    // Get member departments
+    public function memberDepartments()
+    {
+        return $this->departments()
+            ->wherePivot('role', 'member')
+            ->wherePivot('status', 'active');
+    }
+
     public function contact(): HasOne  { return $this->hasOne(Contact::class); }
     public function pastor(): HasOne   { return $this->hasOne(Pastor::class); }
     public function member(): HasOne   { return $this->hasOne(Member::class); }

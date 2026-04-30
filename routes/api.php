@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\DepartmentRequestController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\HomeGroupApiController;
@@ -69,16 +70,17 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/{id}', [MemberController::class, 'show']);
     });
 
-    // ── Pastor Portal ──────────────────────────────────────────────────────────
-    Route::prefix('pastors')->group(function () {
-        Route::get('/me', [PastorController::class, 'me']);
-        Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
-        Route::get('/dashboard', [PastorController::class, 'dashboard']);
-        Route::get('/members', [PastorController::class, 'members'])
-             ->middleware('throttle:120,1'); // Rate-limited to prevent mass export
-        Route::get('/home-groups', [PastorController::class, 'homeGroups']);
-        Route::get('/activities', [PastorController::class, 'activities']);
-    });
+     // ── Pastor Portal ──────────────────────────────────────────────────────────
+     Route::prefix('pastors')->group(function () {
+         Route::get('/me', [PastorController::class, 'me']);
+         Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
+         Route::get('/dashboard', [PastorController::class, 'dashboard']);
+         Route::get('/members', [PastorController::class, 'members'])
+              ->middleware('throttle:120,1'); // Rate-limited to prevent mass export
+         Route::get('/home-groups', [PastorController::class, 'homeGroups']);
+         Route::get('/activities', [PastorController::class, 'activities']);
+         Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
+     });
 
     // ── Dashboard Metrics ──────────────────────────────────────────────────────
     Route::get('/dashboard/metrics', [DashboardController::class, 'metrics']);
@@ -149,4 +151,15 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/department-request/approvals', [DepartmentRequestController::class, 'pendingApprovals']);
     Route::put('/department-request/{id}/approve', [DepartmentRequestController::class, 'approveRequest']);
     Route::put('/department-request/{id}/reject', [DepartmentRequestController::class, 'rejectRequest']);
+
+    // ── Department Management ───────────────────────────────────────────────────
+    Route::get('/departments', [DepartmentController::class, 'index']);
+    Route::get('/departments/{id}', [DepartmentController::class, 'show']);
+    Route::post('/departments/{id}/assign-hod', [DepartmentController::class, 'assignHod']);
+    Route::post('/departments/{id}/remove-hod', [DepartmentController::class, 'removeHod']);
+    Route::post('/departments/{id}/accept-hod', [DepartmentController::class, 'acceptHod']);
+    Route::post('/departments/{id}/decline-hod', [DepartmentController::class, 'declineHod']);
+    Route::get('/departments/{id}/members', [DepartmentController::class, 'members']);
+    Route::get('/departments/{id}/activities', [DepartmentController::class, 'activities']);
+    Route::get('/departments/metrics', [DepartmentController::class, 'metrics']);
 });

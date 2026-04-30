@@ -116,7 +116,7 @@ export default function DashboardStats({ onNavigate }) {
         const enriched = enrichWithTrendsAndSparklines(res.data.data);
         return enriched;
       } catch (err) {
-        const message = err.response?.data?.message || err.message || "Network error";
+        const message = (err.response && err.response.data && err.response.data.message) || err.message || "Network error";
         throw new Error(message);
       }
     },
@@ -245,9 +245,11 @@ export default function DashboardStats({ onNavigate }) {
       aria-label="Dashboard statistics"
     >
       {metricDefinitions.map((metric, index) => {
-        const metricData = data?.[metric.key] ?? 0;
-        const trendData = data?.trends?.[metric.key];
-        const sparklineData = data?.sparklines?.[metric.key] || [];
+        const metricData = (data && data[metric.key]) || 0;
+
+        const trendData = data && data.trends && data.trends[metric.key];
+
+        const sparklineData = (data && data.sparklines && data.sparklines[metric.key]) || [];
         const isThird = index === 2;
         const wrapperClasses = isThird
           ? 'lg:col-span-2 flex justify-center'
@@ -273,11 +275,11 @@ export default function DashboardStats({ onNavigate }) {
                 value={metricData}
                 icon={metric.icon}
                 variant={metric.variant}
-                trend={trendData?.value}
-                trendDirection={trendData?.direction || "up"}
-                trendLabel="vs last month"
-                sparklineData={sparklineData}
-                onClick={() => onNavigate?.(metric.navigateTo)}
+                trend={trendData && trendData.value}
+
+                trendDirection={(trendData && trendData.direction) || "up"}
+
+                onClick={() => onNavigate && onNavigate(metric.navigateTo)}
                 animateValue={true}
                 aria-label={`${metric.label}: ${metricData.toLocaleString()}`}
               />

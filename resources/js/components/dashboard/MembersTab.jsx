@@ -51,7 +51,7 @@ export default function MembersTab() {
            } catch (err) {
              console.error("Members fetch error:", err);
 
-             if (err.response?.status === 403 || err.response?.status === 401) {
+              if ((err.response && err.response.status === 403) || (err.response && err.response.status === 401)) {
                localStorage.removeItem("him_token");
                window.location.href = "/login";
              }
@@ -76,7 +76,7 @@ export default function MembersTab() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
-        if (data?.success && Array.isArray(data?.data)) {
+        if (data && data.success && Array.isArray(data.data)) {
           setHomegroups(data.data);
         }
       } catch (err) {
@@ -97,9 +97,11 @@ export default function MembersTab() {
     return membersData.filter((member) => {
       const matchesSearch =
         !searchTerm ||
-        (member.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (member.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (member.member_number?.toLowerCase().includes(searchTerm.toLowerCase()));
+        ((member.name && member.name.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+
+        ((member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+
+        ((member.member_number && member.member_number.toLowerCase().includes(searchTerm.toLowerCase())));
 
       const matchesStatus =
         !filterStatus ||
@@ -108,11 +110,11 @@ export default function MembersTab() {
 
       const matchesHomeGroup =
         !filterHomeGroup ||
-        (member.home_group?.id?.toString() === filterHomeGroup.toString());
+        (member.home_group && member.home_group.id && member.home_group.id.toString() === filterHomeGroup.toString());
 
       const matchesMinistry =
         !filterMinistry ||
-        (member.member_number?.charAt(0) === filterMinistry);
+        (member.member_number && member.member_number.charAt(0) === filterMinistry);
 
       return matchesSearch && matchesStatus && matchesHomeGroup && matchesMinistry;
     });
@@ -326,7 +328,7 @@ export default function MembersTab() {
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-gold-100 flex items-center justify-center">
                           <span className="text-sm font-medium text-gold-700">
-                            {member.name?.charAt(0)?.toUpperCase() || "?"}
+                            {(member.name && member.name.charAt(0) && member.name.charAt(0).toUpperCase()) || "?"}
                           </span>
                         </div>
                         <div className="ml-4">

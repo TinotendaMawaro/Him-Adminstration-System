@@ -166,7 +166,8 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
     }, [departmentId, limit]);
 
     // Get icon component
-    const IconComponent = getIcon(activities[0]?.icon || 'Bell');
+    const iconName = (activities && activities[0] && activities[0].icon) ? activities[0].icon : 'Bell';
+    const IconComponent = getIcon(iconName);
 
     return (
         <HODGlassCard title="Recent Activity" className="h-full">

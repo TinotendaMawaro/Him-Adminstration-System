@@ -90,9 +90,9 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load([
-            'zone', 'department', 'homeGroup', 'gender', 'demography',
-            'contact.country', 'pastor.zone',
-            'member.zone', 'member.homeGroup', 'member.department',
+            'zone.region.country', 'zone.pastors', 'department', 'homeGroup', 'gender', 'demography',
+            'contact.country', 'pastor.zone.region.country',
+            'member.zone.region.country', 'member.homeGroup', 'member.department',
             'partner',
         ]);
 

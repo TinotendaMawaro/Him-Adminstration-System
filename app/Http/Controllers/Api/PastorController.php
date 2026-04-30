@@ -8,6 +8,8 @@ use App\Models\Event;
 use App\Models\HomeGroup;
 use App\Models\Member;
 use App\Models\Report;
+use App\Models\Zone;
+use App\Models\ZoneHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -353,79 +355,156 @@ class PastorController extends Controller
         ]);
     }
 
-    /** GET /api/pastors/activities — Recent activities in the zone */
-    public function activities(Request $request): JsonResponse
-    {
-        $user = $request->user();
+     /** GET /api/pastors/activities — Recent activities in the zone */
+     public function activities(Request $request): JsonResponse
+     {
+         $user = $request->user();
 
-        if (!$user->isPastor() || !$user->zone_id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
+         if (!$user->isPastor() || !$user->zone_id) {
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
 
-        $zoneId = $user->zone_id;
-        $activities = [];
+         $zoneId = $user->zone_id;
+         $activities = [];
 
-        // Recent new members (last 30 days)
-        $recentMembers = Member::where('zone_id', $zoneId)
-            ->active()
-            ->where('created_at', '>=', now()->subDays(30))
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent new members (last 30 days)
+         $recentMembers = Member::where('zone_id', $zoneId)
+             ->active()
+             ->where('created_at', '>=', now()->subDays(30))
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentMembers as $member) {
-            $activities[] = [
-                'id' => $member->id,
-                'type' => 'new_member',
-                'title' => 'New Member Registered',
-                'description' => "{$member->name} {$member->surname} joined",
-                'time' => $member->created_at->diffForHumans(),
-                'created_at' => $member->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentMembers as $member) {
+             $activities[] = [
+                 'id' => $member->id,
+                 'type' => 'new_member',
+                 'title' => 'New Member Registered',
+                 'description' => "{$member->name} {$member->surname} joined",
+                 'time' => $member->created_at->diffForHumans(),
+                 'created_at' => $member->created_at->toISOString(),
+             ];
+         }
 
-        // Recent reports
-        $recentReports = Report::where('zone_id', $zoneId)
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent reports
+         $recentReports = Report::where('zone_id', $zoneId)
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentReports as $report) {
-            $activities[] = [
-                'id' => $report->id,
-                'type' => 'weekly_report',
-                'title' => 'Weekly Report Submitted',
-                'description' => "Week {$report->week_number} - Attendance: {$report->attendance}",
-                'time' => $report->created_at->diffForHumans(),
-                'created_at' => $report->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentReports as $report) {
+             $activities[] = [
+                 'id' => $report->id,
+                 'type' => 'weekly_report',
+                 'title' => 'Weekly Report Submitted',
+                 'description' => "Week {$report->week_number} - Attendance: {$report->attendance}",
+                 'time' => $report->created_at->diffForHumans(),
+                 'created_at' => $report->created_at->toISOString(),
+             ];
+         }
 
-        // Recent events
-        $recentEvents = Event::where('zone_id', $zoneId)
-            ->orderBy('starts_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent events
+         $recentEvents = Event::where('zone_id', $zoneId)
+             ->orderBy('starts_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentEvents as $event) {
-            $activities[] = [
-                'id' => $event->id,
-                'type' => 'event',
-                'title' => $event->type->getLabel() . ' Scheduled',
-                'description' => $event->title,
-                'time' => $event->starts_at?->diffForHumans() ?? 'TBD',
-                'created_at' => $event->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentEvents as $event) {
+             $activities[] = [
+                 'id' => $event->id,
+                 'type' => 'event',
+                 'title' => $event->type->getLabel() . ' Scheduled',
+                 'description' => $event->title,
+                 'time' => $event->starts_at?->diffForHumans() ?? 'TBD',
+                 'created_at' => $event->created_at->toISOString(),
+             ];
+         }
 
-        // Sort all activities by date
-        usort($activities, fn($a, $b) => 
-            strtotime($b['created_at']) - strtotime($a['created_at'])
-        );
+         // Sort all activities by date
+         usort($activities, fn($a, $b) =>
+             strtotime($b['created_at']) - strtotime($a['created_at'])
+         );
 
-        return response()->json([
-            'success' => true,
-            'data' => array_slice($activities, 0, 20),
-        ]);
-    }
+         return response()->json([
+             'success' => true,
+             'data' => array_slice($activities, 0, 20),
+         ]);
+     }
+
+     /** GET /api/pastors/zone-history — Zone history timeline data */
+     public function zoneHistory(Request $request): JsonResponse
+     {
+         $user = $request->user();
+
+         if (!$user->isPastor() || !$user->zone_id) {
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
+
+         $zoneId = $user->zone_id;
+         $now = now();
+
+         // Fetch zone history records ordered by start_date descending
+         $historyRecords = ZoneHistory::where('zone_id', $zoneId)
+             ->with(['pastor:id,name,unique_code'])
+             ->orderBy('start_date', 'desc')
+             ->get();
+
+         // Build timeline items from zone_histories
+         $timeline = [];
+         foreach ($historyRecords as $record) {
+             $pastor = $record->pastor;
+             $isCurrent = is_null($record->end_date);
+
+             // Determine event type based on notes or infer from context
+             $type = 'pastor_change';
+             if ($record->notes) {
+                 $lowerNotes = strtolower($record->notes);
+                 if (str_contains($lowerNotes, 'achievement') || str_contains($lowerNotes, 'milestone')) {
+                     $type = 'achievement';
+                 } elseif (str_contains($lowerNotes, 'event') || str_contains($lowerNotes, 'conference')) {
+                     $type = 'event';
+                 } elseif (str_contains($lowerNotes, 'growth') || str_contains($lowerNotes, 'expansion')) {
+                     $type = 'growth';
+                 } elseif (str_contains($lowerNotes, 'established') || str_contains($lowerNotes, 'created')) {
+                     $type = 'zone_created';
+                 }
+             }
+
+             $description = $record->notes ?: "Pastoral assignment for " . ($pastor?->name ?? 'Unknown');
+
+             $timeline[] = [
+                 'id' => $record->id,
+                 'type' => $type,
+                 'title' => $isCurrent ? 'Current Zone Pastor' : 'Zone Pastor',
+                 'description' => $description,
+                 'date' => $record->start_date->format('Y-m-d'),
+                 'pastor' => [
+                     'name' => $pastor?->name ?? 'Unknown',
+                     'isCurrent' => $isCurrent,
+                 ],
+                 'start_date' => $record->start_date->format('Y-m-d'),
+                 'end_date' => $record->end_date?->format('Y-m-d'),
+             ];
+         }
+
+         // Also include zone creation event if no history exists
+         if ($historyRecords->isEmpty()) {
+             $zone = Zone::find($zoneId);
+             if ($zone) {
+                 $timeline[] = [
+                     'id' => 0,
+                     'type' => 'zone_created',
+                     'title' => 'Zone Established',
+                     'description' => $zone->name . ' was established',
+                     'date' => $zone->created_at?->format('Y-m-d') ?? $now->format('Y-m-d'),
+                     'pastor' => null,
+                 ];
+             }
+         }
+
+         return response()->json([
+             'success' => true,
+             'data' => $timeline,
+         ]);
+     }
 }

@@ -113,7 +113,7 @@ const DepartmentRequest = ({ user, onClose }) => {
     };
 
     // Already a member of a department
-    if (myRequest?.type === "member") {
+    if (myRequest && myRequest.type === "member") {
         return (
             <div className="space-y-6">
                 <div className="text-center py-4">
@@ -128,7 +128,7 @@ const DepartmentRequest = ({ user, onClose }) => {
                     <div className="flex items-center gap-3">
                         <Icons.BuildingOffice className="w-5 h-5 text-emerald-600" />
                         <div>
-                            <p className="font-semibold text-gray-900">{myRequest.department?.name}</p>
+                            <p className="font-semibold text-gray-900">{(myRequest.department && myRequest.department.name) ? myRequest.department.name : 'Unknown Department'}</p>
                             <p className="text-sm text-gray-500">Member since: {new Date(myRequest.member_since).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -142,7 +142,7 @@ const DepartmentRequest = ({ user, onClose }) => {
     }
 
     // Pending request
-    if (myRequest?.type === "pending") {
+    if (myRequest && myRequest.type === "pending") {
         return (
             <div className="space-y-6">
                 <div className="text-center py-4">
@@ -155,7 +155,7 @@ const DepartmentRequest = ({ user, onClose }) => {
 
                 <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
                     <p className="text-sm text-amber-800">
-                        Your request to join <strong>{myRequest.department?.name}</strong> is being reviewed by your pastor.
+                        Your request to join <strong>{(myRequest.department && myRequest.department.name) ? myRequest.department.name : 'Unknown Department'}</strong> is being reviewed by your pastor.
                     </p>
                 </div>
 
@@ -171,7 +171,7 @@ const DepartmentRequest = ({ user, onClose }) => {
     }
 
     // Rejected request
-    if (myRequest?.type === "rejected") {
+    if (myRequest && myRequest.type === "rejected") {
         return (
             <div className="space-y-6">
                 <div className="text-center py-4">
@@ -183,7 +183,7 @@ const DepartmentRequest = ({ user, onClose }) => {
 
                 <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                     <p className="text-sm text-red-800">
-                        Your request to join <strong>{myRequest.department?.name}</strong> was not approved.
+                        Your request to join <strong>{(myRequest.department && myRequest.department.name) ? myRequest.department.name : 'Unknown Department'}</strong> was not approved.
                     </p>
                     {myRequest.notes && (
                         <p className="text-sm text-red-600 mt-2">Reason: {myRequest.notes}</p>

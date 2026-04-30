@@ -22,7 +22,7 @@ let unauthDispatched = false;
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response && error.response.status === 401) {
             localStorage.removeItem('him_token');
             localStorage.removeItem('him_user');
 

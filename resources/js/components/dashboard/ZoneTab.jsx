@@ -3,6 +3,7 @@ import ZoneDrawer from "./drawers/ZoneDrawer";
 import ZoneInfo, { PastorsList } from "./sections/ZoneInfo";
 import ZoneHistory from "./sections/ZoneHistory";
 import Achievements from "./sections/Achievements";
+import api from "../../lib/api.js";
 
 function AnimatedCard(props) {
   var delay = props.delay || 0;
@@ -76,32 +77,99 @@ function ZoneTab(props) {
   var _useState = useState({ isOpen: false, title: "", content: null });
   var drawerState = _useState[0];
   var setDrawerState = _useState[1];
-  
-  var zoneData = { 
-    name: user?.zone?.name || user?.zoneName || "IOC",
-    description: "A vibrant community of believers committed to spiritual growth and fellowship.", 
-    location: "Northern District", 
-    established: "2020", 
-    membersCount: "250", 
-    homeGroupsCount: "20", 
-    departmentsCount: "8" 
-  };
-  
-  var pastorsData = [
-    { id: 1, name: user && user.name ? user.name : "Pastor C Vutabwashe", title: "Lead Pastor", since: "January 2024", isCurrent: true },
-    { id: 2, name: "Pastor Mary Johnson", title: "Associate Pastor", period: "2020 - 2023", isCurrent: false },
-    { id: 3, name: "Pastor David Lee", title: "Youth Pastor", period: "2018 - 2020", isCurrent: false },
-  ];
+
+  var _useState2 = useState({ loading: true, zoneData: null, summaryData: null, pastorsData: [], timelineData: [], error: null });
+  var dataState = _useState2[0];
+  var setDataState = _useState2[1];
+
+  // Fetch zone data on mount
+  useEffect(function() {
+    var _fetch = async function() {
+      try {
+        var summaryResponse = await api.get('/pastors/zone-summary');
+        var result = summaryResponse.data;
+        if (result.success) {
+          var zone = user?.zone;
+
+          // Fetch zone history for timeline preview
+          var historyResponse = await api.get('/pastors/zone-history');
+          var historyResult = historyResponse.data;
+          var timelineData = historyResult.success ? historyResult.data.slice(0, 4) : [];
+
+          var zoneData = {
+            name: zone?.name || user?.zoneName || "IOC",
+            description: "A vibrant community of believers committed to spiritual growth and fellowship.",
+            location: (zone?.region?.country?.name || '') + ' - ' + (zone?.region?.name || ''),
+            established: zone?.created_at ? new Date(zone.created_at).getFullYear().toString() : "2020",
+            membersCount: result.data.total_members?.toString() || "0",
+            homeGroupsCount: result.data.total_home_groups?.toString() || "0",
+            departmentsCount: result.data.total_departments?.toString() || "0",
+            address: zone?.address || "",
+            phone: zone?.phone || "",
+          };
+
+          // Get pastors
+          var currentPastor = zone?.currentPastor || user;
+          var otherPastors = (zone?.pastors?.filter(function(p) { return p.id !== currentPastor?.id; }) || []).slice(0, 3);
+
+          var pastorsData = [
+            {
+              id: currentPastor?.id || 1,
+              name: currentPastor?.name || user?.name || "Zone Pastor",
+              title: "Lead Pastor",
+              since: zoneData.established,
+              isCurrent: true
+            }
+          ];
+
+          otherPastors.forEach(function(pastor) {
+            pastorsData.push({
+              id: pastor.id,
+              name: pastor.name,
+              title: "Associate Pastor",
+              period: "2023 - 2024",
+              isCurrent: false
+            });
+          });
+
+          setDataState({
+            loading: false,
+            zoneData: zoneData,
+            summaryData: result.data,
+            pastorsData: pastorsData,
+            timelineData: timelineData,
+            error: null
+          });
+        } else {
+          setDataState(function(prev) { return Object.assign({}, prev, { loading: false, error: result.message || 'Failed to load' }); });
+        }
+      } catch (error) {
+        setDataState(function(prev) { return Object.assign({}, prev, { loading: false, error: error.message }); });
+      }
+    };
+    if (user) _fetch();
+  }, [user]);
   
   var openDrawer = function(title, content) { setDrawerState({ isOpen: true, title: title, content: content }); };
   var closeDrawer = function() { setDrawerState(function(prev) { return Object.assign({}, prev, { isOpen: false }); }); };
-  
-  var timelineItems = [
-    { type: "pastor_change", title: "New Pastor Appointed", description: "Pastor John appointed as Zone Pastor", date: "Jan 15, 2024" },
-    { type: "achievement", title: "Zone Achievement", description: "North Zone reached 250 members", date: "Dec 10, 2023" },
-    { type: "event", title: "Zone Conference", description: "Annual zone conference held", date: "Nov 5, 2023" },
-    { type: "growth", title: "Home Group Expansion", description: "Opened 3 new home groups", date: "Jun 15, 2023" },
-  ];
+
+  // Loading state
+  if (dataState.loading) {
+    return React.createElement("div", { className: "flex items-center justify-center p-12" },
+      React.createElement("div", { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500" })
+    );
+  }
+
+  // Error state
+  if (dataState.error) {
+    return React.createElement("div", { className: "p-6 text-center text-red-500" },
+      React.createElement("p", null, "Error loading zone data: " + dataState.error)
+    );
+  }
+
+  var zoneData = dataState.zoneData;
+  var pastorsData = dataState.pastorsData;
+  var timelineData = dataState.timelineData;
   
   var achievements = [
     { title: "Members", icon: "M", tier: "platinum" },
@@ -115,6 +183,11 @@ function ZoneTab(props) {
   var getTierColor = function(tier) {
     var colors = { platinum: "from-slate-300 to-slate-500", gold: "from-yellow-300 to-yellow-500", silver: "from-gray-300 to-gray-400", bronze: "from-orange-300 to-orange-500" };
     return colors[tier] || colors.gold;
+  };
+
+  var formatDate = function(dateString) {
+    var date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return React.createElement("div", { className: "space-y-6" },
@@ -240,13 +313,13 @@ function ZoneTab(props) {
               React.createElement("div", { className: "relative" },
                 React.createElement("div", { className: "absolute left-[19px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gold-400 via-sky-400 to-gray-200" }),
                 React.createElement("div", { className: "space-y-4" },
-                  timelineItems.map(function(item, idx) {
+                  timelineData.map(function(item, idx) {
                     var iconClass = "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ";
                     if (item.type === "pastor_change") iconClass += "bg-gradient-to-br from-violet-400 to-violet-600 shadow-violet-500/20";
                     else if (item.type === "achievement") iconClass += "bg-gradient-to-br from-gold-400 to-gold-600 shadow-gold-500/20";
                     else if (item.type === "event") iconClass += "bg-gradient-to-br from-sky-400 to-sky-600 shadow-sky-500/20";
                     else iconClass += "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-500/20";
-                    return React.createElement("div", { key: idx, className: "relative flex gap-4" },
+                    return React.createElement("div", { key: item.id || idx, className: "relative flex gap-4" },
                       React.createElement("div", { className: "relative z-10 flex-shrink-0" },
                         React.createElement("div", { className: iconClass },
                           React.createElement("svg", { className: "w-5 h-5 text-white", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
@@ -264,7 +337,15 @@ function ZoneTab(props) {
                               React.createElement("h4", { className: "font-semibold text-gray-900 text-sm" }, item.title),
                               React.createElement("p", { className: "text-xs text-gray-500 mt-0.5" }, item.description)
                             ),
-                            React.createElement("span", { className: "text-xs text-gray-400 whitespace-nowrap" }, item.date)
+                            React.createElement("span", { className: "text-xs text-gray-400 whitespace-nowrap" }, formatDate(item.date))
+                          ),
+                          // Pastor info if available
+                          item.pastor && React.createElement("div", { className: "mt-2 flex items-center gap-2" },
+                            React.createElement("div", { className: "w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center text-white text-xs font-bold" }, item.pastor.name.charAt(0)),
+                            React.createElement("span", { className: "text-xs text-gray-600" },
+                              item.pastor.name,
+                              item.pastor.isCurrent && React.createElement("span", { className: "ml-1 text-gold-600 font-medium" }, "(Current)")
+                            )
                           )
                         )
                       )

@@ -27,21 +27,21 @@ class DashboardController extends Controller
     public function metrics(Request $request): JsonResponse
     {
         $user = $request->user();
-        $role = $user?->role?->value ?? 'guest';
-        $zoneId = $user?->zone_id;
-        $isHOD = $user?->isHOD() ?? false;
+        $role = $user ? ($user->role ? $user->role->value : 'guest') : 'guest';
+        $zoneId = $user ? $user->zone_id : null;
+        $isHOD = $user ? ($user->isHOD() ?? false) : false;
 
         \Illuminate\Support\Facades\Log::info('Dashboard metrics request', [
-            'user_id' => $user?->id,
+            'user_id' => $user ? $user->id : null,
             'role' => $role,
             'zone_id' => $zoneId,
         ]);
 
         try {
-            // Role-based cache key (exclude guest/unauthenticated)
-            $cacheKey = $user
-                ? "dashboard:{$role}:{$zoneId}:{$user->department_id}"
-                : 'dashboard:guest';
+        // Role-based cache key (exclude guest/unauthenticated)
+        $cacheKey = $user
+            ? "dashboard:{$role}:{$zoneId}:" . ($user->department_id ? $user->department_id : 'null')
+            : 'dashboard:guest';
 
             $cached = Cache::get($cacheKey);
             if ($cached) {
@@ -154,9 +154,11 @@ class DashboardController extends Controller
         // Total departments in zone
         $totalDepartments = Department::when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))->count();
 
-        // Departments with an active HOD assigned
-        $departmentsWithHOD = Department::whereHas('users', function ($q) {
-            $q->where('role', 'hod')->where('is_active', true);
+        // Departments with an active HOD assigned (using pivot table)
+        $departmentsWithHOD = Department::whereHas('members', function ($q) {
+            $q->where('department_members.role', 'hod')
+              ->where('department_members.status', 'active')
+              ->where('users.is_active', true);
         })
             ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
             ->count();
@@ -179,11 +181,11 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if (! $user?->isHOD() || ! $user?->department_id || ! $user?->zone_id) {
+        if (! $user || ! ($user->isHOD()) || ! $user->department_id || ! $user->zone_id) {
             \Illuminate\Support\Facades\Log::warning('HOD dashboard access denied', [
-                'user_id' => $user?->id,
-                'is_hod' => $user?->isHOD(),
-                'has_department' => (bool) $user?->department_id,
+                'user_id' => $user ? $user->id : null,
+                'is_hod' => $user ? ($user->isHOD() ?: false) : false,
+                'has_department' => (bool) ($user ? $user->department_id : false),
             ]);
 
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
@@ -263,7 +265,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if (! $user?->isMember()) {
+        if (! $user || ! ($user->isMember())) {
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
@@ -289,19 +291,17 @@ class DashboardController extends Controller
 
             $data = [
                 'my_home_group' => [
-                    'name' => $member->homeGroup?->name ?? 'Not assigned',
-                    'total_members' => $member->homeGroup?->members()->count() ?? 0,
-                    'active_members' => $member->homeGroup?->members()
-                        ->where('status', 'active')
-                        ->count() ?? 0,
-                    'leader' => $member->homeGroup?->leader?->name ?? null,
+                    'name' => ($member->homeGroup && $member->homeGroup->name) ? $member->homeGroup->name : 'Not assigned',
+                    'total_members' => ($member->homeGroup && $member->homeGroup->members) ? $member->homeGroup->members()->count() : 0,
+                    'active_members' => ($member->homeGroup && $member->homeGroup->members) ? $member->homeGroup->members()->where('status', 'active')->count() : 0,
+                    'leader' => ($member->homeGroup && $member->homeGroup->leader && $member->homeGroup->leader->name) ? $member->homeGroup->leader->name : null,
                 ],
                 'my_attendance_this_month' => $this->getMyAttendanceThisMonth($user->id),
-                'my_department' => $member->department?->name ?? 'None',
+                'my_department' => ($member->department && $member->department->name) ? $member->department->name : 'None',
                 'my_events_upcoming' => (int) $user->eventRegistrations()
                     ->whereHas('event', fn ($q) => $q->where('starts_at', '>', now()))
                     ->count(),
-                'member_since' => $member->membership_date?->format('Y-m-d'),
+                'member_since' => $member->membership_date ? $member->membership_date->format('Y-m-d') : null,
                 'member_number' => $member->member_number,
                 'last_updated' => now()->toISOString(),
             ];
@@ -336,10 +336,10 @@ class DashboardController extends Controller
             ->first();
 
         return [
-            'name' => $hg?->name,
-            'total_members' => $hg?->members_count ?? 0,
-            'active_members' => $hg?->active_members_count ?? 0,
-            'leader' => $hg?->leader?->name,
+            'name' => $hg ? $hg->name : null,
+            'total_members' => $hg ? ($hg->members_count ?? 0) : 0,
+            'active_members' => $hg ? ($hg->active_members_count ?? 0) : 0,
+            'leader' => $hg && $hg->leader ? $hg->leader->name : null,
         ];
     }
 
@@ -369,6 +369,7 @@ class DashboardController extends Controller
 
     /**
      * Helper: Get pending approvals count (for HOD)
+     * Counts pending department requests for departments in the given zone
      */
     private function getPendingApprovalsCount(?int $zoneId): int
     {
@@ -376,8 +377,9 @@ class DashboardController extends Controller
             return 0;
         }
 
-        return DB::table('department_requests')
-            ->where('zone_id', $zoneId)
+        return \App\Models\DepartmentRequest::whereHas('department', function ($q) use ($zoneId) {
+                $q->where('zone_id', $zoneId);
+            })
             ->where('status', 'pending')
             ->count();
     }

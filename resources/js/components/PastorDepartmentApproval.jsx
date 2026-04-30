@@ -136,15 +136,15 @@ const PastorDepartmentApproval = ({ user, onClose }) => {
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-gold-400 to-amber-500 flex items-center justify-center flex-shrink-0">
                                     <span className="text-white font-bold">
-                                        {request.user?.name?.charAt(0) || "M"}
+                                        {(request.user && request.user.name && request.user.name.charAt(0)) || "M"}
                                     </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-gray-900">
-                                        {request.user?.name || "Member"}
+                                        {request.user && request.user.name || "Member"}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        Requesting to join: <span className="font-medium text-gold-600">{request.department?.name}</span>
+                                        Requesting to join: <span className="font-medium text-gold-600">{(request.department && request.department.name) ? request.department.name : 'Unknown Department'}</span>
                                     </p>
                                     <p className="text-xs text-gray-400 mt-1">
                                         Submitted: {new Date(request.requested_at).toLocaleDateString()}

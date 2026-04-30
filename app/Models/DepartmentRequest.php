@@ -106,9 +106,18 @@ class DepartmentRequest extends Model
             'notes' => $notes,
         ]);
 
-        // Update user's department
+        // Update user's department (direct FK for backward compatibility)
         $this->user->update([
             'department_id' => $this->department_id,
+        ]);
+
+        // Add to pivot table
+        $this->user->departments()->syncWithoutDetaching([
+            $this->department_id => [
+                'role' => 'member',
+                'status' => 'active',
+                'joined_at' => now(),
+            ]
         ]);
     }
 

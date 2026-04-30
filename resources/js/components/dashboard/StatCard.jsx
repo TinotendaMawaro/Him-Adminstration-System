@@ -245,7 +245,7 @@ export default function StatCard({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onClick?.();
+              onClick && onClick();
             }
           }}
           aria-label={ariaLabel || `View ${title} details`}

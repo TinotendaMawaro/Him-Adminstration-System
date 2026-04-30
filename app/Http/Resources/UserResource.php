@@ -25,9 +25,27 @@ class UserResource extends JsonResource
             'is_first_time'  => $this->isFirstTimeLogin(),
 
             'zone_id'        => $this->zone_id,
-            'zone'           => $this->whenLoaded('zone', fn () => [
-                'id' => $this->zone->id, 'name' => $this->zone->name,
-            ]),
+            'zone'           => $this->whenLoaded('zone', function () {
+                $region = $this->zone->relationLoaded('region') ? $this->zone->region : null;
+                return [
+                    'id'      => $this->zone->id,
+                    'name'    => $this->zone->name,
+                    'code'    => $this->zone->code,
+                    'address' => $this->zone->address,
+                    'phone'   => $this->zone->phone,
+                    'region'  => $region ? [
+                        'id'   => $region->id,
+                        'name' => $region->name,
+                        'country' => $region->relationLoaded('country') ? [
+                            'id'   => $region->country->id,
+                            'name' => $region->country->name,
+                            'code' => $region->country->country_code,
+                        ] : null,
+                    ] : null,
+                    'created_at' => $this->zone->created_at?->format('Y-m-d'),
+                ];
+            }),
+
             'home_group_id'  => $this->home_group_id,
             'home_group'     => $this->whenLoaded('homeGroup', fn () => [
                 'id' => $this->homeGroup->id, 'name' => $this->homeGroup->name,

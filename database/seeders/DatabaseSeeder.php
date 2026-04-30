@@ -3,14 +3,33 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Pastor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Database\Seeders\ChurchStructureSeeder;
+use Database\Seeders\ZoneHistorySeeder;
+use Database\Seeders\DepartmentSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // ── Church Structure (zones, regions, countries, pastors) ─────────────────
+        $this->call([
+            ChurchStructureSeeder::class,
+        ]);
+
+        // ── Zone Histories ───────────────────────────────────────────────────────
+        $this->call([
+            ZoneHistorySeeder::class,
+        ]);
+
+        // ── Departments ─────────────────────────────────────────────────────────
+        $this->call([
+            DepartmentSeeder::class,
+        ]);
+
         // ── Master admin ──────────────────────────────────────────────────────
         User::updateOrCreate(
             ['email' => 'master@heartfelt.church'],

@@ -361,7 +361,9 @@ export default function HODCommunicationPage({ departmentId, user }) {
 
     useEffect(() => {
         // Scroll to bottom when messages change
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     }, [messages]);
 
     const filteredContacts = contacts.filter((c) =>
