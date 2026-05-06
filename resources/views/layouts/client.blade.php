@@ -10,7 +10,7 @@
     <meta content="CTF-{{ date("Y") }}, CTF {{ date("Y") }}, CTF, Catch The Fire, CTF Registration, Heartfelt, HIM, Heartfelt International Ministries, Catch the fire conference, Tavonga Vutabwashe, Chipo Vutabwashe, Apostle T Vutabwashe, Pastor C Vutabwashe, Heartfelt Events, Heartfelt International Ministries Events, CTF Zimbabwe, Catch the fire Zimbabwe, Catch The fire Heartfelt" name="keywords">
 
     <!-- Favicons -->
-    <link href="{{asset('client/img/favicon.png')}}" rel="icon">
+    <link href="{{asset('images/favicon.ico')}}" rel="icon">
     <link href="{{asset('client/img/apple-touch-icon.png')}}" rel="apple-touch-icon">
 
     <!-- Google Fonts -->

@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\HomeGroupApiController;
 use App\Http\Controllers\Api\HomeGroupInvitationController;
 use App\Http\Controllers\Api\HomeGroupMemberController;
+use App\Http\Controllers\Api\HomeGroupReportController;
+use App\Http\Controllers\Api\HomeGroupUpdateController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Api\PastorController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RegisterController;
 use App\Http\Controllers\Api\WeeklyReportController;
+use App\Http\Controllers\ProfilePictureController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Cache;
@@ -33,10 +36,12 @@ Route::post('/register', RegisterController::class)
 
 // ─── AUTHENTICATED ───────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-    // ── Auth ───────────────────────────────────────────────────────────────────
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
+     // ── Auth ───────────────────────────────────────────────────────────────────
+      Route::get('/me', [AuthController::class, 'me']);
+      Route::post('/logout', [AuthController::class, 'logout']);
+      Route::put('/profile', [AuthController::class, 'updateProfile']);
+      Route::post('/profile/photo', [AuthController::class, 'uploadProfilePhoto']);
+      Route::post('/user/profile-picture', [ProfilePictureController::class, 'upload']);
 
     Route::post('/terms/accept', [AuthController::class, 'acceptTerms']);
     Route::post('/first-login/complete', [AuthController::class, 'completeFirstLogin']);
@@ -123,6 +128,28 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/home-group/{id}/assign-leader', [HomeGroupMemberController::class, 'assignLeader']);
     Route::delete('/home-group/{homeGroupId}/members/{memberId}', [HomeGroupMemberController::class, 'removeMember']);
 
+    // Home group requests
+    Route::post('/home-group/request', [HomeGroupMemberController::class, 'requestJoin']);
+    Route::get('/home-group/my-request', [HomeGroupMemberController::class, 'myRequest']);
+    Route::delete('/home-group/cancel-request', [HomeGroupMemberController::class, 'cancelRequest']);
+    Route::get('/home-group/pending-approvals', [HomeGroupMemberController::class, 'pendingApprovals']);
+    Route::post('/home-group/approve-request/{id}', [HomeGroupMemberController::class, 'approveRequest']);
+    Route::post('/home-group/reject-request/{id}', [HomeGroupMemberController::class, 'rejectRequest']);
+
+    // Home group updates
+    Route::get('/home-groups/{homeGroupId}/updates', [HomeGroupUpdateController::class, 'index']);
+    Route::post('/home-groups/{homeGroupId}/updates', [HomeGroupUpdateController::class, 'store']);
+    Route::put('/home-groups/{homeGroupId}/updates/{updateId}', [HomeGroupUpdateController::class, 'update']);
+    Route::delete('/home-groups/{homeGroupId}/updates/{updateId}', [HomeGroupUpdateController::class, 'destroy']);
+
+    // Home group reports
+    Route::get('/home-groups/{homeGroupId}/reports', [HomeGroupReportController::class, 'index']);
+    Route::post('/home-groups/{homeGroupId}/reports', [HomeGroupReportController::class, 'store']);
+    Route::put('/home-groups/{homeGroupId}/reports/{reportId}', [HomeGroupReportController::class, 'update']);
+    Route::post('/home-groups/{homeGroupId}/reports/{reportId}/submit', [HomeGroupReportController::class, 'submit']);
+    Route::post('/home-groups/{homeGroupId}/reports/{reportId}/review', [HomeGroupReportController::class, 'review']);
+    Route::delete('/home-groups/{homeGroupId}/reports/{reportId}', [HomeGroupReportController::class, 'destroy']);
+
     // ── Reports ────────────────────────────────────────────────────────────────
     Route::get('/reports/history', [WeeklyReportController::class, 'history']);
     Route::get('/reports/pending', [WeeklyReportController::class, 'pendingReminders']);
@@ -137,7 +164,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // ── Notifications ──────────────────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markRead']); // support PUT too
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']); // support PUT too
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
 
     // ── Messages ───────────────────────────────────────────────────────────────
     Route::get('/messages', [MessageController::class, 'index']);
@@ -148,6 +179,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // ── Department Requests ────────────────────────────────────────────────────
     Route::get('/department-request/my', [DepartmentRequestController::class, 'myRequest']);
     Route::delete('/department-request/cancel', [DepartmentRequestController::class, 'cancelRequest']);
+    Route::delete('/department/leave', [DepartmentRequestController::class, 'leaveDepartment']);
     Route::get('/department-request/approvals', [DepartmentRequestController::class, 'pendingApprovals']);
     Route::put('/department-request/{id}/approve', [DepartmentRequestController::class, 'approveRequest']);
     Route::put('/department-request/{id}/reject', [DepartmentRequestController::class, 'rejectRequest']);

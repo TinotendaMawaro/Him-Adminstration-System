@@ -45,17 +45,16 @@ class MemberSeeder extends Seeder
             ]);
 
             $data[] = [
-                'member_code' => $code,
-                'name'        => $member['name'],
-                'surname'     => '',
-                'member_number' => null,
-                'zone_id'     => $zoneMap[$member['zone']],
-                'user_id'     => $userId,
-                'status'      => 'active',
-                'is_baptised' => 0,
-                'can_be_partner' => 1,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'member_number' => $code,
+                'name'          => $member['name'],
+                'surname'       => '',
+                'user_id'       => $userId,
+                'zone_id'       => $zoneMap[$member['zone']],
+                'status'        => 'active',
+                'is_baptised'   => 0,
+                'can_be_partner'=> 1,
+                'created_at'    => now(),
+                'updated_at'    => now(),
             ];
         }
 

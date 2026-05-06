@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import api from "../../lib/api";
+import Pagination from "../Pagination.jsx";
 
 // ============================================================================
 // ICONS
@@ -339,39 +342,46 @@ const EmptyState = ({ onNewReport }) => (
 // ============================================================================
 
 export default function ReportsHistory({ user, onBack, onNewReport }) {
-    const [reports, setReports] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
 
-    useEffect(() => {
-        fetchReports();
-    }, []);
-
-    const fetchReports = async () => {
-        setIsLoading(true);
-        setError(null);
-        
-        try {
-            const him_token = localStorage.getItem('him_token');
-            const response = await fetch('/api/reports/history', {
-                headers: {
-                    'Authorization': `Bearer ${him_token}`,
-                },
+    const { data: reportsResponse, isLoading, error, refetch } = useQuery({
+        queryKey: ['reports-history', currentPage, perPage],
+        queryFn: async () => {
+            const params = new URLSearchParams({
+                page: currentPage,
+                per_page: perPage,
             });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                setReports(data.reports || []);
-            } else {
-                setError(data.message || 'Failed to fetch reports');
+            const response = await api.get(`/reports/history?${params}`);
+            if (response.data && response.data.success) {
+                // Save to localStorage for persistence
+                localStorage.setItem('reports-history-data', JSON.stringify(response.data));
+                return response.data;
             }
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-            setError('Failed to load reports. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
+            throw new Error(response.data?.message || 'Failed to fetch reports');
+        },
+        staleTime: 60000,
+        gcTime: 300000, // 5 minutes garbage collection
+        refetchOnWindowFocus: true,
+        retry: 1,
+        keepPreviousData: true,
+        initialData: () => {
+            // Load from localStorage if available
+            const cached = localStorage.getItem('reports-history-data');
+            return cached ? JSON.parse(cached) : undefined;
+        },
+    });
+
+    const reports = reportsResponse?.reports || [];
+    const paginationMeta = reportsResponse?.meta || {
+        current_page: 1,
+        last_page: 1,
+        per_page: perPage,
+        total: 0
+    };
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
     };
 
     // Generate PDF content for download
@@ -777,8 +787,8 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
     // Filter reports by service type
     const [filterType, setFilterType] = useState('all');
     
-    const filteredReports = filterType === 'all' 
-        ? reports 
+    const filteredReports = filterType === 'all'
+        ? reports
         : reports.filter(r => r.service_type === filterType);
 
     return (
@@ -854,7 +864,7 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
                             <div>
                                 <p className="font-medium text-rose-700">{error}</p>
                                 <button 
-                                    onClick={fetchReports}
+                                    onClick={() => refetch()}
                                     className="text-sm text-rose-600 hover:text-rose-700 underline mt-1"
                                 >
                                     Try again
@@ -886,6 +896,17 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
                             </div>
                         ))}
                     </div>
+                )}
+
+                {/* Pagination */}
+                {paginationMeta.total > 0 && (
+                    <Pagination
+                        currentPage={paginationMeta.current_page}
+                        totalPages={paginationMeta.last_page}
+                        totalItems={paginationMeta.total}
+                        itemsPerPage={paginationMeta.per_page}
+                        onPageChange={handlePageChange}
+                    />
                 )}
             </div>
         </div>

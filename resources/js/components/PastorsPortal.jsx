@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api.js";
 import { useCurrentUser, useUser } from "../context/UserContext";
 
+import ProfilePictureUpload from "./ProfilePictureUpload";
+
 import ZoneTab from "./dashboard/ZoneTab.jsx";
 import MembersTab from "./dashboard/MembersTab.jsx";
 import HomeGroupsTab from "./dashboard/HomegroupsTab.jsx";
@@ -307,25 +309,35 @@ const menuItems = [
 // ============================================================================
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color, trend, delay = 0 }) => (
-    <div className="group relative overflow-hidden rounded-2xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1" style={{ animationDelay: `${delay}ms` }}>
-        <div className={`absolute -inset-0.5 bg-gradient-to-r ${color} rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500`}></div>
-        <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent"></div>
-            <div className="relative p-6">
+    <div 
+        className="group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5"
+        style={{ animationDelay: `${delay}ms` }}
+    >
+        <div className={`absolute -inset-0.5 bg-gradient-to-r ${color} rounded-xl opacity-0 group-hover:opacity-100 blur-lg transition-all duration-300`}></div>
+        <div className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+            <div className="relative p-4">
                 <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
-                        <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
-                        {subtitle && <p className="text-gray-400 text-xs mt-1">{subtitle}</p>}
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 truncate">
+                            {title}
+                        </p>
+                        <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                            {value}
+                        </p>
+                        {subtitle && (
+                            <p className="text-gray-400 text-[10px] sm:text-xs mt-0.5 truncate">
+                                {subtitle}
+                            </p>
+                        )}
                         {trend && (
-                            <div className={`flex items-center gap-1 mt-2 text-sm ${trend > 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                                <span>{trend > 0 ? "↑" : "↓"}{Math.abs(trend)}%</span>
+                            <div className={`flex items-center gap-1 mt-1.5 text-xs ${trend > 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                                <span className="font-medium">{trend > 0 ? "+" : ""}{trend}%</span>
                                 <span className="text-gray-400">vs last week</span>
                             </div>
                         )}
                     </div>
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <Icon className="w-6 h-6 text-white" />
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${color} shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0`}>
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                 </div>
             </div>
@@ -438,8 +450,14 @@ const Header = ({ title, user, onLogout, onOpenProfile, onNavigate }) => {
                 <div className="relative">
                     <button onClick={() => setDropdownOpen(!dropdownOpen)}
                             className="flex items-center gap-3 pl-4 border-l border-gray-200 hover:bg-white/50 rounded-xl p-1 transition-all duration-300">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
-                            <span className="text-white font-semibold">{user?.name?.charAt(0) || "P"}</span>
+                        <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg shadow-gold-500/20">
+                            {user?.profile_photo ? (
+                                <img src={user.profile_photo} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
+                                    <span className="text-white font-semibold">{user?.name?.charAt(0) || "P"}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="hidden md:block pr-2">
                             <p className="text-gray-900 text-sm font-semibold">{user?.name || "Pastor"}</p>
@@ -494,11 +512,19 @@ const DashboardContent = ({ user, onNavigate }) => {
         queryFn: async () => {
             const res = await api.get('/pastors/zone-summary');
             if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            // Save to localStorage for persistence
+            localStorage.setItem('pastor-zone-summary', JSON.stringify(res.data.data));
             return res.data.data;
         },
         staleTime: 30000, // 30 seconds cache
+        gcTime: 300000, // 5 minutes garbage collection
         refetchOnWindowFocus: true,
         retry: 1,
+        initialData: () => {
+            // Load from localStorage if available
+            const cached = localStorage.getItem('pastor-zone-summary');
+            return cached ? JSON.parse(cached) : undefined;
+        },
     });
     
     // Fetch comprehensive dashboard data
@@ -507,10 +533,18 @@ const DashboardContent = ({ user, onNavigate }) => {
         queryFn: async () => {
             const res = await api.get('/pastors/dashboard');
             if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            // Save to localStorage for persistence
+            localStorage.setItem('pastor-dashboard', JSON.stringify(res.data.data));
             return res.data.data;
         },
         staleTime: 30000,
+        gcTime: 300000, // 5 minutes garbage collection
         refetchOnWindowFocus: true,
+        initialData: () => {
+            // Load from localStorage if available
+            const cached = localStorage.getItem('pastor-dashboard');
+            return cached ? JSON.parse(cached) : undefined;
+        },
     });
     
     // Fetch recent activities
@@ -797,9 +831,9 @@ const ZoneInfoPage = ({ user }) => (
 export default function PastorsPortal({ onLogout }) {
     const user               = useCurrentUser();
     const { updateUser }     = useUser();
-
-    const [activeItem,         setActiveItem]         = useState("dashboard");
-    const [sidebarOpen,        setSidebarOpen]        = useState(false);
+    const queryClient        = useQueryClient();
+    const [activeItem, setActiveItem]         = useState("dashboard");
+    const [sidebarOpen, setSidebarOpen]        = useState(false);
     const [showProfileDrawer,  setShowProfileDrawer]  = useState(false);
     const [isMobile,           setIsMobile]           = useState(false);
 
@@ -814,6 +848,98 @@ export default function PastorsPortal({ onLogout }) {
             return () => window.removeEventListener('resize', handleResize);
         }
     }, []);
+
+    // Prefetch all tab data on mount to ensure instant loading when navigating
+    useEffect(() => {
+        if (!user) return;
+
+        // Prefetch members list
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-members'],
+            queryFn: async () => {
+                const res = await api.get('/members');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch members');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        // Prefetch home groups
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-homegroups'],
+            queryFn: async () => {
+                const res = await api.get('/pastors/home-groups');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        // Prefetch departments
+        queryClient.prefetchQuery({
+            queryKey: ['departments'],
+            queryFn: async () => {
+                const res = await api.get('/departments');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.departments || [];
+            },
+        }).catch(() => {});
+
+        // Prefetch reports history
+        queryClient.prefetchQuery({
+            queryKey: ['reports-history'],
+            queryFn: async () => {
+                const res = await api.get('/reports/history');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.reports || [];
+            },
+        }).catch(() => {});
+
+        // Prefetch dashboard metrics (raw data, component will enrich)
+        queryClient.prefetchQuery({
+            queryKey: ['dashboard-metrics'],
+            queryFn: async () => {
+                const res = await api.get('/dashboard/metrics');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-dashboard'],
+            queryFn: async () => {
+                const res = await api.get('/pastors/dashboard');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-activities'],
+            queryFn: async () => {
+                const res = await api.get('/pastors/activities');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        // Prefetch zone summary and history for My Zone tab
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-zone-summary'],
+            queryFn: async () => {
+                const res = await api.get('/pastors/zone-summary');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+
+        queryClient.prefetchQuery({
+            queryKey: ['pastor-zone-history'],
+            queryFn: async () => {
+                const res = await api.get('/pastors/zone-history');
+                if (!res.data.success) throw new Error(res.data.message || 'Failed');
+                return res.data.data;
+            },
+        }).catch(() => {});
+    }, [user, queryClient]);
 
     const getPageContent = () => {
         switch (activeItem) {
@@ -870,13 +996,26 @@ export default function PastorsPortal({ onLogout }) {
                         <img src="/images/favicon.ico" alt="HIM Logo" className="w-8 h-8 object-contain" />
                         <p className="text-xs text-gray-500">Pastoral Portal</p>
                     </div>
+
+                    <div className="mt-4">
+                        <ProfilePictureUpload
+                            currentPic={user?.profile_photo}
+                            onUpdate={(newPic) => updateUser({ profile_photo: newPic })}
+                        />
+                    </div>
                     <div className="flex items-center gap-2 ml-auto">
                         <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative">
                             <Icons.Bell className="w-5 h-5 text-gray-600" />
                             <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
                         </button>
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg">
-                            <span className="text-white font-semibold text-sm">{user?.name?.charAt(0) || "P"}</span>
+                        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg">
+                            {user?.profile_photo ? (
+                                <img src={user.profile_photo} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
+                                    <span className="text-white font-semibold text-sm">{user?.name?.charAt(0) || "P"}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

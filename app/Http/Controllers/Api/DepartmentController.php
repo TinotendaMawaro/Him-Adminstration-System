@@ -16,41 +16,50 @@ class DepartmentController extends Controller
     /**
      * Get all departments with statistics
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $perPage = $request->get('per_page', 12);
+
         $departments = Department::with(['hodUser', 'zone'])
             ->withCount(['activeMembers', 'activities'])
             ->orderBy('name')
-            ->get()
-            ->map(function ($dept) {
-                return [
-                    'id' => $dept->id,
-                    'name' => $dept->name,
-                    'description' => $dept->description,
-                    'color' => $dept->color,
-                    'zone_id' => $dept->zone_id,
-                    'zone' => $dept->zone ? [
-                        'id' => $dept->zone->id,
-                        'name' => $dept->zone->name,
-                    ] : null,
-                    'hod_id' => $dept->hod_id,
-                    'hod_status' => $dept->hod_status,
-                    'hod_assigned_at' => $dept->hod_assigned_at,
-                    'hod_accepted_at' => $dept->hod_accepted_at,
-                    'hod' => $dept->hodUser ? [
-                        'id' => $dept->hodUser->id,
-                        'name' => $dept->hodUser->name,
-                        'email' => $dept->hodUser->email,
-                    ] : null,
-                    'members_count' => $dept->active_members_count,
-                    'activities_count' => $dept->activities_count,
-                    'created_at' => $dept->created_at,
-                ];
-            });
+            ->paginate($perPage);
+
+        $departments->getCollection()->transform(function ($dept) {
+            return [
+                'id' => $dept->id,
+                'name' => $dept->name,
+                'description' => $dept->description,
+                'color' => $dept->color,
+                'zone_id' => $dept->zone_id,
+                'zone' => $dept->zone ? [
+                    'id' => $dept->zone->id,
+                    'name' => $dept->zone->name,
+                ] : null,
+                'hod_id' => $dept->hod_id,
+                'hod_status' => $dept->hod_status,
+                'hod_assigned_at' => $dept->hod_assigned_at,
+                'hod_accepted_at' => $dept->hod_accepted_at,
+                'hod' => $dept->hodUser ? [
+                    'id' => $dept->hodUser->id,
+                    'name' => $dept->hodUser->name,
+                    'email' => $dept->hodUser->email,
+                ] : null,
+                'members_count' => $dept->active_members_count,
+                'activities_count' => $dept->activities_count,
+                'created_at' => $dept->created_at,
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'departments' => $departments,
+            'departments' => $departments->items(),
+            'meta' => [
+                'current_page' => $departments->currentPage(),
+                'last_page' => $departments->lastPage(),
+                'per_page' => $departments->perPage(),
+                'total' => $departments->total(),
+            ],
         ]);
     }
 

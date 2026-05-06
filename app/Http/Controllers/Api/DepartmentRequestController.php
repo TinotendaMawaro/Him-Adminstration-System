@@ -195,6 +195,79 @@ class DepartmentRequestController extends Controller
     }
 
     /**
+     * Leave current department with reason
+     */
+    public function leaveDepartment(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->department_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not belong to a department.',
+            ], 400);
+        }
+
+        // Check if user is HOD - HODs cannot leave without pastor approval
+        $department = Department::find($user->department_id);
+
+        if ($department->hod_id === $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'As a department HOD, please contact your pastor to transfer leadership before leaving.',
+            ], 400);
+        }
+
+        // Remove from department_members pivot table
+        $department->members()->detach($user->id);
+
+        // Update user
+        $user->update([
+            'department_id' => null,
+        ]);
+
+        // Notify pastors and HOD about the member leaving
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $user->zone_id)
+            ->get();
+
+        $hod = $department->hodUser;
+
+        foreach ($pastors as $pastor) {
+            $pastor->notifications()->create([
+                'title' => 'Member Left Department',
+                'message' => "{$user->name} left {$department->name}. Reason: {$validated['reason']}",
+                'type' => 'department',
+                'category' => 'member_left',
+            ]);
+        }
+
+        if ($hod && $hod->id !== $user->id) {
+            $hod->notifications()->create([
+                'title' => 'Member Left Department',
+                'message' => "{$user->name} left your department. Reason: {$validated['reason']}",
+                'type' => 'department',
+                'category' => 'member_left',
+            ]);
+        }
+
+        Log::info('User left department', [
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+            'reason' => $validated['reason'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You have left the department.',
+        ]);
+    }
+
+    /**
      * Get pending requests for pastor approval (Pastors & HODs only)
      */
     public function pendingApprovals(Request $request): JsonResponse

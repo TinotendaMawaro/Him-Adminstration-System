@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -70,6 +71,26 @@ class User extends Authenticatable
     public function isFirstTimeLogin(): bool   { return $this->first_login_at === null; }
     public function needsToAcceptTerms(): bool { return !$this->terms_accepted; }
 
+    // ─── Zone accessor with fallback ──────────────────────────────────────────
+    /**
+     * Get the user's zone ID.
+     * For pastors with null user.zone_id, fallback to the related pastor record's zone_id.
+     *
+     * @param  mixed  $value  The raw attribute value from DB.
+     * @return int|null
+     */
+    public function getZoneIdAttribute($value)
+    {
+        if (!is_null($value)) {
+            return $value;
+        }
+        // If the user is a pastor and has a related pastor record with a zone, use that zone_id.
+        if ($this->isPastor() && ($this->relationLoaded('pastor') || $this->pastor)) {
+            return $this->pastor?->zone_id;
+        }
+        return $value;
+    }
+
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function gender(): BelongsTo     { return $this->belongsTo(Gender::class); }
@@ -122,5 +143,14 @@ class User extends Authenticatable
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
         return $this->role->isFilamentRole() && $this->is_active;
+    }
+
+    /**
+     * Get the profile photo URL with storage path.
+     * Returns full URL if profile_photo is set, otherwise null.
+     */
+    public function getProfilePhotoAttribute($value)
+    {
+        return $value ? Storage::url($value) : null;
     }
 }

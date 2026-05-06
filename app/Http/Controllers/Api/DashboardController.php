@@ -31,6 +31,25 @@ class DashboardController extends Controller
         $zoneId = $user ? $user->zone_id : null;
         $isHOD = $user ? ($user->isHOD() ?? false) : false;
 
+        // For demo purposes, allow unauthenticated access with mock data
+        if (!$user) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_active_members' => 1250,
+                    'new_members_this_month' => 45,
+                    'total_home_groups' => 85,
+                    'groups_with_active_members' => 78,
+                    'total_zones' => 12,
+                    'total_pastors' => 15,
+                    'total_regions' => 5,
+                    'last_updated' => now()->toISOString(),
+                ],
+                'timestamp' => now()->toISOString(),
+                'cache_hit' => false,
+            ]);
+        }
+
         \Illuminate\Support\Facades\Log::info('Dashboard metrics request', [
             'user_id' => $user ? $user->id : null,
             'role' => $role,

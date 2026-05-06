@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
-import InviteMemberModal from "./InviteMemberModal.jsx";
+import InviteMemberDrawer from "./InviteMemberModal.jsx";
+import Drawer from "../Drawer.jsx";
+import Pagination from "../Pagination.jsx";
 
 // Ripple Effect Button Component
 function RippleButton({ children, onClick, className = "", variant = "primary", shakeOnClick = false, disabled = false }) {
@@ -64,50 +66,7 @@ function RippleButton({ children, onClick, className = "", variant = "primary", 
   );
 }
 
-// Drawer Component - Slide-out Panel
-function Drawer({ isOpen, onClose, title, children, size = "md" }) {
-  const sizes = {
-    sm: "max-w-md",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
-  };
 
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-      
-      {/* Drawer Panel - Slide from right */}
-      <div className="absolute right-0 top-0 h-full w-full">
-        <div className={`relative h-full bg-white/95 backdrop-blur-2xl shadow-2xl animate-slide-in-right ${sizes[size]} ml-auto`}>
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-xl z-10">
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-            <button 
-              onClick={onClose}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          {/* Content */}
-          <div className="p-6 overflow-y-auto h-[calc(100%-80px)]">
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Create Homegroup Modal
 function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
@@ -136,27 +95,22 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
     setError("");
 
     try {
-      const token = localStorage.getItem('him_token');
-      const response = await fetch('/api/homegroups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await api.post('/homegroups', formData);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data && response.data.success) {
         onSuccess();
         onClose();
         setFormData({ name: "", location: "", meeting_day: "Sunday", meeting_time: "10:00" });
       } else {
-        setError(data.message || 'Failed to create homegroup');
+        setError(response.data?.message || 'Failed to create homegroup');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      // Extract detailed error message from Laravel validation or other errors
+      const errMsg = err.response?.data?.message ||
+                     (err.response?.data?.errors && JSON.stringify(err.response.data.errors)) ||
+                     err.message ||
+                     'An error occurred. Please try again.';
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -236,8 +190,8 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
   );
 }
 
-// Assign Leader Modal
-function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSuccess }) {
+// Assign Leader Drawer
+function AssignLeaderDrawer({ isOpen, onClose, homegroupName, homegroupId, onSuccess }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
   const [members, setMembers] = useState([]);
@@ -251,25 +205,22 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
     }
   }, [isOpen, homegroupId]);
 
-   const fetchMembers = async () => {
-     setLoading(true);
-     try {
-       const token = localStorage.getItem('him_token');
-       const response = await fetch(`/api/homegroups/${homegroupId}/available-members`, {
-         headers: { Authorization: `Bearer ${token}` }
-       });
-      const data = await response.json();
-      if (data.success) {
-        setMembers(data.members);
+  const fetchMembers = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/homegroups/${homegroupId}/available-members`);
+      if (response.data && response.data.success) {
+        setMembers(response.data.members || []);
       }
     } catch (err) {
       console.error('Error fetching members:', err);
+      setMembers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredMembers = members.filter(m => 
+  const filteredMembers = members.filter(m =>
     m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -280,151 +231,184 @@ function AssignLeaderModal({ isOpen, onClose, homegroupName, homegroupId, onSucc
     setError("");
 
     try {
-      const token = localStorage.getItem('him_token');
-      const response = await fetch(`/api/homegroups/${homegroupId}/assign-leader`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ leader_id: selectedMember.id }),
+      const response = await api.post(`/homegroups/${homegroupId}/assign-leader`, {
+        leader_id: selectedMember.id
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data && response.data.success) {
         onSuccess();
         onClose();
       } else {
-        setError(data.message || 'Failed to assign leader');
+        setError(response.data?.message || 'Failed to assign leader');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      const msg = err.response?.data?.message || err.message || 'An error occurred. Please try again.';
+      setError(msg);
     } finally {
       setAssigning(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">Assign Leader</h2>
-          <p className="text-gray-500 text-sm mt-1">Select a member to lead {homegroupName}</p>
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Assign Leader - ${homegroupName}`}
+      size="md"
+    >
+      <div className="space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="relative">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search members..."
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
+          />
         </div>
-        <div className="p-6 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-              {error}
+
+        <div className="max-h-96 overflow-y-auto space-y-2">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto mb-3"></div>
+              Loading members...
             </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              No members available
+            </div>
+          ) : (
+            filteredMembers.map(member => (
+              <button
+                key={member.id}
+                onClick={() => setSelectedMember(member)}
+                className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${
+                  selectedMember && selectedMember.id === member.id
+                    ? 'bg-emerald-50 border-2 border-emerald-400'
+                    : 'bg-white border-2 border-transparent hover:bg-gray-50'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center text-white font-bold">
+                  {member.name.charAt(0)}
+                </div>
+                <div className="text-left flex-1">
+                  <p className="font-semibold text-gray-900">{member.name}</p>
+                  <p className="text-sm text-gray-500">{member.role || 'Member'}</p>
+                </div>
+                {selectedMember && selectedMember.id === member.id && (
+                  <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))
           )}
-          <div className="relative">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search members..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto space-y-2">
-            {loading ? (
-              <div className="text-center py-4 text-gray-500">Loading members...</div>
-            ) : filteredMembers.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No members available</div>
-            ) : (
-              filteredMembers.map(member => (
-                <button
-                  key={member.id}
-                  onClick={() => setSelectedMember(member)}
-                  className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${
-                    selectedMember && selectedMember.id === member.id 
-                      ? 'bg-emerald-50 border-2 border-emerald-400' 
-                      : 'bg-white border-2 border-transparent hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center text-white font-bold">
-                    {member.name.charAt(0)}
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-900">{member.name}</p>
-                    <p className="text-sm text-gray-500">{member.role || 'Member'}</p>
-                  </div>
-                  {selectedMember && selectedMember.id === member.id && (
-                    <svg className="w-5 h-5 text-emerald-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
         </div>
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <RippleButton variant="secondary" onClick={onClose}>Cancel</RippleButton>
-          <RippleButton onClick={handleAssign} disabled={!selectedMember || assigning}>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAssign}
+            disabled={!selectedMember || assigning}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold hover:from-gold-500 hover:to-gold-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
             {assigning ? 'Assigning...' : 'Assign Leader'}
-          </RippleButton>
+          </button>
         </div>
       </div>
-    </div>
-   );
- }
-
- // Demote Leader Confirmation Modal
- function DemoteConfirmationModal({ isOpen, onClose, onConfirm, leaderName, homegroupName, loading }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-scale-in">
-        <div className="p-6 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Demote {leaderName}?</h2>
-          <p className="text-gray-500">
-            This will remove {leaderName} as the leader of {homegroupName}. 
-            They will remain as a regular member.
-          </p>
-        </div>
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-center gap-3">
-          <RippleButton variant="secondary" onClick={onClose} disabled={loading}>Cancel</RippleButton>
-          <RippleButton variant="dangerGlow" onClick={onConfirm} disabled={loading}>
-            {loading ? 'Demoting...' : 'Demote'}
-          </RippleButton>
-        </div>
-      </div>
-    </div>
+    </Drawer>
   );
 }
 
-// View Members Modal
-function ViewMembersModal({ isOpen, onClose, homegroupName, members, loading }) {
-  if (!isOpen) return null;
-
+// Demote Leader Confirmation Drawer
+function DemoteConfirmationDrawer({ isOpen, onClose, onConfirm, leaderName, homegroupName, loading }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">{homegroupName} Members</h2>
-          <p className="text-gray-500 text-sm mt-1">{members.length} members in this homegroup</p>
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Demote ${leaderName}?`}
+      size="sm"
+    >
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
         </div>
-        <div className="p-6 max-h-80 overflow-y-auto space-y-3">
+
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Demotion</h3>
+          <p className="text-gray-600">
+            This will remove <strong>{leaderName}</strong> as the leader of <strong>{homegroupName}</strong>.
+            They will remain as a regular member.
+          </p>
+        </div>
+
+        <div className="flex justify-center gap-3 pt-4 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-400 to-red-500 text-white font-semibold hover:from-red-500 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {loading ? 'Demoting...' : 'Demote Leader'}
+          </button>
+        </div>
+      </div>
+    </Drawer>
+  );
+}
+
+// View Members Drawer
+function ViewMembersDrawer({ isOpen, onClose, homegroupName, members, loading }) {
+  return (
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`${homegroupName} Members`}
+      size="md"
+    >
+      <div className="space-y-4">
+        <div className="text-sm text-gray-500">
+          {members.length} members in this homegroup
+        </div>
+
+        <div className="max-h-96 overflow-y-auto space-y-3">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading members...</div>
+            <div className="text-center py-8 text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto mb-3"></div>
+              Loading members...
+            </div>
           ) : members.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No members in this homegroup</div>
+            <div className="text-center py-8 text-gray-500">
+              <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              No members in this homegroup
+            </div>
           ) : (
             members.map((member, idx) => (
               <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
@@ -444,11 +428,17 @@ function ViewMembersModal({ isOpen, onClose, homegroupName, members, loading }) 
             ))
           )}
         </div>
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-          <RippleButton variant="secondary" onClick={onClose}>Close</RippleButton>
+
+        <div className="flex justify-end pt-4 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
-    </div>
+    </Drawer>
   );
 }
 
@@ -600,26 +590,54 @@ export default function HomegroupsTab() {
   const [demoteLoading, setDemoteLoading] = useState(false);
   const [inviteSearch, setInviteSearch] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
 
-  // Use react-query to fetch homegroups from pastor's zone endpoint
-  const { data: homegroupsData, isLoading, error, refetch } = useQuery({
-    queryKey: ['pastor-homegroups'],
+  // Use react-query to fetch homegroups from pastor's zone endpoint with pagination
+  const { data: homegroupsResponse, isLoading, error, refetch } = useQuery({
+    queryKey: ['pastor-homegroups', currentPage, perPage],
     queryFn: async () => {
-      const res = await api.get('/pastors/home-groups');
+      const params = new URLSearchParams({
+        page: currentPage,
+        per_page: perPage,
+      });
+      const res = await api.get(`/pastors/home-groups?${params}`);
       if (!res.data.success) throw new Error(res.data.message || 'Failed');
       // Map members_count to members for component compatibility
-      return res.data.data.map((hg) => ({
+      const data = res.data.data.map((hg) => ({
         ...hg,
         members: hg.members_count,
       }));
+
+      // Save to localStorage for persistence
+      localStorage.setItem('homegroups-data', JSON.stringify(res.data));
+      return { data, meta: res.data.meta };
     },
     staleTime: 30000, // 30 seconds cache
+    gcTime: 300000,
     refetchOnWindowFocus: true,
     retry: 1,
+    keepPreviousData: true,
+    initialData: () => {
+      // Load from localStorage if available
+      const cached = localStorage.getItem('homegroups-data');
+      return cached ? JSON.parse(cached) : undefined;
+    },
   });
 
-  const homegroups = homegroupsData || [];
+  const homegroups = homegroupsResponse?.data || [];
+  const paginationMeta = homegroupsResponse?.meta || {
+    current_page: 1,
+    last_page: 1,
+    per_page: perPage,
+    total: 0
+  };
   const loading = isLoading;
+
+  // Handle page changes
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   // Manual refresh function
   const refreshHomegroups = () => {
@@ -641,54 +659,47 @@ export default function HomegroupsTab() {
     setShowInviteModal(true);
   };
 
-   const handleConfirmDemote = async () => {
-     if (!selectedHomegroup) return;
+    const handleConfirmDemote = async () => {
+      if (!selectedHomegroup) return;
 
-     setDemoteLoading(true);
-     try {
-       const token = localStorage.getItem('him_token');
-       const response = await fetch(`/api/homegroups/${selectedHomegroup.id}/demote-leader`, {
-         method: 'POST',
-         headers: { 
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${token}` 
-         }
-       });
-      const data = await response.json();
-      
-      if (data.success) {
-        refreshHomegroups();
-        setShowDemoteModal(false);
-        setSelectedHomegroup(null);
+      setDemoteLoading(true);
+      try {
+        const response = await api.post(`/homegroups/${selectedHomegroup.id}/demote-leader`);
+
+        if (response.data && response.data.success) {
+          refreshHomegroups();
+          setShowDemoteModal(false);
+          setSelectedHomegroup(null);
+        } else {
+          setError(response.data?.message || 'Failed to demote leader');
+        }
+      } catch (err) {
+        const msg = err.response?.data?.message || err.message || 'An error occurred. Please try again.';
+        setError(msg);
+      } finally {
+        setDemoteLoading(false);
       }
-    } catch (err) {
-      console.error('Error demoting leader:', err);
-    } finally {
-      setDemoteLoading(false);
-    }
-  };
+    };
 
-   const handleViewMembers = async (homegroup) => {
-     setSelectedHomegroup(homegroup);
-     setMembersLoading(true);
-     setShowMembersModal(true);
+    const handleViewMembers = async (homegroup) => {
+        setSelectedHomegroup(homegroup);
+        setMembersLoading(true);
+        setShowMembersModal(true);
 
-     try {
-       const token = localStorage.getItem('him_token');
-       const response = await fetch(`/api/homegroups/${homegroup.id}`, {
-         headers: { Authorization: `Bearer ${token}` }
-       });
-      const data = await response.json();
-      if (data.success) {
-        setMembers(data.homegroup.members || []);
-      }
-    } catch (err) {
-      console.error('Error fetching members:', err);
-      setMembers([]);
-    } finally {
-      setMembersLoading(false);
-    }
-  };
+        try {
+            const response = await api.get(`/homegroups/${homegroup.id}`);
+            if (response.data && response.data.success) {
+                setMembers(response.data.homegroup?.members || []);
+            } else {
+                setMembers([]);
+            }
+        } catch (err) {
+            console.error('Error fetching members:', err);
+            setMembers([]);
+        } finally {
+            setMembersLoading(false);
+        }
+    };
 
   return (
     <div className="space-y-6">
@@ -750,6 +761,17 @@ export default function HomegroupsTab() {
         </div>
       )}
 
+      {/* Pagination */}
+      {paginationMeta.total > 0 && (
+        <Pagination
+          currentPage={paginationMeta.current_page}
+          totalPages={paginationMeta.last_page}
+          totalItems={paginationMeta.total}
+          itemsPerPage={paginationMeta.per_page}
+          onPageChange={handlePageChange}
+        />
+      )}
+
       {/* Floating Create Button */}
       <FloatingAddButton onClick={() => setShowCreateModal(true)} label="Create Homegroup" />
 
@@ -760,7 +782,7 @@ export default function HomegroupsTab() {
         onSuccess={refreshHomegroups}
       />
 
-        <AssignLeaderModal
+        <AssignLeaderDrawer
           isOpen={showAssignModal}
           onClose={() => { setShowAssignModal(false); setSelectedHomegroup(null); }}
           homegroupName={selectedHomegroup && selectedHomegroup.name}
@@ -768,15 +790,15 @@ export default function HomegroupsTab() {
           onSuccess={refreshHomegroups}
         />
 
-        <InviteMemberModal
+        <InviteMemberDrawer
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           homegroupName={selectedHomegroup && selectedHomegroup.name}
           homegroupId={selectedHomegroup && selectedHomegroup.id}
-         onSuccess={refreshHomegroups}
-       />
+          onSuccess={refreshHomegroups}
+        />
 
-       <DemoteConfirmationModal 
+      <DemoteConfirmationDrawer
         isOpen={showDemoteModal}
         onClose={() => { setShowDemoteModal(false); setSelectedHomegroup(null); }}
         onConfirm={handleConfirmDemote}
@@ -785,7 +807,7 @@ export default function HomegroupsTab() {
         loading={demoteLoading}
       />
 
-      <ViewMembersModal
+      <ViewMembersDrawer
         isOpen={showMembersModal}
         onClose={() => { setShowMembersModal(false); setSelectedHomegroup(null); setMembers([]); }}
         homegroupName={selectedHomegroup && selectedHomegroup.name}

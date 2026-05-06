@@ -40,8 +40,8 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
                     <div className="flex items-center justify-between h-12 md:h-16">
                         {/* Logo & Department */}
                         <div className="flex items-center gap-2 md:gap-3">
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-400/20">
-                                <span className="text-white font-bold text-sm md:text-lg">H</span>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg shadow-amber-400/20 bg-white">
+                                <img src="/images/favicon.ico" alt="Heartfelt Logo" className="w-full h-full object-contain p-1" />
                             </div>
                             <div>
                                 <p className="hidden xs:block text-xs text-slate-400">HOD Portal</p>

@@ -48,10 +48,18 @@ class HomeGroup extends Model
     }
 
     /**
-     * Get members belonging to this home group
+     * Get all activities for this home group.
      */
-    public function members()
+    public function activities()
     {
-        return $this->hasMany(Member::class, 'home_group_id');
+        return $this->hasMany(Activity::class);
+    }
+
+    /**
+     * Get all updates/posts for this home group.
+     */
+    public function updates()
+    {
+        return $this->hasMany(HomeGroupUpdate::class)->orderBy('is_pinned', 'desc')->orderBy('published_at', 'desc');
     }
 }

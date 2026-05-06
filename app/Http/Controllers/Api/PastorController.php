@@ -340,7 +340,7 @@ class PastorController extends Controller
 
         $homeGroups = HomeGroup::where('zone_id', $user->zone_id)
             ->with(['leader', 'zone'])
-            ->withCount('members')
+            ->withCount('users')
             ->orderBy('name')
             ->paginate(20);
 

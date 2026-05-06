@@ -269,19 +269,26 @@ export const HODAvatar = ({ name, size = "md", className = "" }) => {
 
 export const HODStatCard = ({ title, value, subtitle, icon: Icon, color, delay = 0 }) => (
     <div 
-        className={`relative group ${HODTheme.glass} ${HODTheme.rounded} ${HODTheme.glassHover} ${HODTheme.scale} overflow-hidden`}
+        className={`relative group bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300`}
         style={{ animationDelay: `${delay}ms` }}
     >
-        <div className={`absolute -inset-0.5 bg-gradient-to-r ${color} rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-all duration-500`}></div>
-        <div className="relative p-5">
+        <div className="p-4">
             <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-gray-500 text-sm font-medium">{title}</p>
-                    <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
-                    {subtitle && <p className="text-gray-400 text-xs mt-1">{subtitle}</p>}
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        {title}
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                        {value}
+                    </p>
+                    {subtitle && (
+                        <p className="text-gray-400 text-[10px] sm:text-xs mt-0.5 truncate">
+                            {subtitle}
+                        </p>
+                    )}
                 </div>
-                <div className={`p-3 rounded-2xl bg-gradient-to-br ${color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-5 h-5 text-white" />
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${color} shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0`}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
             </div>
         </div>

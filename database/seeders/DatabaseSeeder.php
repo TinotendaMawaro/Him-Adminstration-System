@@ -7,9 +7,14 @@ use App\Models\Pastor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Database\Seeders\ChurchStructureSeeder;
 use Database\Seeders\ZoneHistorySeeder;
 use Database\Seeders\DepartmentSeeder;
+use Database\Seeders\HomeGroupSeeder;
+use Database\Seeders\GenderSeeder;
+use Database\Seeders\DemographySeeder;
+use Database\Seeders\AdditionalMembersSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,6 +23,17 @@ class DatabaseSeeder extends Seeder
         // ── Church Structure (zones, regions, countries, pastors) ─────────────────
         $this->call([
             ChurchStructureSeeder::class,
+        ]);
+
+        // ── Reference Data (genders, demographies) ───────────────────────────────
+        $this->call([
+            GenderSeeder::class,
+            DemographySeeder::class,
+        ]);
+
+        // ── Home Groups ───────────────────────────────────────────────────────────
+        $this->call([
+            HomeGroupSeeder::class,
         ]);
 
         // ── Zone Histories ───────────────────────────────────────────────────────
@@ -112,25 +128,43 @@ class DatabaseSeeder extends Seeder
         $memberUser = User::updateOrCreate(
             ['email' => 'alpha@heartfelt.church'],
             [
-                'name'           => 'Alpha M',
-                'password'       => Hash::make('password'),
-                'role'           => 'member',
-                'is_active'      => true,
-                'terms_accepted' => true,
-                'completed_tour' => true,
+                'name'              => 'Alpha M',
+                'password'          => Hash::make('password'),
+                'role'              => 'member',
+                'is_active'         => true,
+                'terms_accepted'    => true,
+                'completed_tour'    => true,
             ]
         );
+
+        // Get reference IDs
+        $zoneId = DB::table('zones')->where('code', 'R0101')->first()?->id;
+        $homeGroupId = DB::table('home_groups')->where('zone_id', $zoneId)->first()?->id;
+        $genderId = DB::table('genders')->where('name', 'Male')->first()?->id;
+        $demographyId = DB::table('demographies')->where('name', 'Adult')->first()?->id;
 
         \App\Models\Member::updateOrCreate(
             ['user_id' => $memberUser->id],
             [
-                'name'            => 'Alpha',
-                'surname'         => 'M',
-                'member_number'   => 'MEM-0001',
-                'status'          => 'active',
-                'membership_date' => now(),
+                'name'             => 'Alpha',
+                'surname'          => 'M',
+                'member_number'    => 'MEM-0001',
+                'zone_id'          => $zoneId,
+                'home_group_id'    => $homeGroupId,
+                'gender_id'        => $genderId,
+                'demography_id'    => $demographyId,
+                'date_of_birth'    => '1990-05-15',
+                'status'           => 'active',
+                'is_baptised'      => false,
+                'can_be_partner'   => true,
+                'membership_date'  => now(),
             ]
         );
+
+        // ── Additional Sample Members (3-4 total) ───────────────────────────────
+        $this->call([
+            AdditionalMembersSeeder::class,
+        ]);
 
         // ── Partner (not a member) ────────────────────────────────────────────
         $partnerUser = User::updateOrCreate(

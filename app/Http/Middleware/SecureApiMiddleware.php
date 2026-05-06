@@ -40,6 +40,14 @@ class SecureApiMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
+        // Log all API requests for debugging
+        \Log::info('SecureApiMiddleware: API request received', [
+            'path' => $request->path(),
+            'method' => $request->method(),
+            'is_api' => $request->is('api/*'),
+            'headers' => $request->headers->all(),
+        ]);
+
         // 1️⃣ Content-Length check (prevent large payload DoS)
         $contentLength = $request->server('CONTENT_LENGTH', 0);
         if ($contentLength > self::MAX_REQUEST_SIZE) {

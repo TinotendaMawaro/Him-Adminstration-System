@@ -57,8 +57,8 @@ class HomeGroupInvitationController extends Controller
         }
 
         // Prevent duplicate pending invitations
-        $existing = HomeGroupInvitation::where('homegroup_id', $id)
-            ->where('member_id', $validated['member_id'])
+        $existing = HomeGroupInvitation::where('home_group_id', $id)
+            ->where('user_id', $validated['member_id'])
             ->where('status', 'pending')
             ->first();
 
@@ -71,27 +71,27 @@ class HomeGroupInvitationController extends Controller
 
         // Create invitation
         $invitation = HomeGroupInvitation::create([
-            'homegroup_id' => $id,
-            'member_id' => $validated['member_id'],
-            'pastor_id' => $pastor->id,
+            'home_group_id' => $id,
+            'user_id' => $validated['member_id'],
+            'requested_by' => $pastor->id,
             'status' => 'pending',
-            'invited_at' => now(),
+            'requested_at' => now(),
         ]);
 
         // Send notification to member
         NotificationService::createHomeGroupInvitation($member, $homeGroup, $pastor);
 
         Log::info('Homegroup invitation sent', [
-            'homegroup_id' => $id,
-            'member_id' => $validated['member_id'],
-            'pastor_id' => $pastor->id,
+            'home_group_id' => $id,
+            'user_id' => $validated['member_id'],
+            'requested_by' => $pastor->id,
             'invitation_id' => $invitation->id,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Invitation sent successfully.',
-            'invitation' => $invitation->load(['homegroup', 'member', 'pastor']),
+            'invitation' => $invitation->load(['homeGroup', 'user', 'requester']),
         ], 201);
     }
 
@@ -103,8 +103,8 @@ class HomeGroupInvitationController extends Controller
     {
         $user = $request->user();
 
-        $invitations = HomeGroupInvitation::with(['homegroup.zone', 'pastor'])
-            ->where('member_id', $user->id)
+        $invitations = HomeGroupInvitation::with(['homeGroup.zone', 'requester'])
+            ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -122,9 +122,9 @@ class HomeGroupInvitationController extends Controller
     {
         $user = $request->user();
 
-        $invitation = HomeGroupInvitation::with(['homegroup.zone', 'pastor'])
+        $invitation = HomeGroupInvitation::with(['homeGroup.zone', 'requester'])
             ->where('id', $id)
-            ->where('member_id', $user->id)
+            ->where('user_id', $user->id)
             ->first();
 
         if (!$invitation) {
@@ -149,7 +149,7 @@ class HomeGroupInvitationController extends Controller
         $user = $request->user();
 
         $invitation = HomeGroupInvitation::where('id', $id)
-            ->where('member_id', $user->id)
+            ->where('user_id', $user->id)
             ->first();
 
         if (!$invitation) {
@@ -177,21 +177,21 @@ class HomeGroupInvitationController extends Controller
 
         // Notify pastor
         NotificationService::createInvitationAccepted(
-            $invitation->pastor,
-            $invitation->homegroup,
+            $invitation->requester,
+            $invitation->homeGroup,
             $user
         );
 
         Log::info('Homegroup invitation accepted', [
             'invitation_id' => $id,
-            'member_id' => $user->id,
+            'user_id' => $user->id,
             'homegroup_id' => $invitation->homegroup_id,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Invitation accepted. You are now a member of ' . $invitation->homegroup->name,
-            'invitation' => $invitation->fresh(['homegroup']),
+            'message' => 'Invitation accepted. You are now a member of ' . $invitation->homeGroup->name,
+            'invitation' => $invitation->fresh(['homeGroup']),
         ]);
     }
 
@@ -205,7 +205,7 @@ class HomeGroupInvitationController extends Controller
         $note = $request->input('note', null);
 
         $invitation = HomeGroupInvitation::where('id', $id)
-            ->where('member_id', $user->id)
+            ->where('user_id', $user->id)
             ->first();
 
         if (!$invitation) {
@@ -231,15 +231,15 @@ class HomeGroupInvitationController extends Controller
 
         // Notify pastor
         NotificationService::createInvitationDeclined(
-            $invitation->pastor,
-            $invitation->homegroup,
+            $invitation->requester,
+            $invitation->homeGroup,
             $user,
             $note
         );
 
         Log::info('Homegroup invitation declined', [
             'invitation_id' => $id,
-            'member_id' => $user->id,
+            'user_id' => $user->id,
             'homegroup_id' => $invitation->homegroup_id,
             'note' => $note,
         ]);
@@ -267,7 +267,7 @@ class HomeGroupInvitationController extends Controller
         }
 
         $invitation = HomeGroupInvitation::where('id', $id)
-            ->where('pastor_id', $pastor->id)
+            ->where('requested_by', $pastor->id)
             ->where('status', 'pending')
             ->first();
 
@@ -282,7 +282,7 @@ class HomeGroupInvitationController extends Controller
 
         Log::info('Homegroup invitation cancelled', [
             'invitation_id' => $id,
-            'pastor_id' => $pastor->id,
+            'requested_by' => $pastor->id,
         ]);
 
         return response()->json([
@@ -303,8 +303,8 @@ class HomeGroupInvitationController extends Controller
             return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
         }
 
-        $invitations = HomeGroupInvitation::with(['member', 'homegroup'])
-            ->where('pastor_id', $pastor->id)
+        $invitations = HomeGroupInvitation::with(['user', 'homeGroup'])
+            ->where('requested_by', $pastor->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -326,7 +326,7 @@ class HomeGroupInvitationController extends Controller
             return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
         }
 
-        $count = HomeGroupInvitation::where('pastor_id', $pastor->id)
+        $count = HomeGroupInvitation::where('requested_by', $pastor->id)
             ->where('status', 'pending')
             ->count();
 
