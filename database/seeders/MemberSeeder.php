@@ -40,6 +40,7 @@ class MemberSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'member',
                 'is_active' => true,
+                'zone_id' => $zoneMap[$member['zone']],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -93,6 +93,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/hod/dashboard', [DashboardController::class, 'hodDashboard']);
     Route::get('/member/dashboard', [DashboardController::class, 'memberDashboard']);
 
+    // ── Department Entity Management ───────────────────────────────────────────
+    Route::get('/departments/eligible-entities', [DepartmentController::class, 'getEligibleEntities']);
+    Route::post('/departments/assign-hod-entity', [DepartmentController::class, 'assignHodEntity']);
+
     // ── Partners ───────────────────────────────────────────────────────────────
     Route::prefix('partners')->group(function () {
         Route::get('/me', [PartnerController::class, 'me']);
@@ -108,17 +112,19 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
      Route::delete('/homegroups/{id}', [HomeGroupApiController::class, 'destroy']);
      Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
      Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
-     Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
+      Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
+      Route::get('/homegroups/{id}/available-members-for-invite', [HomeGroupApiController::class, 'availableMembersForInvite']);
      
-     // Home Group Invitations (Pastor invites, Member responds)
-     Route::post('/homegroups/{id}/invite', [HomeGroupInvitationController::class, 'invite']);
-     Route::get('/homegroup-invitations', [HomeGroupInvitationController::class, 'index']);
-     Route::get('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'show']);
-     Route::post('/homegroup-invitations/{id}/accept', [HomeGroupInvitationController::class, 'accept']);
-     Route::post('/homegroup-invitations/{id}/decline', [HomeGroupInvitationController::class, 'decline']);
-     Route::delete('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'destroy']);
-     Route::get('/pastors/homegroup-invitations', [HomeGroupInvitationController::class, 'pastorInvitations']);
-     Route::get('/pastors/homegroup-invitations/pending-count', [HomeGroupInvitationController::class, 'pendingCount']);
+      // Home Group Invitations & Requests
+      Route::post('/homegroups/{id}/invite', [HomeGroupInvitationController::class, 'invite']);
+      Route::post('/homegroups/{id}/request', [HomeGroupInvitationController::class, 'requestJoin']);
+      Route::get('/homegroup-invitations', [HomeGroupInvitationController::class, 'index']);
+      Route::get('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'show']);
+      Route::post('/homegroup-invitations/{id}/accept', [HomeGroupInvitationController::class, 'accept']);
+      Route::post('/homegroup-invitations/{id}/decline', [HomeGroupInvitationController::class, 'decline']);
+      Route::delete('/homegroup-invitations/{id}', [HomeGroupInvitationController::class, 'destroy']);
+      Route::get('/pastors/homegroup-invitations', [HomeGroupInvitationController::class, 'pastorInvitations']);
+      Route::get('/pastors/homegroup-invitations/pending-count', [HomeGroupInvitationController::class, 'pendingCount']);
 
     Route::get('/home-groups/available', [HomeGroupMemberController::class, 'availableHomeGroups']);
     Route::get('/home-group/my', [HomeGroupMemberController::class, 'myHomeGroup']);
@@ -163,8 +169,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // ── Notifications ──────────────────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
-    Route::put('/notifications/{id}/read', [NotificationController::class, 'markRead']); // support PUT too
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']); // support PUT too
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']); // support PUT too
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);

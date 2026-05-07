@@ -166,6 +166,42 @@ class Department extends Model
                 'joined_at' => now(),
             ]
         ]);
+
+        // Generate and assign HOD code if user doesn't have one
+        if (empty($user->hod_code)) {
+            $zone = $this->zone;
+            if ($zone && $zone->region) {
+                $regionId = $zone->region_id;
+                $zoneId = $zone->id;
+
+                // Format: R{region_id:2d}{zone_id:2d}H{sequence:2d}
+                $prefix = 'R' . str_pad($regionId, 2, '0', STR_PAD_LEFT) . str_pad($zoneId, 2, '0', STR_PAD_LEFT) . 'H';
+
+                // Count existing HODs with this prefix to determine sequence
+                $existingCount = self::whereHas('zone', function($q) use ($zoneId) {
+                        $q->where('zones.id', $zoneId);
+                    })
+                    ->whereHas('hodUser', function($q) use ($prefix) {
+                        $q->where('hod_code', 'like', $prefix . '%');
+                    })
+                    ->count();
+                // Alternative simpler: count users with hod_code like prefix
+                $existingCount = \App\Models\User::where('hod_code', 'like', $prefix . '%')->count();
+                $sequence = $existingCount + 1;
+                $hodCode = $prefix . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+
+                $user->hod_code = $hodCode;
+                $user->save();
+
+                \Illuminate\Support\Facades\Log::info('HOD code assigned (on assign)', [
+                    'user_id' => $user->id,
+                    'hod_code' => $hodCode,
+                    'department_id' => $this->id,
+                    'zone_id' => $zoneId,
+                    'region_id' => $regionId,
+                ]);
+            }
+        }
     }
 
     /**
@@ -184,6 +220,35 @@ class Department extends Model
                 'role' => 'hod',
                 'status' => 'active',
             ]);
+        }
+
+        // Generate and assign HOD code if not already set
+        $hodUser = $this->hodUser;
+        if ($hodUser && empty($hodUser->hod_code)) {
+            $zone = $this->zone;
+            if ($zone && $zone->region) {
+                $regionId = $zone->region_id;
+                $zoneId = $zone->id;
+
+                // Format: R{region_id:2d}{zone_id:2d}H{sequence:2d}
+                $prefix = 'R' . str_pad($regionId, 2, '0', STR_PAD_LEFT) . str_pad($zoneId, 2, '0', STR_PAD_LEFT) . 'H';
+
+                // Count existing HODs with this prefix to determine sequence
+                $existingCount = \App\Models\User::where('hod_code', 'like', $prefix . '%')->count();
+                $sequence = $existingCount + 1;
+                $hodCode = $prefix . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+
+                $hodUser->hod_code = $hodCode;
+                $hodUser->save();
+
+                \Illuminate\Support\Facades\Log::info('HOD code assigned', [
+                    'user_id' => $hodUser->id,
+                    'hod_code' => $hodCode,
+                    'department_id' => $this->id,
+                    'zone_id' => $zoneId,
+                    'region_id' => $regionId,
+                ]);
+            }
         }
     }
 

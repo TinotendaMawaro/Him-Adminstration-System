@@ -79,7 +79,7 @@ function InviteMemberDrawer({ isOpen, onClose, homegroupName, homegroupId, onSuc
   const fetchMembers = async () => {
     setError("");
     try {
-      const response = await api.get(`/homegroups/${homegroupId}/available-members`);
+      const response = await api.get(`/homegroups/${homegroupId}/available-members-for-invite`);
       const data = response.data;
       if (data && data.success) {
         // Exclude members already in this homegroup

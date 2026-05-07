@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 // Animated Counter Component with optimized performance
 function AnimatedCounter({ 

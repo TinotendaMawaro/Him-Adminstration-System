@@ -143,7 +143,232 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Assign HOD to department (Pastors & Master only)
+     * Get eligible entities (members or groups) for HOD assignment
+     */
+    public function getEligibleEntities(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $search = $request->get('search', '');
+        $type = $request->get('type', 'members'); // 'members' or 'groups'
+
+        // Authorization: Only Master, Finance, Event, or Pastor can search
+        if (!$user->isMaster() && !$user->isFinance() && !$user->isEventRole() && !$user->isPastor()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized.',
+            ], 403);
+        }
+
+        if ($type === 'members') {
+            // Search for eligible members
+            $members = \App\Models\Member::with(['user', 'zone', 'homeGroup'])
+                ->where('status', 'active')
+                ->whereHas('user', function ($q) {
+                    $q->where('is_active', true)
+                      ->where('role', 'member'); // Only regular members, not existing HODs
+                })
+                ->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('surname', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($uq) use ($search) {
+                          $uq->where('name', 'like', "%{$search}%")
+                             ->orWhere('email', 'like', "%{$search}%");
+                      });
+                })
+                ->limit(20)
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'name' => $member->name . ' ' . $member->surname,
+                        'zone_name' => $member->zone?->name ?? 'Unknown Zone',
+                        'home_group_name' => $member->homeGroup?->name ?? null,
+                        'membership_date' => $member->membership_date?->format('M Y'),
+                        'user_id' => $member->user_id,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $members,
+            ]);
+
+        } elseif ($type === 'groups') {
+            // Search for eligible home groups
+            $groups = \App\Models\HomeGroup::with(['zone', 'members'])
+                ->withCount('members')
+                ->where('name', 'like', "%{$search}%")
+                ->whereHas('members', function ($q) {
+                    $q->where('status', 'active');
+                }, '>=', 1) // Must have at least 1 active member
+                ->limit(20)
+                ->get()
+                ->map(function ($group) {
+                    return [
+                        'id' => $group->id,
+                        'name' => $group->name,
+                        'zone_name' => $group->zone?->name ?? 'Unknown Zone',
+                        'member_count' => $group->members_count,
+                        'leader_name' => $group->leader?->name ?? 'No Leader',
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $groups,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid entity type.',
+        ], 400);
+    }
+
+    /**
+     * Assign HOD to department via entity (member or group)
+     */
+    public function assignHodEntity(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'entity_type' => 'required|in:members,groups',
+            'entity_id' => 'required|integer',
+            'department_id' => 'required|exists:departments,id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $user = $request->user();
+
+        // Authorization: Only Master, Finance, Event, or Pastor can assign
+        if (!$user->isMaster() && !$user->isFinance() && !$user->isEventRole() && !$user->isPastor()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins, pastors, or event coordinators can assign HODs.',
+            ], 403);
+        }
+
+        $department = Department::find($validated['department_id']);
+        if (!$department) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Department not found.',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($validated, $department, $user) {
+            if ($validated['entity_type'] === 'members') {
+                // Assign to member - find/create user account
+                $member = \App\Models\Member::find($validated['entity_id']);
+                if (!$member) {
+                    throw new \Exception('Member not found.');
+                }
+
+                $hodUser = $member->user;
+                if (!$hodUser) {
+                    throw new \Exception('Member has no associated user account.');
+                }
+
+                // Check if already HOD of this department
+                if ($department->hod_id === $hodUser->id && $department->hod_status === 'accepted') {
+                    throw new \Exception('This member is already the HOD of this department.');
+                }
+
+            } elseif ($validated['entity_type'] === 'groups') {
+                // Assign to group - create new HOD user account for the group
+                $group = \App\Models\HomeGroup::find($validated['entity_id']);
+                if (!$group) {
+                    throw new \Exception('Group not found.');
+                }
+
+                // Create a new user account for the group HOD
+                $hodUser = User::create([
+                    'name' => $group->name . ' HOD',
+                    'email' => 'hod.' . $group->id . '@church.local',
+                    'password' => bcrypt(\Illuminate\Support\Str::random(16)),
+                    'role' => 'hod',
+                    'zone_id' => $group->zone_id,
+                    'is_active' => true,
+                    'terms_accepted' => true,
+                    'terms_accepted_at' => now(),
+                ]);
+
+                // Create member profile
+                \App\Models\Member::create([
+                    'user_id' => $hodUser->id,
+                    'name' => $group->name,
+                    'surname' => 'HOD',
+                    'status' => 'active',
+                    'zone_id' => $group->zone_id,
+                    'home_group_id' => $group->id,
+                    'membership_date' => now(),
+                ]);
+
+                Log::info('Group-based HOD user created', [
+                    'group_id' => $group->id,
+                    'user_id' => $hodUser->id,
+                    'department_id' => $department->id,
+                ]);
+            }
+
+            // Cancel any pending assignments
+            if ($department->hod_id && $department->hod_status === 'pending') {
+                $previousHod = User::find($department->hod_id);
+                if ($previousHod) {
+                    $previousHod->notifications()->create([
+                        'title' => 'HOD Assignment Cancelled',
+                        'message' => "Your appointment as HOD for {$department->name} has been cancelled.",
+                        'type' => 'department',
+                        'category' => 'hod_cancelled',
+                    ]);
+                }
+            }
+
+            // Assign HOD
+            $department->assignHod($hodUser, $validated['notes'] ?? null);
+
+            // Send notification to HOD
+            $hodUser->notifications()->create([
+                'title' => 'HOD Appointment',
+                'message' => "You have been appointed as Head of Department for {$department->name}.",
+                'type' => 'department',
+                'category' => 'hod_appointed',
+            ]);
+
+            // Audit log
+            \App\Models\AuditLog::create([
+                'user_id' => $hodUser->id,
+                'action' => 'hod_entity_assignment',
+                'actor_id' => $user->id,
+                'details' => [
+                    'entity_type' => $validated['entity_type'],
+                    'entity_id' => $validated['entity_id'],
+                    'department_id' => $department->id,
+                    'hod_code' => $hodUser->hod_code,
+                ]
+            ]);
+
+            Log::info('HOD assigned via entity', [
+                'entity_type' => $validated['entity_type'],
+                'entity_id' => $validated['entity_id'],
+                'department_id' => $department->id,
+                'hod_user_id' => $hodUser->id,
+                'assigned_by' => $user->id,
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'HOD assigned successfully via ' . $validated['entity_type'] . '.',
+            'department' => [
+                'id' => $department->id,
+                'hod_id' => $department->hod_id,
+                'hod_status' => $department->hod_status,
+            ],
+        ]);
+    }
+
+    /**
+     * Assign HOD to department (Pastors & Master only) - Legacy method
      */
     public function assignHod(Request $request, int $id): JsonResponse
     {
@@ -242,10 +467,6 @@ class DepartmentController extends Controller
                 'hod_id' => $department->hod_id,
                 'hod_status' => $department->hod_status,
                 'hod_assigned_at' => $department->hod_assigned_at,
-                'hod' => $hodUser ? [
-                    'id' => $hodUser->id,
-                    'name' => $hodUser->name,
-                ] : null,
             ],
         ]);
     }

@@ -9,18 +9,20 @@ class HomeGroupInvitation extends Model
 {
     use HasFactory;
 
+    protected $table = 'homegroup_invitations';
+
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'user_id',
-        'home_group_id',
-        'requested_by',
-        'approved_by',
+        'homegroup_id',
+        'member_id',
+        'pastor_id',
         'status',
-        'notes',
-        'requested_at',
-        'approved_at',
+        'invited_at',
+        'responded_at',
+        'response_note',
+        'message',
     ];
 
     /**
@@ -35,23 +37,23 @@ class HomeGroupInvitation extends Model
     }
 
     /**
-     * Get the user who made the request
+     * Get the member being invited
      */
-    public function user()
+    public function member()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'member_id');
     }
 
     /**
-     * Get the home group being requested
+     * Get the home group being invited to
      */
     public function homeGroup()
     {
-        return $this->belongsTo(HomeGroup::class);
+        return $this->belongsTo(HomeGroup::class, 'homegroup_id');
     }
 
     /**
-     * Get the user who requested (if different from user)
+     * Get the user who requested the invitation
      */
     public function requester()
     {
@@ -59,11 +61,11 @@ class HomeGroupInvitation extends Model
     }
 
     /**
-     * Get the pastor who approved/rejected the request
+     * Get the pastor who sent the invitation
      */
-    public function approver()
+    public function pastor()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'pastor_id');
     }
 
     /**

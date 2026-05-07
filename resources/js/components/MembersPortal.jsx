@@ -5,6 +5,7 @@ import api from "../lib/api";
 import StatCard from "./dashboard/StatCard";
 import InvitationsManager from "./InvitationsManager";
 import HomeGroupCommunity from "./HomeGroupCommunity";
+import NotificationBell from "./notifications/NotificationBell";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND COMPONENT
@@ -1087,10 +1088,7 @@ export default function MembersPortal({ onLogout }) {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setNotificationsOpen(true)} className="relative p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <Icons.Bell className="w-6 h-6 text-gray-700" />
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">2</span>
-                        </button>
+                        <NotificationBell userId={user?.id} />
                         <button onClick={onLogout} className="p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
                             <Icons.ArrowRightOnRectangle className="w-6 h-6 text-gray-700" />
                         </button>

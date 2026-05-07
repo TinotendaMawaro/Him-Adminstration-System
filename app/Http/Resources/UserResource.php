@@ -24,6 +24,8 @@ class UserResource extends JsonResource
             'completed_tour' => $this->completed_tour,
             'is_first_time'  => $this->isFirstTimeLogin(),
 
+            'hod_code'       => $this->when($this->isHOD(), $this->hod_code),
+
             'zone_id'        => $this->when($this->isPastor() || $this->isMember() || $this->isPartner(), function () {
                 return $this->isMember() && $this->member?->zone_id 
                     ? $this->member->zone_id 
