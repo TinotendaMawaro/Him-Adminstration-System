@@ -43,19 +43,18 @@ class AdminPanelProvider extends PanelProvider
             // ── Navigation groups (visibility controlled per-resource) ────────
             ->navigationGroups([
                 NavigationGroup::make('Church Structure')
-                    ->icon('heroicon-o-building-library'),
+                    ->collapsed(),
 
                 NavigationGroup::make('People')
-                    ->icon('heroicon-o-users'),
+                    ->collapsed(),
 
                 NavigationGroup::make('Finance')
-                    ->icon('heroicon-o-banknotes'),
+                    ->collapsed(),
 
                 NavigationGroup::make('Events')
-                    ->icon('heroicon-o-calendar-days'),
+                    ->collapsed(),
 
                 NavigationGroup::make('System Management')
-                    ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
 
