@@ -99,21 +99,7 @@ class UserResource extends JsonResource
                 'id' => $this->department->id, 'name' => $this->department->name,
             ]),
 
-            // Pastor information for members
-            'pastor' => $this->when($this->isMember() || $this->isPartner(), function () {
-                $pastor = $this->zone?->currentPastor;
-                if ($pastor) {
-                    return [
-                        'id' => $pastor->id,
-                        'name' => $pastor->name,
-                        'email' => $pastor->email,
-                        'phone' => $pastor->phone,
-                    ];
-                }
-                return null;
-            }),
-
-            'pastor'  => $this->whenLoaded('pastor',  fn () => new PastorResource($this->pastor)),
+'pastor'  => $this->when($this->isPastor(), fn () => new PastorResource($this->pastor)),
             'member'  => $this->whenLoaded('member',  fn () => new MemberResource($this->member)),
             'partner' => $this->whenLoaded('partner', fn () => new PartnerResource($this->partner)),
             'contact' => $this->whenLoaded('contact', fn () => new ContactResource($this->contact)),

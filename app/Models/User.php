@@ -85,7 +85,10 @@ class User extends Authenticatable
             return $value;
         }
         // If the user is a pastor and has a related pastor record with a zone, use that zone_id.
-        if ($this->isPastor() && ($this->relationLoaded('pastor') || $this->pastor)) {
+        if ($this->isPastor()) {
+            if (!$this->relationLoaded('pastor')) {
+                $this->load('pastor');
+            }
             return $this->pastor?->zone_id;
         }
         return $value;

@@ -163,9 +163,10 @@ class DashboardController extends Controller
         $totalHomeGroups = HomeGroup::when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))->count();
 
         // Groups with at least one active member
-        $groupsWithActiveMembers = HomeGroup::whereHas('members', function ($q) {
-            $q->where('status', 'active')
-                ->whereHas('user', fn ($q2) => $q2->where('is_active', true));
+        $groupsWithActiveMembers = HomeGroup::whereHas('users', function ($q) {
+            $q->whereHas('member', function ($q2) {
+                $q2->where('status', 'active');
+            });
         })
             ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
             ->count();
@@ -238,9 +239,8 @@ class DashboardController extends Controller
 
             // Groups with at least one active member in the zone
             $groupsWithActiveMembers = HomeGroup::where('zone_id', $zoneId)
-                ->whereHas('members', function ($q) {
-                    $q->where('status', 'active')
-                        ->whereHas('user', fn ($q2) => $q2->where('is_active', true));
+                ->whereHas('users', function ($q) {
+                    $q->whereHas('member', fn ($q2) => $q2->where('status', 'active'));
                 })
                 ->count();
 
@@ -308,11 +308,12 @@ class DashboardController extends Controller
                 ], 404);
             }
 
-            $data = [
+            // Get user's home group info (for member dashboard)
+             $data = [
                 'my_home_group' => [
                     'name' => ($member->homeGroup && $member->homeGroup->name) ? $member->homeGroup->name : 'Not assigned',
-                    'total_members' => ($member->homeGroup && $member->homeGroup->members) ? $member->homeGroup->members()->count() : 0,
-                    'active_members' => ($member->homeGroup && $member->homeGroup->members) ? $member->homeGroup->members()->where('status', 'active')->count() : 0,
+                    'total_members' => ($member->homeGroup && $member->homeGroup->users) ? $member->homeGroup->users()->count() : 0,
+                    'active_members' => ($member->homeGroup && $member->homeGroup->users) ? $member->homeGroup->users()->whereHas('member', fn($q) => $q->where('status', 'active'))->count() : 0,
                     'leader' => ($member->homeGroup && $member->homeGroup->leader && $member->homeGroup->leader->name) ? $member->homeGroup->leader->name : null,
                 ],
                 'my_attendance_this_month' => $this->getMyAttendanceThisMonth($user->id),
@@ -351,12 +352,12 @@ class DashboardController extends Controller
         }
 
         $hg = HomeGroup::where('id', $member->home_group_id)
-            ->withCount(['members as active_members_count' => fn ($q) => $q->where('status', 'active')])
+            ->withCount(['users as active_members_count' => fn ($q) => $q->whereHas('member', fn($q2) => $q2->where('status', 'active'))])
             ->first();
 
         return [
             'name' => $hg ? $hg->name : null,
-            'total_members' => $hg ? ($hg->members_count ?? 0) : 0,
+            'total_members' => $hg ? ($hg->users_count ?? 0) : 0,
             'active_members' => $hg ? ($hg->active_members_count ?? 0) : 0,
             'leader' => $hg && $hg->leader ? $hg->leader->name : null,
         ];

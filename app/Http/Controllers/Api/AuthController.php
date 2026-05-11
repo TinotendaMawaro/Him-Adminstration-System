@@ -163,7 +163,15 @@ class AuthController extends Controller
 
     private function issueToken(User $user): JsonResponse
     {
-        $user->load(['zone', 'department', 'homeGroup', 'pastor', 'member', 'partner']);
+        $user->load([
+            'zone.region.country',
+            'department',
+            'homeGroup',
+            'pastor.zone.region.country',
+            'member.zone.region.country',
+            'member.homeGroup',
+            'partner'
+        ]);
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
