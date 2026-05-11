@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { UserProvider, useUser } from "./context/UserContext.jsx";
@@ -62,27 +62,29 @@ function PortalRouter({ onLogout }) {
 // ─── Inner app — has access to UserContext ────────────────────────────────────
 function AppInner() {
     const { user, updateUser, clearUser, refreshUser } = useUser();
-    const [appState, setAppState] = useState("auth");
 
-    // Restore session on mount
-    useEffect(() => {
+    // Compute initial app state from localStorage to avoid flash of wrong screen
+    const getInitialAppState = () => {
         const savedToken = localStorage.getItem("him_token");
         const savedUser  = localStorage.getItem("him_user");
-
         if (savedToken && savedUser) {
             const parsed = JSON.parse(savedUser);
-            // UserProvider already called /me in background; just set the state
-            if (!parsed.terms_accepted)  setAppState("terms");
-            else if (!parsed.completed_tour) setAppState("tour");
-            else setAppState("dashboard");
+            if (!parsed.terms_accepted)  return "terms";
+            else if (!parsed.completed_tour) return "tour";
+            else return "dashboard";
         }
+        return "auth";
+    };
+    const [appState, setAppState] = useState(getInitialAppState);
 
+    // Listen for global logout events (e.g., from other tabs)
+    useEffect(() => {
         const onUnauth = () => handleLogout({ shouldLogoutApi: false });
         window.addEventListener("him:unauthenticated", onUnauth);
         return () => window.removeEventListener("him:unauthenticated", onUnauth);
     }, []);
 
-    // Advance from loading → next screen
+    // Advance from loading → next screen (used if we ever set loading manually)
     useEffect(() => {
         if (appState !== "loading") return;
         const timer = setTimeout(() => {
@@ -97,12 +99,6 @@ function AppInner() {
         }, 2200);
         return () => clearTimeout(timer);
     }, [appState, user]);
-
-    const handleAuthenticated = (userData) => {
-        // userData already saved to localStorage by AuthPage
-        updateUser(userData);
-        setAppState("loading");
-    };
 
     const handleTermsAccept = async () => {
         updateUser({ terms_accepted: true });
@@ -154,12 +150,10 @@ function AppInner() {
         localStorage.removeItem("him_token");
         queryClient.clear();
         clearUser();
-        setAppState("auth");
+        // No need to set appState; component will unmount via RequireAuth redirect
     };
 
     switch (appState) {
-        case "auth":
-            return <AuthPage onLoginSuccess={handleAuthenticated} />;
         case "loading":
             return <LoadingScreen />;
         case "terms":
@@ -179,8 +173,64 @@ function AppInner() {
         case "dashboard":
             return <PortalRouter onLogout={handleLogout} />;
         default:
-            return <AuthPage onLoginSuccess={handleAuthenticated} />;
+            return null;
     }
+}
+
+// ─── Public route: root redirect ───────────────────────────────────────────────
+function RootRedirect() {
+    const { user, loading } = useUser();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!loading) {
+            if (user) {
+                navigate("/dashboard", { replace: true });
+            } else {
+                navigate("/login", { replace: true });
+            }
+        }
+    }, [user, loading, navigate]);
+
+    // While checking auth, show a loading indicator
+    if (loading) return <LoadingScreen />;
+    return null;
+}
+
+// ─── Login page wrapper ────────────────────────────────────────────────────────
+function LoginPage() {
+    const navigate = useNavigate();
+    const { user, updateUser } = useUser();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (user) {
+            navigate("/dashboard", { replace: true });
+        }
+    }, [user, navigate]);
+
+    const handleLoginSuccess = (userData) => {
+        updateUser(userData);
+        navigate("/dashboard", { replace: true });
+    };
+
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+}
+
+// ─── Protected route guard ─────────────────────────────────────────────────────
+function RequireAuth() {
+    const { user, loading } = useUser();
+    const location = useLocation();
+
+    if (loading) {
+        return <LoadingScreen />;
+    }
+
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    return <Outlet />;
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
@@ -193,13 +243,20 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <ErrorBoundary>
                 <UserProvider initialUser={cachedUser} token={cachedToken}>
-                    <GlobalStateProvider>
-                        <BrowserRouter>
-                            <Routes>
-                                <Route path="*" element={<AppInner />} />
-                            </Routes>
-                        </BrowserRouter>
-                    </GlobalStateProvider>
+                     <GlobalStateProvider>
+                         <BrowserRouter>
+                             <Routes>
+                                 {/* Public routes */}
+                                 <Route path="/" element={<RootRedirect />} />
+                                 <Route path="/login" element={<LoginPage />} />
+
+                                 {/* Protected routes */}
+                                 <Route element={<RequireAuth />}>
+                                     <Route path="*" element={<AppInner />} />
+                                 </Route>
+                             </Routes>
+                         </BrowserRouter>
+                     </GlobalStateProvider>
                 </UserProvider>
             </ErrorBoundary>
         </QueryClientProvider>

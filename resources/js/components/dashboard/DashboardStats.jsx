@@ -156,34 +156,34 @@ export default function DashboardStats({ onNavigate }) {
     };
   }
 
-  // ==========================================================================
-  // LOADING STATE
-  // ==========================================================================
-  if (isLoading && !data) {
-    return (
-       <div
-         className="flex flex-wrap gap-5 overflow-x-auto pb-4"
-         role="status"
-         aria-label="Loading dashboard statistics"
-       >
-         {metricDefinitions.map((metric, index) => (
-           <div
-             key={metric.key}
-             className="opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards] flex-shrink-0"
-             style={{ animationDelay: `${index * 100}ms`, minWidth: '280px' }}
-           >
-             <PremiumCard
-               title={metric.label}
-               value={0}
-               icon={metric.icon}
-               variant={metric.variant}
-               loading={true}
-             />
-           </div>
-         ))}
-       </div>
-     );
-   }
+   // ==========================================================================
+   // LOADING STATE
+   // ==========================================================================
+   if (isLoading && !data) {
+     return (
+        <div
+          className="flex flex-nowrap gap-2 sm:gap-4 md:gap-5 overflow-visible"
+          role="status"
+          aria-label="Loading dashboard statistics"
+        >
+          {metricDefinitions.map((metric, index) => (
+            <div
+              key={metric.key}
+              className="flex-1 min-w-0 opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards]"
+              style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+            >
+              <PremiumCard
+                title={metric.label}
+                value={0}
+                icon={metric.icon}
+                variant={metric.variant}
+                loading={true}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
 
   // ==========================================================================
   // ERROR STATE
@@ -231,59 +231,47 @@ export default function DashboardStats({ onNavigate }) {
     );
   }
 
-  // ==========================================================================
-  // SUCCESS STATE — render premium cards with staggered entrance
-  // ==========================================================================
-  return (
-    <div
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5"
-      role="grid"
-      aria-label="Dashboard statistics"
-    >
-      {metricDefinitions.map((metric, index) => {
-        const metricData = (data && data[metric.key]) || 0;
+   // ==========================================================================
+   // SUCCESS STATE — render premium cards in a single responsive horizontal row
+   // ==========================================================================
+   return (
+     <div
+       className="flex flex-nowrap gap-2 sm:gap-4 md:gap-5 overflow-visible"
+       role="group"
+       aria-label="Dashboard statistics"
+     >
+       {metricDefinitions.map((metric, index) => {
+         const metricData = (data && data[metric.key]) || 0;
+         const trendData = data && data.trends && data.trends[metric.key];
+         const sparklineData = (data && data.sparklines && data.sparklines[metric.key]) || [];
 
-        const trendData = data && data.trends && data.trends[metric.key];
-
-        const sparklineData = (data && data.sparklines && data.sparklines[metric.key]) || [];
-        const isThird = index === 2;
-        const wrapperClasses = isThird
-          ? 'lg:col-span-2 flex justify-center'
-          : '';
-        const innerWidthClass = isThird
-          ? 'w-full md:w-[calc(50%-10px)] max-w-[480px]'
-          : 'w-full';
-
-        return (
-          <div
-            key={metric.key}
-            className={`opacity-0 animate-[fade-in-up_0.6s_ease-out_forwards] ${wrapperClasses}`}
-            style={{
-              animationDelay: `${150 + index * 100}ms`,
-              animationFillMode: "forwards",
-            }}
-            role="gridcell"
-          >
-            <div className={innerWidthClass}>
-              <PremiumCard
-                id={metric.key}
-                title={metric.label}
-                value={metricData}
-                icon={metric.icon}
-                variant={metric.variant}
-                trend={trendData && trendData.value}
-
-                trendDirection={(trendData && trendData.direction) || "up"}
-
-                onClick={() => onNavigate && onNavigate(metric.navigateTo)}
-                animateValue={true}
-                aria-label={`${metric.label}: ${metricData.toLocaleString()}`}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+         return (
+           <div
+             key={metric.key}
+             className="flex-1 min-w-0 opacity-0 animate-[fade-in-up_0.6s_ease-out_forwards]"
+             style={{
+               animationDelay: `${150 + index * 100}ms`,
+               animationFillMode: "forwards",
+             }}
+             role="group"
+             aria-label={`${metric.label} card`}
+           >
+             <PremiumCard
+               id={metric.key}
+               title={metric.label}
+               value={metricData}
+               icon={metric.icon}
+               variant={metric.variant}
+               trend={trendData && trendData.value}
+               trendDirection={trendData && trendData.direction ? trendData.direction : "up"}
+               onClick={() => onNavigate && onNavigate(metric.navigateTo)}
+               animateValue={true}
+               aria-label={`${metric.label}: ${metricData.toLocaleString()}`}
+             />
+           </div>
+         );
+       })}
+     </div>
+   );
 }
 

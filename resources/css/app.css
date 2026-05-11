@@ -670,9 +670,52 @@
   background-size: 200% 100%;
 }
 
-.premium-card__skeleton-trend {
-  @apply h-5 w-28 bg-gray-200 rounded-full;
-  animation: premium-shimmer 1.5s infinite linear;
-  background-size: 200% 100%;
-}
+  .premium-card__skeleton-trend {
+    @apply h-5 w-28 bg-gray-200 rounded-full;
+    animation: premium-shimmer 1.5s infinite linear;
+    background-size: 200% 100%;
+  }
 
+  /* Responsive adjustments for narrow containers (single-row layouts) */
+  @media (max-width: 640px) {
+    .premium-card {
+      --card-padding: 10px;
+      --card-vertical-padding: 8px;
+      --card-horizontal-padding: 8px;
+      --icon-size: 28px;
+    }
+
+    .premium-card__header {
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .premium-card__title {
+      font-size: 9px;
+      line-height: 11px;
+    }
+
+    .premium-card__value {
+      font-size: 24px;
+      line-height: 28px;
+    }
+
+    .premium-card__value-container {
+      margin-top: 0.5rem;
+    }
+
+    .premium-card__sparkline {
+      width: 20px;
+      height: 7px;
+    }
+
+    .premium-card__trend {
+      font-size: 9px;
+      padding: 1px 4px;
+    }
+
+    .premium-card__subtext {
+      font-size: 11px;
+      line-height: 13px;
+    }
+  }

@@ -340,15 +340,15 @@ export default function PremiumCard({
   const safeVariant = validVariants.includes(variant) ? variant : "emerald";
 
   // Card wrapper with elevated hover
-  const CardWrapper = ({ children, showWrapper = true }) => {
-    const baseClasses = "premium-card group relative h-full";
-    const interactive = !!onClick;
-    const variantClass = `premium-card--${safeVariant}`;
-    const stateClasses = interactive
-      ? "data-[interactive='true'] hover:[--shadow-4:0_12px_40px_rgba(0,0,0,0.12)]"
-      : "";
+   const CardWrapper = ({ children, showWrapper = true }) => {
+     const baseClasses = "premium-card group relative h-full w-full";
+     const interactive = !!onClick;
+     const variantClass = `premium-card--${safeVariant}`;
+     const stateClasses = interactive
+       ? "data-[interactive='true'] hover:[--shadow-4:0_12px_40px_rgba(0,0,0,0.12)]"
+       : "";
 
-    const cardClasses = `${baseClasses} ${variantClass} ${stateClasses} ${className}`;
+     const cardClasses = `${baseClasses} ${variantClass} ${stateClasses} ${className}`;
 
     if (showWrapper && interactive) {
       return (
