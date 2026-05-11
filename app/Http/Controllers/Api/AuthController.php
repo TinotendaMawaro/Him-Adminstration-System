@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -44,6 +45,14 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
+        // Debug: check if this method is reached
+        \Log::info('AuthController login method reached', [
+            'request_method' => $request->method(),
+            'request_path' => $request->path(),
+            'content_type' => $request->header('Content-Type'),
+            'request_data' => $request->all(),
+        ]);
+
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
@@ -90,9 +99,9 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load([
-            'zone', 'department', 'homeGroup', 'gender', 'demography',
-            'contact.country', 'pastor.zone',
-            'member.zone', 'member.homeGroup', 'member.department',
+            'zone.region.country', 'zone.pastors', 'department', 'homeGroup', 'gender', 'demography',
+            'contact.country', 'pastor.zone.region.country',
+            'member.zone.region.country', 'member.homeGroup', 'member.department',
             'partner',
         ]);
 
@@ -124,11 +133,45 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Upload user profile photo.
+     * POST /api/profile/photo
+     */
+    public function uploadProfilePhoto(Request $request): JsonResponse
+    {
+        $request->validate([
+            'photo' => 'required|file|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        // Store the photo in 'profile-photos' directory on the public disk
+        $path = $request->file('photo')->store('profile-photos', 'public');
+
+        $user->update(['profile_photo' => $path]);
+
+        // Load relationships for UserResource
+        $user->load(['zone', 'department', 'homeGroup']);
+
+        return response()->json([
+            'success' => true,
+            'user'    => new UserResource($user),
+        ]);
+    }
+
     // ─── Private ──────────────────────────────────────────────────────────────
 
     private function issueToken(User $user): JsonResponse
     {
-        $user->load(['zone', 'department', 'homeGroup', 'pastor', 'member', 'partner']);
+        $user->load([
+            'zone.region.country',
+            'department',
+            'homeGroup',
+            'pastor.zone.region.country',
+            'member.zone.region.country',
+            'member.homeGroup',
+            'partner'
+        ]);
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([

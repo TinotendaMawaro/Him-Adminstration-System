@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
+import MemberDrawer from "./MemberDrawer.jsx";
+import Pagination from "../Pagination.jsx";
 
 // ============================================================================
 // SECURE MEMBERS TAB COMPONENT
@@ -10,125 +12,127 @@ import api from "../../lib/api.js";
 // ============================================================================
 
 export default function MembersTab() {
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterHomeGroup, setFilterHomeGroup] = useState("");
-  const [filterMinistry, setFilterMinistry] = useState("");
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [homegroups, setHomegroups] = useState([]);
+    const queryClient = useQueryClient();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState("");
+    const [filterHomeGroup, setFilterHomeGroup] = useState("");
+    const [filterMinistry, setFilterMinistry] = useState("");
+    const [selectedMember, setSelectedMember] = useState(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
 
-  // --------------------------------------------------------------------------
-  // SECURE API FETCH: Role-based access enforced server-side
-  // The backend validates: (1) authenticated user, (2) pastor role,
-  // (3) zone_id matches user's zone. Returns empty array if no members.
-  // --------------------------------------------------------------------------
-       const {
-         data: membersData = [],
-         isLoading,
-         error,
-         refetch,
-         isFetching,
-       } = useQuery({
-         queryKey: ["pastor-members"],
-         queryFn: async () => {
-           try {
-             const token = localStorage.getItem("him_token");
-             if (!token) {
-               throw new Error("Authentication required");
+    // Fetch members with pagination
+    const {
+           data: membersResponse,
+           isLoading: membersLoading,
+           error: membersError,
+           refetch: refetchMembers,
+           isFetching: membersFetching,
+         } = useQuery({
+           queryKey: ["pastor-members", currentPage, perPage, searchTerm, filterStatus, filterHomeGroup, filterMinistry],
+           queryFn: async () => {
+             try {
+               const params = new URLSearchParams({
+                 page: currentPage,
+                 per_page: perPage,
+               });
+
+               if (searchTerm) params.append('search', searchTerm);
+               if (filterStatus) params.append('status', filterStatus);
+               if (filterHomeGroup) params.append('home_group_id', filterHomeGroup);
+               if (filterMinistry) params.append('ministry', filterMinistry);
+
+               const res = await api.get(`/members?${params}`);
+               if (!res.data.success) {
+                 throw new Error(res.data.message || "Failed to fetch members");
+               }
+
+               // Save to localStorage for persistence
+               localStorage.setItem('members-data', JSON.stringify(res.data));
+               return res.data;
+             } catch (err) {
+               if ((err.response && err.response.status === 403) || (err.response && err.response.status === 401)) {
+                 localStorage.removeItem("him_token");
+                 window.location.href = "/login";
+               }
+               throw err;
              }
+           },
+           staleTime: 30000,
+           gcTime: 300000,
+           refetchOnWindowFocus: false,
+           retry: 1,
+           keepPreviousData: true,
+           initialData: () => {
+             // Load from localStorage if available
+             const cached = localStorage.getItem('members-data');
+             return cached ? JSON.parse(cached) : undefined;
+           },
+         });
 
-              const res = await api.get("/members");
-
-             if (!res.data.success) {
-               throw new Error(res.data.message || "Failed to fetch members");
-             }
-
-             return Array.isArray(res.data.data) ? res.data.data : [];
-           } catch (err) {
-             console.error("Members fetch error:", err);
-
-             if (err.response?.status === 403 || err.response?.status === 401) {
-               localStorage.removeItem("him_token");
-               window.location.href = "/login";
-             }
-
-             throw err;
-           }
-         },
-         staleTime: 30_000,
-         gcTime: 300_000,
-         refetchOnWindowFocus: false, // Prevent unnecessary refetches
-         retry: 1,
-       });
-
-  // --------------------------------------------------------------------------
-  // Homegroups fetch (for filter dropdown)
-  // --------------------------------------------------------------------------
-  useEffect(() => {
-    const fetchHomegroups = async () => {
-      try {
-        const token = localStorage.getItem("him_token");
-        const response = await fetch("/api/pastors/home-groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-        if (data?.success && Array.isArray(data?.data)) {
-          setHomegroups(data.data);
-        }
-      } catch (err) {
-        // Minimal fallback - never expose raw errors to UI
-        setHomegroups([]);
-      }
+    const membersData = membersResponse?.data || [];
+    const paginationMeta = membersResponse?.meta || {
+      current_page: 1,
+      last_page: 1,
+      per_page: perPage,
+      total: 0
     };
 
-    fetchHomegroups();
-  }, []);
+   // Fetch home groups for filter dropdown
+   const { data: homegroups = [], isLoading: homegroupsLoading } = useQuery({
+        queryKey: ["pastor-homegroups"],
+        queryFn: async () => {
+            const res = await api.get('/pastors/home-groups');
+            if (!res.data.success) throw new Error(res.data.message || 'Failed');
+            return res.data.data;
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 1,
+   });
 
   // --------------------------------------------------------------------------
-  // Filter logic (client-side for UX; server already scoped to zone)
+  // Handle page changes
   // --------------------------------------------------------------------------
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterHomeGroup, filterMinistry]);
+
+  // Use server-filtered data (pagination already applied)
   const filteredMembers = useMemo(() => {
-    if (!Array.isArray(membersData)) return [];
-
-    return membersData.filter((member) => {
-      const matchesSearch =
-        !searchTerm ||
-        (member.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (member.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (member.member_number?.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesStatus =
-        !filterStatus ||
-        (filterStatus === "active" && member.status === "active") ||
-        (filterStatus === "inactive" && member.status !== "active");
-
-      const matchesHomeGroup =
-        !filterHomeGroup ||
-        (member.home_group?.id?.toString() === filterHomeGroup.toString());
-
-      const matchesMinistry =
-        !filterMinistry ||
-        (member.member_number?.charAt(0) === filterMinistry);
-
-      return matchesSearch && matchesStatus && matchesHomeGroup && matchesMinistry;
-    });
-  }, [membersData, searchTerm, filterStatus, filterHomeGroup, filterMinistry]);
+    return Array.isArray(membersData) ? membersData : [];
+  }, [membersData]);
 
   // --------------------------------------------------------------------------
   // Action handlers
   // --------------------------------------------------------------------------
-  const handleViewMember = (member) => {
-    setSelectedMember(member);
-    setShowDrawer(true);
+  const handleViewMember = async (member) => {
+    // Fetch full member details with all relationships
+    try {
+      const response = await api.get(`/members/${member.id}`);
+      if (response.data.success) {
+        setSelectedMember(response.data.data);
+        setShowDrawer(true);
+      }
+    } catch (err) {
+      console.error('Error fetching member details:', err);
+      // Fallback to basic member data
+      setSelectedMember(member);
+      setShowDrawer(true);
+    }
   };
 
-   const handleRefresh = async () => {
-     await queryClient.invalidateQueries({ queryKey: ["pastor-members"] });
-     await refetch();
-   };
+    const handleRefresh = async () => {
+      await queryClient.invalidateQueries({ queryKey: ["pastor-members"] });
+      await refetchMembers();
+    };
 
   // --------------------------------------------------------------------------
   // RENDER
@@ -154,39 +158,42 @@ export default function MembersTab() {
           <span className="text-sm text-gray-500">
             {filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}
           </span>
-          <button
-            onClick={handleRefresh}
-            disabled={isFetching}
-            className="flex items-center gap-2 px-4 py-2 bg-gold-500 text-white rounded-xl hover:bg-gold-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/25 hover:shadow-gold-500/40"
+            <button
+              onClick={handleRefresh}
+              disabled={membersFetching}
+              className="flex items-center gap-2 px-4 py-2 bg-gold-500 text-white rounded-xl hover:bg-gold-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gold-500/25 hover:shadow-gold-500/40"
           >
-            <svg className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <svg className={`w-4 h-4 ${membersFetching ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.5M19 19v-5h-.5M5 4.5A9 9 0 0118.8 7.5M19 19.5a9 9 0 01-13.8-3" />
             </svg>
-            {isFetching ? "Refreshing..." : "Refresh"}
+             {membersFetching ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-700">
-          <div className="flex items-start gap-4">
-            <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-base">Unable to load members</p>
-              <p className="text-sm mt-1 text-rose-600 break-words">{error.message}</p>
-              <button
-                onClick={handleRefresh}
-                className="mt-4 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* Error State */}
+       {membersError && (
+         <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-700">
+           <div className="flex items-start gap-4">
+             <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+             </svg>
+             <div className="flex-1 min-w-0">
+               <p className="font-semibold text-base">Unable to load members</p>
+               <p className="text-sm mt-1 text-rose-600 break-words">{membersError.message}</p>
+               <button
+                 onClick={() => {
+                     queryClient.invalidateQueries({ queryKey: ["pastor-members"] });
+                     refetchMembers();
+                 }}
+                 className="mt-4 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors"
+               >
+                 Retry
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* Search and Filter Bar */}
       <div className="space-y-4">
@@ -243,10 +250,10 @@ export default function MembersTab() {
         </div>
       </div>
 
-      {/* --------------------------------------------------------------- */}
-      {/* SECURE MEMBERS TABLE: Inline rendering - no external component  */}
-      {/* --------------------------------------------------------------- */}
-      {isLoading ? (
+       {/* --------------------------------------------------------------- */}
+       {/* SECURE MEMBERS TABLE: Inline rendering - no external component  */}
+       {/* --------------------------------------------------------------- */}
+       {membersLoading ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <div className="flex items-center justify-center">
             <svg className="animate-spin h-8 w-8 text-gold-500" fill="none" viewBox="0 0 24 24">
@@ -314,7 +321,7 @@ export default function MembersTab() {
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-gold-100 flex items-center justify-center">
                           <span className="text-sm font-medium text-gold-700">
-                            {member.name?.charAt(0)?.toUpperCase() || "?"}
+                            {(member.name && member.name.charAt(0) && member.name.charAt(0).toUpperCase()) || "?"}
                           </span>
                         </div>
                         <div className="ml-4">
@@ -362,38 +369,23 @@ export default function MembersTab() {
             </table>
           </div>
 
-          {/* Pagination placeholder - implement if needed */}
-          {membersData.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <p className="text-sm text-gray-500">
-                Showing {filteredMembers.length} of {membersData.length} members
-              </p>
-            </div>
+          {/* Pagination */}
+          {paginationMeta.total > 0 && (
+            <Pagination
+              currentPage={paginationMeta.current_page}
+              totalPages={paginationMeta.last_page}
+              totalItems={paginationMeta.total}
+              itemsPerPage={paginationMeta.per_page}
+              onPageChange={handlePageChange}
+            />
           )}
         </div>
       )}
 
-      {/* Member Drawer - Pass through to parent or implement inline */}
-      {showDrawer && selectedMember && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDrawer(false)}></div>
-          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Member Details</h3>
-                <button onClick={() => setShowDrawer(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <pre className="text-sm bg-gray-50 p-4 rounded overflow-auto max-h-[60vh]">
-                {JSON.stringify(selectedMember, null, 2)}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* Member Drawer */}
+       {showDrawer && selectedMember && (
+         <MemberDrawer member={selectedMember} onClose={() => setShowDrawer(false)} />
+       )}
 
       {/* Register Modal placeholder */}
       {showRegisterModal && (

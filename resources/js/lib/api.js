@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+// Use relative URL - works with Vite's proxy (localhost:5173 → localhost:8000)
+// or when frontend and backend are on same origins
 const api = axios.create({
     baseURL: '/api',
     headers: {
@@ -22,7 +24,7 @@ let unauthDispatched = false;
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response && error.response.status === 401) {
             localStorage.removeItem('him_token');
             localStorage.removeItem('him_user');
 

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { UserProvider, useUser } from "./context/UserContext.jsx";
+import { GlobalStateProvider } from "./hooks/GlobalStateProvider.jsx";
 import AuthPage        from "./components/AuthPage.jsx";
 import ErrorBoundary   from "./components/ErrorBoundary.jsx";
 import LoadingScreen   from "./components/onboarding/LoadingScreen.jsx";
@@ -192,11 +193,13 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <ErrorBoundary>
                 <UserProvider initialUser={cachedUser} token={cachedToken}>
-                    <BrowserRouter>
-                        <Routes>
-                            <Route path="*" element={<AppInner />} />
-                        </Routes>
-                    </BrowserRouter>
+                    <GlobalStateProvider>
+                        <BrowserRouter>
+                            <Routes>
+                                <Route path="*" element={<AppInner />} />
+                            </Routes>
+                        </BrowserRouter>
+                    </GlobalStateProvider>
                 </UserProvider>
             </ErrorBoundary>
         </QueryClientProvider>

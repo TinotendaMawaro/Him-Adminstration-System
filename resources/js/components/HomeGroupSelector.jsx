@@ -4,6 +4,7 @@ import { Icons } from "./MembersPortal";
 const HomeGroupSelector = ({ user, onClose }) => {
     const [homeGroups, setHomeGroups] = useState([]);
     const [myHomeGroup, setMyHomeGroup] = useState(null);
+    const [pendingRequest, setPendingRequest] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -14,13 +15,13 @@ const HomeGroupSelector = ({ user, onClose }) => {
         fetchMyHomeGroup();
     }, []);
 
-    const fetchHomeGroups = async () => {
-        try {
-            const response = await fetch("/api/home-groups/available", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+     const fetchHomeGroups = async () => {
+         try {
+             const response = await fetch("/api/home-groups/available", {
+                 headers: {
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+             });
             const data = await response.json();
             if (data.success) {
                 setHomeGroups(data.home_groups);
@@ -30,23 +31,27 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
-    const fetchMyHomeGroup = async () => {
+     const fetchMyHomeGroup = async () => {
         try {
-            const response = await fetch("/api/home-group/my", {
+            const response = await fetch("/api/home-group/my-request", {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
                 },
             });
             const data = await response.json();
-            if (data.success && data.member) {
-                setMyHomeGroup(data.member);
+            if (data.success) {
+                if (data.member) {
+                    setMyHomeGroup(data.member);
+                } else if (data.pending) {
+                    setPendingRequest(data.pending);
+                }
             }
         } catch (err) {
             console.error("Failed to fetch my home group:", err);
         }
     };
 
-    const handleJoinHomeGroup = async () => {
+    const handleRequestJoinHomeGroup = async () => {
         if (!selectedGroup) {
             setError("Please select a home group");
             return;
@@ -55,39 +60,39 @@ const HomeGroupSelector = ({ user, onClose }) => {
         setLoading(true);
         setError("");
 
-        try {
-            const response = await fetch("/api/home-group/join", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify({ home_group_id: selectedGroup }),
-            });
+         try {
+             const response = await fetch("/api/home-group/request", {
+                 method: "POST",
+                 headers: {
+                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+                 body: JSON.stringify({ home_group_id: selectedGroup }),
+             });
             const data = await response.json();
 
             if (data.success) {
-                setSuccess("You have joined the home group!");
+                setSuccess("Your request to join the home group has been submitted!");
                 fetchMyHomeGroup();
             } else {
                 setError(data.message);
             }
         } catch (err) {
-            setError("Failed to join home group. Please try again.");
+            setError("Failed to submit request. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLeaveHomeGroup = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch("/api/home-group/leave", {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
+     const handleLeaveHomeGroup = async () => {
+         setLoading(true);
+         try {
+             const response = await fetch("/api/home-group/leave", {
+                 method: "DELETE",
+                 headers: {
+                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                 },
+             });
             const data = await response.json();
             if (data.success) {
                 setMyHomeGroup(null);
@@ -102,6 +107,69 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
+    // Has pending request
+    if (pendingRequest) {
+        return (
+            <div className="space-y-6">
+                <div className="text-center py-4">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg mb-4">
+                        <Icons.Clock className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900">Request Pending</h3>
+                    <p className="text-gray-500">
+                        Your request to join {pendingRequest.homeGroup?.name} is being reviewed
+                    </p>
+                </div>
+
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <Icons.MapPin className="w-5 h-5 text-amber-600" />
+                        <div>
+                            <p className="text-sm text-gray-500">Requested Home Group</p>
+                            <p className="font-semibold text-gray-900">{pendingRequest.homeGroup?.name}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Icons.Calendar className="w-5 h-5 text-amber-600" />
+                        <div>
+                            <p className="text-sm text-gray-500">Requested On</p>
+                            <p className="font-semibold text-gray-900">{new Date(pendingRequest.requested_at).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={async () => {
+                        setLoading(true);
+                        try {
+                            const response = await fetch("/api/home-group/cancel-request", {
+                                method: "DELETE",
+                                headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                                },
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                setPendingRequest(null);
+                                setSuccess("Request cancelled successfully.");
+                            } else {
+                                setError(data.message);
+                            }
+                        } catch (err) {
+                            setError("Failed to cancel request.");
+                        } finally {
+                            setLoading(false);
+                        }
+                    }}
+                    disabled={loading}
+                    className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 disabled:opacity-50"
+                >
+                    {loading ? "Cancelling..." : "Cancel Request"}
+                </button>
+            </div>
+        );
+    }
+
     // Already in a home group
     if (myHomeGroup) {
         return (
@@ -110,14 +178,14 @@ const HomeGroupSelector = ({ user, onClose }) => {
                     <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg mb-4">
                         <Icons.Users className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">{myHomeGroup.home_group?.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900">{(myHomeGroup.home_group && myHomeGroup.home_group.name) ? myHomeGroup.home_group.name : 'Not Assigned'}</h3>
                     <p className="text-gray-500">
                         {myHomeGroup.role === "leader" ? "You are the leader" : "You are a member"}
                     </p>
                 </div>
 
                 <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 space-y-3">
-                    {myHomeGroup.home_group?.leader && (
+                    {myHomeGroup.home_group && myHomeGroup.home_group.leader && (
                         <div className="flex items-center gap-3">
                             <Icons.User className="w-5 h-5 text-emerald-600" />
                             <div>
@@ -220,11 +288,11 @@ const HomeGroupSelector = ({ user, onClose }) => {
             )}
 
             <button
-                onClick={handleJoinHomeGroup}
+                onClick={handleRequestJoinHomeGroup}
                 disabled={loading || !selectedGroup}
                 className="w-full py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 hover:to-gold-600 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {loading ? "Joining..." : "Join Home Group"}
+                {loading ? "Requesting..." : "Request to Join"}
             </button>
         </div>
     );

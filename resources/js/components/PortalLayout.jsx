@@ -117,15 +117,15 @@ export default function PortalLayout({ children, user, activePage, setActivePage
       <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-100 flex flex-col shadow-lg">
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-lg shadow-gold-500/20">
-              <span className="text-white font-bold text-xl">H</span>
+            <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg shadow-gold-500/20 bg-white">
+                    <img src="/client/img/logo.png" alt="Heartfelt Logo" className="w-full h-full object-contain p-1" onError={(e) => { e.target.onerror = null; e.target.src = '/images/logo.webp'; }} />
+                </div>
+                <div>
+                    {/* <h1 className="text-gray-900 font-bold text-lg">HIM</h1> */}
+                    <p className="text-gray-400 text-xs">Partner Portal</p>
+                </div>
             </div>
-            <div>
-              {/* <h1 className="text-gray-900 font-bold text-lg">HIM</h1> */}
-              <p className="text-gray-400 text-xs">Pastor Portal</p>
-            </div>
-          </div>
         </div>
 
         {/* Zone Info */}

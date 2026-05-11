@@ -6,8 +6,10 @@ export default function ZoneInfo({ zone, onUpdate }) {
   const [editData, setEditData] = useState({
     name: zone?.name || "International Overflow Center",
     description: zone?.description || "A vibrant community of believers committed to spiritual growth and fellowship.",
-    location: zone?.location || "Harare,Ashdown Park",
+    location: zone?.location || "Harare, Ashdown Park",
     established: zone?.established || "2010",
+    address: zone?.address || "",
+    phone: zone?.phone || "",
   });
 
   const handleSave = () => {
@@ -21,8 +23,10 @@ export default function ZoneInfo({ zone, onUpdate }) {
     setEditData({
       name: zone?.name || "International Overflow Center",
       description: zone?.description || "A vibrant community of believers committed to spiritual growth and fellowship.",
-      location: zone?.location || "Harare,Ashdown Park",
+      location: zone?.location || "Harare, Ashdown Park",
       established: zone?.established || "2010",
+      address: zone?.address || "",
+      phone: zone?.phone || "",
     });
     setIsEditing(false);
   };
@@ -111,6 +115,24 @@ export default function ZoneInfo({ zone, onUpdate }) {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input
+                type="text"
+                value={editData.address}
+                onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input
+                type="text"
+                value={editData.phone}
+                onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
+              />
+            </div>
           </div>
         ) : (
           // View Mode
@@ -164,6 +186,29 @@ export default function ZoneInfo({ zone, onUpdate }) {
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">Established</p>
                   <p className="font-semibold text-gray-900">{editData.established}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50/50 rounded-2xl p-4 flex items-center gap-3 col-span-2 md:col-span-1">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Address</p>
+                  <p className="font-semibold text-gray-900 truncate">{editData.address || "Not set"}</p>
+                </div>
+              </div>
+              <div className="bg-gray-50/50 rounded-2xl p-4 flex items-center gap-3 col-span-2 md:col-span-1">
+                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Phone</p>
+                  <p className="font-semibold text-gray-900 truncate">{editData.phone || "Not set"}</p>
                 </div>
               </div>
             </div>

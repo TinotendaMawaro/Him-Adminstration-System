@@ -83,7 +83,32 @@ class DepartmentRequestController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        // TODO: Notify the pastor/HOD about the new request
+        // Notify the pastor and HOD about the new request
+        $department = Department::find($validated['department_id']);
+        $hod = $department ? $department->hodUser : null;
+
+        // Notify HOD if exists
+        if ($hod) {
+            $hod->notifications()->create([
+                'title' => 'New Department Join Request',
+                'message' => "{$user->name} has requested to join {$department->name}. Please review the request.",
+                'type' => 'department',
+                'category' => 'join_request',
+            ]);
+        }
+
+        // Also notify pastors in the zone
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $user->zone_id)
+            ->get();
+        foreach ($pastors as $pastor) {
+            $pastor->notifications()->create([
+                'title' => 'New Department Join Request',
+                'message' => "{$user->name} has requested to join {$department->name}.",
+                'type' => 'department',
+                'category' => 'join_request',
+            ]);
+        }
 
         Log::info('Department join request created', [
             'user_id' => $user->id,
@@ -166,6 +191,79 @@ class DepartmentRequestController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Department request cancelled.',
+        ]);
+    }
+
+    /**
+     * Leave current department with reason
+     */
+    public function leaveDepartment(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->department_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not belong to a department.',
+            ], 400);
+        }
+
+        // Check if user is HOD - HODs cannot leave without pastor approval
+        $department = Department::find($user->department_id);
+
+        if ($department->hod_id === $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'As a department HOD, please contact your pastor to transfer leadership before leaving.',
+            ], 400);
+        }
+
+        // Remove from department_members pivot table
+        $department->members()->detach($user->id);
+
+        // Update user
+        $user->update([
+            'department_id' => null,
+        ]);
+
+        // Notify pastors and HOD about the member leaving
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $user->zone_id)
+            ->get();
+
+        $hod = $department->hodUser;
+
+        foreach ($pastors as $pastor) {
+            $pastor->notifications()->create([
+                'title' => 'Member Left Department',
+                'message' => "{$user->name} left {$department->name}. Reason: {$validated['reason']}",
+                'type' => 'department',
+                'category' => 'member_left',
+            ]);
+        }
+
+        if ($hod && $hod->id !== $user->id) {
+            $hod->notifications()->create([
+                'title' => 'Member Left Department',
+                'message' => "{$user->name} left your department. Reason: {$validated['reason']}",
+                'type' => 'department',
+                'category' => 'member_left',
+            ]);
+        }
+
+        Log::info('User left department', [
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+            'reason' => $validated['reason'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You have left the department.',
         ]);
     }
 
@@ -266,14 +364,16 @@ class DepartmentRequestController extends Controller
         // Approve the request
         $departmentRequest->approve($user, $validated['notes'] ?? null);
 
-        Log::info('Department request approved', [
-            'request_id' => $id,
-            'approved_by' => $user->id,
-            'user_id' => $departmentRequest->user_id,
-            'department_id' => $departmentRequest->department_id,
-        ]);
+        // Notify the member about approval
+        $member = $departmentRequest->user;
+        $department = $departmentRequest->department;
 
-        // TODO: Notify the member about approval
+        $member->notifications()->create([
+            'title' => 'Department Request Approved',
+            'message' => "Congratulations! Your request to join {$department->name} has been approved.",
+            'type' => 'department',
+            'category' => 'join_approved',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -326,6 +426,18 @@ class DepartmentRequestController extends Controller
 
         // Reject the request
         $departmentRequest->reject($user, $validated['notes'] ?? null);
+
+        // Notify the member about rejection
+        $member = $departmentRequest->user;
+        $department = $departmentRequest->department;
+
+        $notesMessage = $validated['notes'] ?? 'Please contact your pastor for more information.';
+        $member->notifications()->create([
+            'title' => 'Department Request Rejected',
+            'message' => "Your request to join {$department->name} has been rejected. {$notesMessage}",
+            'type' => 'department',
+            'category' => 'join_rejected',
+        ]);
 
         Log::info('Department request rejected', [
             'request_id' => $id,

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -17,7 +18,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password',
-        'role', 'unique_code',
+        'role', 'unique_code', 'hod_code',
         'is_active', 'terms_accepted', 'terms_accepted_at',
         'first_login_at', 'completed_tour', 'profile_photo',
     ];
@@ -70,6 +71,29 @@ class User extends Authenticatable
     public function isFirstTimeLogin(): bool   { return $this->first_login_at === null; }
     public function needsToAcceptTerms(): bool { return !$this->terms_accepted; }
 
+    // ─── Zone accessor with fallback ──────────────────────────────────────────
+    /**
+     * Get the user's zone ID.
+     * For pastors with null user.zone_id, fallback to the related pastor record's zone_id.
+     *
+     * @param  mixed  $value  The raw attribute value from DB.
+     * @return int|null
+     */
+    public function getZoneIdAttribute($value)
+    {
+        if (!is_null($value)) {
+            return $value;
+        }
+        // If the user is a pastor and has a related pastor record with a zone, use that zone_id.
+        if ($this->isPastor()) {
+            if (!$this->relationLoaded('pastor')) {
+                $this->load('pastor');
+            }
+            return $this->pastor?->zone_id;
+        }
+        return $value;
+    }
+
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function gender(): BelongsTo     { return $this->belongsTo(Gender::class); }
@@ -77,6 +101,30 @@ class User extends Authenticatable
     public function zone(): BelongsTo       { return $this->belongsTo(Zone::class); }
     public function homeGroup(): BelongsTo  { return $this->belongsTo(HomeGroup::class); }
     public function department(): BelongsTo { return $this->belongsTo(Department::class); }
+
+    // Many-to-many relationship through pivot table
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class, 'department_members')
+            ->withPivot(['role', 'status', 'joined_at', 'left_at'])
+            ->withTimestamps();
+    }
+
+    // Get HOD departments
+    public function hodDepartments()
+    {
+        return $this->departments()
+            ->wherePivot('role', 'hod')
+            ->wherePivot('status', 'active');
+    }
+
+    // Get member departments
+    public function memberDepartments()
+    {
+        return $this->departments()
+            ->wherePivot('role', 'member')
+            ->wherePivot('status', 'active');
+    }
 
     public function contact(): HasOne  { return $this->hasOne(Contact::class); }
     public function pastor(): HasOne   { return $this->hasOne(Pastor::class); }
@@ -98,5 +146,14 @@ class User extends Authenticatable
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
         return $this->role->isFilamentRole() && $this->is_active;
+    }
+
+    /**
+     * Get the profile photo URL with storage path.
+     * Returns full URL if profile_photo is set, otherwise null.
+     */
+    public function getProfilePhotoAttribute($value)
+    {
+        return $value ? Storage::url($value) : null;
     }
 }

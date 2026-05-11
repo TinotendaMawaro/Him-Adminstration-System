@@ -152,31 +152,36 @@ class HomeGroupApiController extends Controller
         ]);
     }
 
-    /**
-     * Assign a leader to a homegroup
-     */
-    public function assignLeader(Request $request, int $id): JsonResponse
-    {
-        $homegroup = HomeGroup::where('zone_id', $request->user()->zone_id)
-            ->findOrFail($id);
+     /**
+      * Assign a leader to a homegroup
+      */
+     public function assignLeader(Request $request, int $id): JsonResponse
+     {
+         $homegroup = HomeGroup::where('zone_id', $request->user()->zone_id)
+             ->findOrFail($id);
 
-        $validated = $request->validate([
-            'leader_id' => 'required|exists:users,id',
-        ]);
+         $validated = $request->validate([
+             'leader_id' => 'required|exists:users,id',
+         ]);
 
-        // Verify the user belongs to this zone
-        $leader = User::where('id', $validated['leader_id'])
-            ->where('zone_id', $request->user()->zone_id)
-            ->firstOrFail();
+         // Verify the user belongs to the same zone as the pastor
+         $leader = User::where('id', $validated['leader_id'])
+             ->where('zone_id', $request->user()->zone_id)
+             ->firstOrFail();
 
-        $homegroup->update(['leader_id' => $validated['leader_id']]);
+         // Auto-add leader to the homegroup if not already a member
+         if ($leader->homegroup_id !== $homegroup->id) {
+             $leader->update(['homegroup_id' => $homegroup->id]);
+         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Leader assigned successfully',
-            'homegroup' => $homegroup->fresh('leader'),
-        ]);
-    }
+         $homegroup->update(['leader_id' => $validated['leader_id']]);
+
+         return response()->json([
+             'success' => true,
+             'message' => 'Leader assigned successfully',
+             'homegroup' => $homegroup->fresh('leader'),
+         ]);
+     }
 
     /**
      * Demote (remove) a leader from a homegroup
@@ -202,34 +207,86 @@ class HomeGroupApiController extends Controller
         ]);
     }
 
-    /**
-     * Get available members that can be assigned as leaders
-     */
-    public function availableMembers(Request $request, int $id): JsonResponse
-    {
-        $homegroup = HomeGroup::where('zone_id', $request->user()->zone_id)
-            ->findOrFail($id);
+      /**
+       * Get available members that can be assigned as leaders
+       */
+      public function availableMembers(Request $request, int $id): JsonResponse
+      {
+          $homegroup = HomeGroup::where('zone_id', $request->user()->zone_id)
+              ->findOrFail($id);
 
-        // Get users in the same zone who are not already leaders of another homegroup
-        $members = User::where('zone_id', $request->user()->zone_id)
-            ->where('is_active', true)
-            ->where(function ($query) use ($homegroup) {
-                $query->whereNull('homegroup_id')
-                    ->orWhere('homegroup_id', $homegroup->id);
-            })
-            ->get(['id', 'name', 'role', 'is_active']);
+           // Get all active users in the pastor's zone who are not leaders of other homegroups
+           // Available: users with no homegroup OR already in this homegroup (potential co-leader scenario)
+           $members = User::where('zone_id', $request->user()->zone_id)
+               ->where('is_active', true)
+               ->where(function ($query) use ($homegroup) {
+                   $query->whereNull('home_group_id')
+                       ->orWhere('home_group_id', $homegroup->id);
+               })
+               ->whereNotIn('id', function ($query) {
+                   $query->select('leader_id')
+                       ->from('home_groups')
+                       ->whereNotNull('leader_id');
+               })
+            ->orderBy('name')
+            ->get(['id', 'name', 'role', 'is_active', 'home_group_id']);
 
-        return response()->json([
-            'success' => true,
-            'members' => $members->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'role' => $user->role,
-                    'status' => $user->is_active ? 'Active' : 'Inactive',
-                ];
-            }),
-        ]);
-    }
+         return response()->json([
+             'success' => true,
+             'members' => $members->map(function ($user) {
+                 return [
+                     'id' => $user->id,
+                     'name' => $user->name,
+                     'role' => $user->role,
+                     'status' => $user->is_active ? 'Active' : 'Inactive',
+                     'home_group_id' => $user->home_group_id,
+                 ];
+             }),
+         ]);
+      }
+
+      /**
+       * Get available members that can be invited to join this homegroup
+       */
+      public function availableMembersForInvite(Request $request, int $id): JsonResponse
+      {
+          $user = $request->user()->load('pastor'); // Ensure pastor relationship is loaded for zone_id fallback
+
+          $homegroup = HomeGroup::where('zone_id', $user->zone_id)
+              ->findOrFail($id);
+
+          // Get active members in the pastor's zone who:
+          // 1. Are not already in this homegroup
+          // 2. Don't have pending invitations to this homegroup
+          // 3. Have role 'member'
+          $members = User::where('zone_id', $user->zone_id)
+              ->where('is_active', true)
+              ->where('role', 'member')
+              ->where(function ($query) use ($homegroup) {
+                  $query->whereNull('home_group_id')
+                        ->orWhere('home_group_id', '!=', $homegroup->id);
+              }) // Not already in this homegroup
+              ->whereNotIn('id', function ($query) use ($homegroup) {
+                  $query->select('member_id')
+                      ->from('homegroup_invitations')
+                      ->where('homegroup_id', $homegroup->id)
+                      ->where('status', 'pending');
+              })
+              ->orderBy('name')
+              ->get(['id', 'name', 'role', 'is_active', 'home_group_id']);
+
+          return response()->json([
+              'success' => true,
+              'members' => $members->map(function ($user) {
+                  return [
+                      'id' => $user->id,
+                      'name' => $user->name,
+                      'role' => $user->role,
+                      'status' => $user->is_active ? 'Active' : 'Inactive',
+                      'home_group_id' => $user->home_group_id,
+                  ];
+              }),
+          ]);
+      }
 }
 

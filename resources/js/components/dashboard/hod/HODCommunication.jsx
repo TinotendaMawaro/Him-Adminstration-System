@@ -296,9 +296,9 @@ export default function HODCommunicationPage({ departmentId, user }) {
     const fetchConversations = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch('/api/messages/conversations', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${him_token}` }
             });
             
             if (response.ok) {
@@ -317,9 +317,9 @@ export default function HODCommunicationPage({ departmentId, user }) {
     // Fetch pastor messages
     const fetchPastorMessages = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch('/api/messages/pastor', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${him_token}` }
             });
             
             if (response.ok) {
@@ -334,9 +334,9 @@ export default function HODCommunicationPage({ departmentId, user }) {
     // Fetch messages for selected contact
     const fetchConversation = async (contactId) => {
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch(`/api/messages/conversation/${contactId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${him_token}` }
             });
             
             if (response.ok) {
@@ -361,7 +361,9 @@ export default function HODCommunicationPage({ departmentId, user }) {
 
     useEffect(() => {
         // Scroll to bottom when messages change
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     }, [messages]);
 
     const filteredContacts = contacts.filter((c) =>
@@ -378,11 +380,11 @@ export default function HODCommunicationPage({ departmentId, user }) {
         if (!newMessage.trim() || !selectedContact) return;
 
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const response = await fetch('/api/messages/direct', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -424,7 +426,7 @@ export default function HODCommunicationPage({ departmentId, user }) {
 
     const handleAnnouncementSubmit = async (data) => {
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const endpoint = data.recipientType === "department" 
                 ? '/api/messages/announcement' 
                 : '/api/messages/notice';
@@ -432,7 +434,7 @@ export default function HODCommunicationPage({ departmentId, user }) {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({

@@ -12,12 +12,12 @@ import { HODGlassCard, HODGoldButton, HODSkyButton, HODInput, HODTextarea, HODBa
 
 const ActivityFormDrawer = ({ isOpen, onClose, onSubmit, activity, isSubmitting }) => {
     const [formData, setFormData] = useState({
-        title: activity?.title || "",
-        date: activity?.date || "",
-        location: activity?.location || "",
-        description: activity?.description || "",
-        type: activity?.type || "activity",
-        status: activity?.status || "draft",
+        title: (activity && activity.title) || "",
+        date: (activity && activity.date) || "",
+        location: (activity && activity.location) || "",
+        description: (activity && activity.description) || "",
+        type: (activity && activity.type) || "activity",
+        status: (activity && activity.status) || "draft",
     });
 
     useEffect(() => {
@@ -244,14 +244,14 @@ const HODActivitiesPage = ({ departmentId }) => {
     const fetchActivities = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             const url = departmentId 
                 ? `/api/activities?department_id=${departmentId}` 
                 : '/api/activities';
             
             const response = await fetch(url, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                     'Content-Type': 'application/json',
                 },
             });
@@ -283,12 +283,12 @@ const HODActivitiesPage = ({ departmentId }) => {
     const handleCreateActivity = async (data) => {
         try {
             setIsSubmitting(true);
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             
             const response = await fetch('/api/activities', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -315,12 +315,12 @@ const HODActivitiesPage = ({ departmentId }) => {
     const handleUpdateActivity = async (data) => {
         try {
             setIsSubmitting(true);
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             
             const response = await fetch(`/api/activities/${selectedActivity.id}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
@@ -349,12 +349,12 @@ const HODActivitiesPage = ({ departmentId }) => {
         if (!confirm('Are you sure you want to delete this activity?')) return;
         
         try {
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             
             const response = await fetch(`/api/activities/${selectedActivity.id}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${him_token}`,
                 },
             });
 

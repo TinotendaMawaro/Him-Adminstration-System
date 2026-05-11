@@ -16,6 +16,13 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+        
         $notifications = Notification::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->limit($request->get('limit', 50))
@@ -34,6 +41,13 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+        
         $count = Notification::where('user_id', $user->id)
             ->where('is_read', false)
             ->count();
@@ -47,6 +61,13 @@ class NotificationController extends Controller
     public function markAsRead($id)
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
         
         $notification = Notification::where('id', $id)
             ->where('user_id', $user->id)
@@ -71,6 +92,13 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+        
         Notification::where('user_id', $user->id)
             ->where('is_read', false)
             ->update([
@@ -87,6 +115,13 @@ class NotificationController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
         
         $notification = Notification::where('id', $id)
             ->where('user_id', $user->id)
@@ -107,6 +142,13 @@ class NotificationController extends Controller
     public function clearRead()
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
         
         Notification::where('user_id', $user->id)
             ->where('is_read', true)

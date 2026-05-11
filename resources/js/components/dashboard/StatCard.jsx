@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 // Animated Counter Component with optimized performance
 function AnimatedCounter({ 
@@ -221,15 +221,11 @@ export default function StatCard({
 }) {
   const colors = colorMap[color] || colorMap.sky;
 
-  // Generate staggered animation delay based on color index
-  const colorOrder = { sky: 0, emerald: 1, violet: 2, amber: 3, gold: 4 };
-  const staggerDelay = (colorOrder[color] || 0) * 100; // 0ms, 100ms, 200ms...
-
-  // Card container with hover effects
+  // Compact card wrapper - reduced padding, smaller fonts
   const CardWrapper = ({ children, showWrapper = true }) => {
     const cardClasses = `
       group relative h-full
-      glass-card rounded-3xl p-6
+      glass-card rounded-2xl p-4
       hover-elevation transition-smooth
       ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500' : ''}
       ${className}
@@ -245,7 +241,7 @@ export default function StatCard({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onClick?.();
+              onClick && onClick();
             }
           }}
           aria-label={ariaLabel || `View ${title} details`}
@@ -262,11 +258,20 @@ export default function StatCard({
     );
   };
 
-  // Render loading skeleton
+  // Render loading skeleton (compact)
   if (loading) {
     return (
       <CardWrapper showWrapper={false}>
-        <CardSkeleton />
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="h-2.5 w-16 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-6 w-20 bg-gray-200 rounded-lg animate-pulse" />
+            </div>
+            <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
+          <div className="h-4 w-20 bg-gray-200 rounded-full animate-pulse" />
+        </div>
       </CardWrapper>
     );
   }
@@ -281,62 +286,61 @@ export default function StatCard({
       {/* Content */}
       <div className="relative z-10">
         {/* Header: icon + title */}
-        <div className="flex items-start justify-between mb-5">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            {/* Title */}
-            <p className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider truncate">
+            {/* Title - smaller */}
+            <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">
               {title}
             </p>
             
-            {/* Value with animated counter */}
-            <div className="mt-3">
+            {/* Value with animated counter - compact */}
+            <div className="mt-1.5">
               {animateValue && typeof value === 'number' ? (
                 <AnimatedCounter 
                   value={value} 
                   duration={800}
-                  className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight break-words"
+                  className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight break-words"
                 />
               ) : (
-                <p className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight break-words">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight break-words">
                   {displayValue}
                 </p>
               )}
             </div>
 
-            {/* Trend indicator */}
-            <div className="mt-3">
-              <TrendIndicator 
-                trend={trend} 
-                direction={trendDirection}
-                label={trendLabel}
-              />
-            </div>
+            {/* Trend indicator - compact */}
+            {trend !== undefined && (
+              <div className={`mt-1.5 text-xs ${trend > 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                <span className="font-medium">{trend > 0 ? "+" : ""}{trend}%</span>
+                <span className="text-gray-400 ml-0.5">{trendLabel}</span>
+              </div>
+            )}
           </div>
 
-          {/* Icon with hover effect */}
-          <div className="relative ml-4 flex-shrink-0">
+          {/* Icon - smaller */}
+          <div className="relative ml-2 flex-shrink-0">
             {/* Glow effect on hover */}
             <div 
-              className={`absolute inset-0 bg-gradient-to-br ${colors.accent} rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300`} 
+              className={`absolute inset-0 bg-gradient-to-br ${colors.accent} rounded-xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300`} 
               aria-hidden="true"
             />
             <div 
               className={`
-                relative p-3.5 sm:p-4 rounded-2xl 
+                relative p-2 sm:p-2.5 rounded-xl 
                 ${colors.iconBg} ${colors.iconText}
                 group-hover:scale-110 transition-transform duration-300
                 shadow-sm
               `}
               aria-hidden="true"
             >
-              {icon}
+              {React.cloneElement(icon, { className: "w-4 h-4 sm:w-5 sm:h-5" })}
             </div>
           </div>
         </div>
 
-        {/* Bottom accent line on hover */}
+        {/* Bottom accent line on hover - subtle */}
         <div 
-          className={`absolute bottom-0 left-6 right-6 h-1 bg-gradient-to-r ${colors.accent} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+          className={`absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r ${colors.accent} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
           aria-hidden="true"
         />
       </div>

@@ -8,6 +8,8 @@ use App\Models\Event;
 use App\Models\HomeGroup;
 use App\Models\Member;
 use App\Models\Report;
+use App\Models\Zone;
+use App\Models\ZoneHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -37,79 +39,60 @@ class PastorController extends Controller
     {
         $user = $request->user();
 
-        \Log::info('Zone summary request', [
-            'user_id' => $user->id,
-            'user_role' => $user->role,
-            'user_zone_id' => $user->zone_id,
-            'is_pastor' => $user->isPastor(),
-        ]);
-
         if (!$user->isPastor() || !$user->zone_id) {
-            \Log::warning('Zone summary access denied', [
-                'user_id' => $user->id,
-                'is_pastor' => $user->isPastor(),
-                'zone_id' => $user->zone_id,
-            ]);
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
         $zoneId = $user->zone_id;
-        $now = now();
-        $lastWeek = $now->copy()->subWeek();
+        $cacheKey = "zone_summary_{$zoneId}";
+        
+        return response()->json(\Cache::remember($cacheKey, 300, function () use ($zoneId) {
+            $now = now();
+            $lastWeek = $now->copy()->subWeek();
 
-        // Current counts
-        $totalMembers = Member::where('zone_id', $zoneId)->active()->count();
-        $totalHomeGroups = \App\Models\HomeGroup::where('zone_id', $zoneId)->count();
-        $totalDepartments = \App\Models\Department::where('zone_id', $zoneId)->count();
+            // Current counts
+            $totalMembers = Member::where('zone_id', $zoneId)->active()->count();
+            $totalHomeGroups = \App\Models\HomeGroup::where('zone_id', $zoneId)->count();
+            $totalDepartments = \App\Models\Department::where('zone_id', $zoneId)->count();
 
-        \Log::info('Zone summary counts', [
-            'zone_id' => $zoneId,
-            'total_members' => $totalMembers,
-            'total_home_groups' => $totalHomeGroups,
-            'total_departments' => $totalDepartments,
-        ]);
+            // Last week counts (for trend)
+            $membersLastWeek = Member::where('zone_id', $zoneId)
+                ->active()
+                ->where('created_at', '<', $lastWeek)
+                ->count();
 
-        // Last week counts (for trend)
-        $membersLastWeek = Member::where('zone_id', $zoneId)
-            ->active()
-            ->where('created_at', '<', $lastWeek)
-            ->count();
+            $homeGroupsLastWeek = \App\Models\HomeGroup::where('zone_id', $zoneId)
+                ->where('created_at', '<', $lastWeek)
+                ->count();
 
-        $homeGroupsLastWeek = \App\Models\HomeGroup::where('zone_id', $zoneId)
-            ->where('created_at', '<', $lastWeek)
-            ->count();
+            $departmentsLastWeek = \App\Models\Department::where('zone_id', $zoneId)
+                ->where('created_at', '<', $lastWeek)
+                ->count();
 
-        $departmentsLastWeek = \App\Models\Department::where('zone_id', $zoneId)
-            ->where('created_at', '<', $lastWeek)
-            ->count();
+            // Calculate percentage changes
+            $memberTrend = $membersLastWeek > 0 ? round((($totalMembers - $membersLastWeek) / $membersLastWeek) * 100, 1) : 0;
+            $homeGroupTrend = $homeGroupsLastWeek > 0 ? round((($totalHomeGroups - $homeGroupsLastWeek) / $homeGroupsLastWeek) * 100, 1) : 0;
+            $departmentTrend = $departmentsLastWeek > 0 ? round((($totalDepartments - $departmentsLastWeek) / $departmentsLastWeek) * 100, 1) : 0;
 
-        // Calculate percentage changes
-        $memberTrend = $membersLastWeek > 0 ? round((($totalMembers - $membersLastWeek) / $membersLastWeek) * 100, 1) : 0;
-        $homeGroupTrend = $homeGroupsLastWeek > 0 ? round((($totalHomeGroups - $homeGroupsLastWeek) / $homeGroupsLastWeek) * 100, 1) : 0;
-        $departmentTrend = $departmentsLastWeek > 0 ? round((($totalDepartments - $departmentsLastWeek) / $departmentsLastWeek) * 100, 1) : 0;
-
-        $response = [
-            'success' => true,
-            'data'    => [
-                'total_members'       => $totalMembers,
-                'member_trend'        => $memberTrend,
-                'total_home_groups'   => $totalHomeGroups,
-                'home_group_trend'    => $homeGroupTrend,
-                'total_departments'   => $totalDepartments,
-                'department_trend'    => $departmentTrend,
-                'new_members_month'   => Member::where('zone_id', $zoneId)
-                    ->whereMonth('membership_date', $now->month)
-                    ->whereYear('membership_date', $now->year)
-                    ->count(),
-            ],
-        ];
-
-        \Log::info('Zone summary response', $response);
-
-        return response()->json($response);
+            return [
+                'success' => true,
+                'data'    => [
+                    'total_members'       => $totalMembers,
+                    'member_trend'        => $memberTrend,
+                    'total_home_groups'   => $totalHomeGroups,
+                    'home_group_trend'    => $homeGroupTrend,
+                    'total_departments'   => $totalDepartments,
+                    'department_trend'    => $departmentTrend,
+                    'new_members_month'   => Member::where('zone_id', $zoneId)
+                        ->whereMonth('membership_date', $now->month)
+                        ->whereYear('membership_date', $now->year)
+                        ->count(),
+                ],
+            ];
+        }));
     }
 
-    /** GET /api/pastors/dashboard — Comprehensive dashboard data */
+    /** GET /api/pastors/dashboard— Comprehensive dashboard data */
     public function dashboard(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -119,99 +102,98 @@ class PastorController extends Controller
         }
 
         $zoneId = $user->zone_id;
-        $now = now();
-        $startOfMonth = $now->copy()->startOfMonth();
-        $startOfYear = $now->copy()->startOfYear();
+        $cacheKey = "dashboard_{$zoneId}";
+        
+        return response()->json(\Cache::remember($cacheKey, 300, function () use ($zoneId) {
+            $now = now();
+            $startOfMonth = $now->copy()->startOfMonth();
+            $startOfYear = $now->copy()->startOfYear();
 
-        // Member statistics
-        $totalMembers = Member::where('zone_id', $zoneId)->active()->count();
-        $newMembersThisMonth = Member::where('zone_id', $zoneId)
-            ->active()
-            ->where('membership_date', '>=', $startOfMonth)
-            ->count();
-        $newMembersThisYear = Member::where('zone_id', $zoneId)
-            ->active()
-            ->where('membership_date', '>=', $startOfYear)
-            ->count();
+            // Member statistics
+            $totalMembers = Member::where('zone_id', $zoneId)->active()->count();
+            $newMembersThisMonth = Member::where('zone_id', $zoneId)
+                ->active()
+                ->where('membership_date', '>=', $startOfMonth)
+                ->count();
+            $newMembersThisYear = Member::where('zone_id', $zoneId)
+                ->active()
+                ->where('membership_date', '>=', $startOfYear)
+                ->count();
 
-        // Home group statistics
-        $totalHomeGroups = HomeGroup::where('zone_id', $zoneId)->count();
-        // All home groups are considered active (no is_active column)
-        $activeHomeGroups = $totalHomeGroups;
+            // Home group statistics
+            $totalHomeGroups = HomeGroup::where('zone_id', $zoneId)->count();
+            $activeHomeGroups = $totalHomeGroups;
 
-        // Department count
-        $totalDepartments = \App\Models\Department::where('zone_id', $zoneId)->count();
+            // Department count
+            $totalDepartments = \App\Models\Department::where('zone_id', $zoneId)->count();
 
-        // Upcoming events
-        $upcomingEvents = Event::where('zone_id', $zoneId)
-            ->published()
-            ->upcoming()
-            ->take(5)
-            ->get(['id', 'title', 'type', 'starts_at', 'venue_name']);
+            // Upcoming events
+            $upcomingEvents = Event::where('zone_id', $zoneId)
+                ->published()
+                ->upcoming()
+                ->take(5)
+                ->get(['id', 'title', 'type', 'starts_at', 'venue_name']);
 
-        // Recent weekly reports
-        $recentReports = Report::where('zone_id', $zoneId)
-            ->orderBy('report_date', 'desc')
-            ->take(5)
-            ->get(['id', 'report_date', 'week_number', 'year', 'attendance', 'new_members']);
+            // Recent weekly reports
+            $recentReports = Report::where('zone_id', $zoneId)
+                ->orderBy('report_date', 'desc')
+                ->take(5)
+                ->get(['id', 'report_date', 'week_number', 'year', 'attendance', 'new_members']);
 
-        // Attendance from recent reports
-        $totalAttendance = Report::where('zone_id', $zoneId)
-            ->where('report_date', '>=', $startOfMonth)
-            ->sum('attendance');
+            // Attendance from recent reports
+            $totalAttendance = Report::where('zone_id', $zoneId)
+                ->where('report_date', '>=', $startOfMonth)
+                ->sum('attendance');
 
-        // Gender breakdown - use SQL aggregation instead of loading all members
-        $membersByGender = Member::where('zone_id', $zoneId)
-            ->active()
-            ->select('gender_id')
-            ->selectRaw('COUNT(*) as count')
-            ->groupBy('gender_id')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                $genderName = \App\Models\Gender::find($item->gender_id)?->name ?? 'Unknown';
-                return [$genderName => $item->count];
-            });
+            // Gender breakdown - use SQL aggregation instead of loading all members
+            $membersByGender = Member::where('zone_id', $zoneId)
+                ->active()
+                ->select('gender_id')
+                ->selectRaw('COUNT(*) as count')
+                ->groupBy('gender_id')
+                ->get()
+                ->mapWithKeys(function ($item) {
+                    $genderName = \App\Models\Gender::find($item->gender_id)?->name ?? 'Unknown';
+                    return [$genderName => $item->count];
+                });
 
-        $response = [
-            'success' => true,
-            'data' => [
-                'members' => [
-                    'total' => $totalMembers,
-                    'new_this_month' => $newMembersThisMonth,
-                    'new_this_year' => $newMembersThisYear,
-                    'by_gender' => $membersByGender,
+            return [
+                'success' => true,
+                'data' => [
+                    'members' => [
+                        'total' => $totalMembers,
+                        'new_this_month' => $newMembersThisMonth,
+                        'new_this_year' => $newMembersThisYear,
+                        'by_gender' => $membersByGender,
+                    ],
+                    'home_groups' => [
+                        'total' => $totalHomeGroups,
+                        'active' => $activeHomeGroups,
+                    ],
+                    'departments' => [
+                        'total' => $totalDepartments,
+                    ],
+                    'attendance' => [
+                        'this_month' => $totalAttendance,
+                    ],
+                    'upcoming_events' => $upcomingEvents->map(fn($e) => [
+                        'id' => $e->id,
+                        'title' => $e->title,
+                        'type' => $e->type->value,
+                        'starts_at' => $e->starts_at?->format('Y-m-d H:i'),
+                        'venue' => $e->venue_name,
+                    ]),
+                    'recent_reports' => $recentReports->map(fn($r) => [
+                        'id' => $r->id,
+                        'report_date' => $r->report_date?->format('Y-m-d'),
+                        'week_number' => $r->week_number,
+                        'year' => $r->year,
+                        'attendance' => $r->attendance,
+                        'new_members' => $r->new_members,
+                    ]),
                 ],
-                'home_groups' => [
-                    'total' => $totalHomeGroups,
-                    'active' => $activeHomeGroups,
-                ],
-                'departments' => [
-                    'total' => $totalDepartments,
-                ],
-                'attendance' => [
-                    'this_month' => $totalAttendance,
-                ],
-                'upcoming_events' => $upcomingEvents->map(fn($e) => [
-                    'id' => $e->id,
-                    'title' => $e->title,
-                    'type' => $e->type->value,
-                    'starts_at' => $e->starts_at?->format('Y-m-d H:i'),
-                    'venue' => $e->venue_name,
-                ]),
-                'recent_reports' => $recentReports->map(fn($r) => [
-                    'id' => $r->id,
-                    'report_date' => $r->report_date?->format('Y-m-d'),
-                    'week_number' => $r->week_number,
-                    'year' => $r->year,
-                    'attendance' => $r->attendance,
-                    'new_members' => $r->new_members,
-                ]),
-            ],
-        ];
-
-        \Log::info('Dashboard response', ['user_id' => $user->id, 'zone_id' => $zoneId]);
-
-        return response()->json($response);
+            ];
+        }));
     }
 
      /** GET /api/pastors/members — List members in pastor's zone
@@ -239,17 +221,19 @@ class PastorController extends Controller
              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
          }
 
-         // 2️⃣ RATE LIMITING: Simple in-memory throttle (consider Redis for production)
-         $cacheKey = 'pastor_members_rate:' . $user->id;
-         $attempts = \Cache::get($cacheKey, 0);
-         if ($attempts >= 60) {
-             \Log::notice('Rate limit exceeded for members API', ['user_id' => $user->id]);
-             return response()->json([
-                 'success' => false,
-                 'message' => 'Too many requests. Please try again later.'
-             ], 429);
-         }
-         \Cache::put($cacheKey, $attempts + 1, now()->addMinute());
+// 2️⃣ RATE LIMITING: Atomic increment to avoid race conditions
+          $cacheKey = 'pastor_members_rate:' . $user->id;
+          $attempts = \Cache::increment($cacheKey, 1);
+          if ($attempts === 1) {
+              \Cache::expire($cacheKey, 60);
+          }
+          if ($attempts > 60) {
+              \Log::notice('Rate limit exceeded for members API', ['user_id' => $user->id]);
+              return response()->json([
+                  'success' => false,
+                  'message' => 'Too many requests. Please try again later.'
+              ], 429);
+          }
 
          // 3️⃣ INPUT VALIDATION: Strict allowlist for filters
          $perPage = (int) $request->query('per_page', 20);
@@ -338,7 +322,7 @@ class PastorController extends Controller
 
         $homeGroups = HomeGroup::where('zone_id', $user->zone_id)
             ->with(['leader', 'zone'])
-            ->withCount('members')
+            ->withCount('users')
             ->orderBy('name')
             ->paginate(20);
 
@@ -353,79 +337,156 @@ class PastorController extends Controller
         ]);
     }
 
-    /** GET /api/pastors/activities — Recent activities in the zone */
-    public function activities(Request $request): JsonResponse
-    {
-        $user = $request->user();
+     /** GET /api/pastors/activities — Recent activities in the zone */
+     public function activities(Request $request): JsonResponse
+     {
+         $user = $request->user();
 
-        if (!$user->isPastor() || !$user->zone_id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
+         if (!$user->isPastor() || !$user->zone_id) {
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
 
-        $zoneId = $user->zone_id;
-        $activities = [];
+         $zoneId = $user->zone_id;
+         $activities = [];
 
-        // Recent new members (last 30 days)
-        $recentMembers = Member::where('zone_id', $zoneId)
-            ->active()
-            ->where('created_at', '>=', now()->subDays(30))
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent new members (last 30 days)
+         $recentMembers = Member::where('zone_id', $zoneId)
+             ->active()
+             ->where('created_at', '>=', now()->subDays(30))
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentMembers as $member) {
-            $activities[] = [
-                'id' => $member->id,
-                'type' => 'new_member',
-                'title' => 'New Member Registered',
-                'description' => "{$member->name} {$member->surname} joined",
-                'time' => $member->created_at->diffForHumans(),
-                'created_at' => $member->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentMembers as $member) {
+             $activities[] = [
+                 'id' => $member->id,
+                 'type' => 'new_member',
+                 'title' => 'New Member Registered',
+                 'description' => "{$member->name} {$member->surname} joined",
+                 'time' => $member->created_at->diffForHumans(),
+                 'created_at' => $member->created_at->toISOString(),
+             ];
+         }
 
-        // Recent reports
-        $recentReports = Report::where('zone_id', $zoneId)
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent reports
+         $recentReports = Report::where('zone_id', $zoneId)
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentReports as $report) {
-            $activities[] = [
-                'id' => $report->id,
-                'type' => 'weekly_report',
-                'title' => 'Weekly Report Submitted',
-                'description' => "Week {$report->week_number} - Attendance: {$report->attendance}",
-                'time' => $report->created_at->diffForHumans(),
-                'created_at' => $report->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentReports as $report) {
+             $activities[] = [
+                 'id' => $report->id,
+                 'type' => 'weekly_report',
+                 'title' => 'Weekly Report Submitted',
+                 'description' => "Week {$report->week_number} - Attendance: {$report->attendance}",
+                 'time' => $report->created_at->diffForHumans(),
+                 'created_at' => $report->created_at->toISOString(),
+             ];
+         }
 
-        // Recent events
-        $recentEvents = Event::where('zone_id', $zoneId)
-            ->orderBy('starts_at', 'desc')
-            ->take(10)
-            ->get();
+         // Recent events
+         $recentEvents = Event::where('zone_id', $zoneId)
+             ->orderBy('starts_at', 'desc')
+             ->take(10)
+             ->get();
 
-        foreach ($recentEvents as $event) {
-            $activities[] = [
-                'id' => $event->id,
-                'type' => 'event',
-                'title' => $event->type->getLabel() . ' Scheduled',
-                'description' => $event->title,
-                'time' => $event->starts_at?->diffForHumans() ?? 'TBD',
-                'created_at' => $event->created_at->toISOString(),
-            ];
-        }
+         foreach ($recentEvents as $event) {
+             $activities[] = [
+                 'id' => $event->id,
+                 'type' => 'event',
+                 'title' => $event->type->getLabel() . ' Scheduled',
+                 'description' => $event->title,
+                 'time' => $event->starts_at?->diffForHumans() ?? 'TBD',
+                 'created_at' => $event->created_at->toISOString(),
+             ];
+         }
 
-        // Sort all activities by date
-        usort($activities, fn($a, $b) => 
-            strtotime($b['created_at']) - strtotime($a['created_at'])
-        );
+         // Sort all activities by date
+         usort($activities, fn($a, $b) =>
+             strtotime($b['created_at']) - strtotime($a['created_at'])
+         );
 
-        return response()->json([
-            'success' => true,
-            'data' => array_slice($activities, 0, 20),
-        ]);
-    }
+         return response()->json([
+             'success' => true,
+             'data' => array_slice($activities, 0, 20),
+         ]);
+     }
+
+     /** GET /api/pastors/zone-history — Zone history timeline data */
+     public function zoneHistory(Request $request): JsonResponse
+     {
+         $user = $request->user();
+
+         if (!$user->isPastor() || !$user->zone_id) {
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
+
+         $zoneId = $user->zone_id;
+         $now = now();
+
+         // Fetch zone history records ordered by start_date descending
+         $historyRecords = ZoneHistory::where('zone_id', $zoneId)
+             ->with(['pastor:id,name,unique_code'])
+             ->orderBy('start_date', 'desc')
+             ->get();
+
+         // Build timeline items from zone_histories
+         $timeline = [];
+         foreach ($historyRecords as $record) {
+             $pastor = $record->pastor;
+             $isCurrent = is_null($record->end_date);
+
+             // Determine event type based on notes or infer from context
+             $type = 'pastor_change';
+             if ($record->notes) {
+                 $lowerNotes = strtolower($record->notes);
+                 if (str_contains($lowerNotes, 'achievement') || str_contains($lowerNotes, 'milestone')) {
+                     $type = 'achievement';
+                 } elseif (str_contains($lowerNotes, 'event') || str_contains($lowerNotes, 'conference')) {
+                     $type = 'event';
+                 } elseif (str_contains($lowerNotes, 'growth') || str_contains($lowerNotes, 'expansion')) {
+                     $type = 'growth';
+                 } elseif (str_contains($lowerNotes, 'established') || str_contains($lowerNotes, 'created')) {
+                     $type = 'zone_created';
+                 }
+             }
+
+             $description = $record->notes ?: "Pastoral assignment for " . ($pastor?->name ?? 'Unknown');
+
+             $timeline[] = [
+                 'id' => $record->id,
+                 'type' => $type,
+                 'title' => $isCurrent ? 'Current Zone Pastor' : 'Zone Pastor',
+                 'description' => $description,
+                 'date' => $record->start_date->format('Y-m-d'),
+                 'pastor' => [
+                     'name' => $pastor?->name ?? 'Unknown',
+                     'isCurrent' => $isCurrent,
+                 ],
+                 'start_date' => $record->start_date->format('Y-m-d'),
+                 'end_date' => $record->end_date?->format('Y-m-d'),
+             ];
+         }
+
+         // Also include zone creation event if no history exists
+         if ($historyRecords->isEmpty()) {
+             $zone = Zone::find($zoneId);
+             if ($zone) {
+                 $timeline[] = [
+                     'id' => 0,
+                     'type' => 'zone_created',
+                     'title' => 'Zone Established',
+                     'description' => $zone->name . ' was established',
+                     'date' => $zone->created_at?->format('Y-m-d') ?? $now->format('Y-m-d'),
+                     'pastor' => null,
+                 ];
+             }
+         }
+
+         return response()->json([
+             'success' => true,
+             'data' => $timeline,
+         ]);
+     }
 }

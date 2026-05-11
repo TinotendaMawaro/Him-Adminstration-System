@@ -64,10 +64,14 @@ class Zone extends Model
 
     public function currentPastor()
     {
-        return $this->zoneHistories()
-            ->where('end_date', null)
-            ->with('pastor')
-            ->first()?->pastor;
+        return $this->hasOneThrough(
+            User::class,
+            ZoneHistory::class,
+            'zone_id',      // Foreign key on ZoneHistory table
+            'id',           // Foreign key on User table
+            'id',           // Local key on Zone table
+            'pastor_id'     // Local key on ZoneHistory table
+        )->whereNull('zone_histories.end_date');
     }
 
     public function weddings()

@@ -192,18 +192,27 @@ class WeeklyReportController extends Controller
     {
         $user = Auth::user();
         $zoneId = $user->zone_id ?? $user->zone?->id;
+        $perPage = $request->get('per_page', 10);
 
         $reports = Report::where('zone_id', $zoneId)
             ->orderBy('report_date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($report) {
-                $report->equipment_pledged = json_decode($report->equipment_pledged, true);
-                return $report;
-            });
+            ->paginate($perPage);
+
+        $reports->getCollection()->transform(function ($report) {
+            $report->equipment_pledged = json_decode($report->equipment_pledged, true);
+            return $report;
+        });
 
         return response()->json([
-            'reports' => $reports
+            'success' => true,
+            'reports' => $reports->items(),
+            'meta' => [
+                'current_page' => $reports->currentPage(),
+                'last_page' => $reports->lastPage(),
+                'per_page' => $reports->perPage(),
+                'total' => $reports->total(),
+            ],
         ]);
     }
 

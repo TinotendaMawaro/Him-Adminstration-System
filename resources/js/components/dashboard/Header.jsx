@@ -13,14 +13,14 @@ export default function Header({ title, user, onLogout }) {
         </h1>
         <p className="text-gray-500 font-medium mt-2 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-gradient-to-r from-gold-500 to-sky-500 animate-pulse"></span>
-          Praise the Lord, {user?.name || "Pastor C Vutabwashe"}
+          Praise the Lord, {user && user.name || "Pastor C Vutabwashe"}
         </p>
       </div>
       
       {/* Actions Section */}
       <div className="flex items-center gap-4">
         {/* Notifications Bell */}
-        <NotificationBell userId={user?.id} />
+        <NotificationBell userId={user && user.id} />
 
         {/* User Profile with Dropdown */}
         <div className="relative">
@@ -29,10 +29,10 @@ export default function Header({ title, user, onLogout }) {
             className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 transition-smooth cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center font-bold text-white shadow-lg">
-              {user?.name?.charAt(0) || "P"}
+              {user && user.name && user.name.charAt(0) || "P"}
             </div>
             <div className="hidden lg:block">
-              <p className="text-gray-900 font-semibold text-sm">{user?.name || "Pastor John"}</p>
+              <p className="text-gray-900 font-semibold text-sm">{user && user.name || "Pastor John"}</p>
               <p className="text-gray-500 text-xs">Zone Shepherd</p>
             </div>
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

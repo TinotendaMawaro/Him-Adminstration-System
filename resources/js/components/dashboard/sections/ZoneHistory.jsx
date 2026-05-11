@@ -1,76 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../../lib/api.js";
 
-// Timeline-style Zone History Section
-export default function ZoneHistory({ history = [] }) {
-  // Sample data if no history provided
-  const sampleHistory = history.length > 0 ? history : [
-    {
-      id: 1,
-      type: "pastor_change",
-      title: "New Pastor Appointed",
-      description: "Pastor John Smith appointed as the new Zone Pastor",
-      date: "2024-01-15",
-      pastor: { name: "John Smith", isCurrent: true },
-    },
-    {
-      id: 2,
-      type: "achievement",
-      title: "Zone Achievement",
-      description: "North Zone reached 250 active members milestone",
-      date: "2023-12-10",
-    },
-    {
-      id: 3,
-      type: "event",
-      title: "Zone Conference",
-      description: "Annual zone conference held successfully with 180 attendees",
-      date: "2023-11-05",
-    },
-    {
-      id: 4,
-      type: "pastor_change",
-      title: "Pastoral Transition",
-      description: "Pastor Mary Johnson completed tenure, Pastor David Lee took over",
-      date: "2023-08-20",
-      pastor: { name: "Mary Johnson", isCurrent: false },
-    },
-    {
-      id: 5,
-      type: "growth",
-      title: "Home Group Expansion",
-      description: "Opened 3 new home groups in the eastern region",
-      date: "2023-06-15",
-    },
-    {
-      id: 6,
-      type: "event",
-      title: "Youth Revival",
-      description: "Successful youth revival with 120 decisions for Christ",
-      date: "2023-04-22",
-    },
-    {
-      id: 7,
-      type: "achievement",
-      title: "Department Launch",
-      description: "Women's ministry department officially launched",
-      date: "2023-03-08",
-    },
-    {
-      id: 8,
-      type: "zone_created",
-      title: "Zone Established",
-      description: "North Zone officially established",
-      date: "2020-01-01",
-    },
-  ];
-
+// Timeline-style Zone History Section - fetches real data from API
+export default function ZoneHistory() {
+  const [history, setHistory] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredHistory = filter === "all" 
-    ? sampleHistory 
-    : sampleHistory.filter(item => item.type === filter);
+  useEffect(() => {
+    var _fetchData = async function() {
+      try {
+        var response = await api.get('/pastors/zone-history');
+        var result = response.data;
+        if (result.success) {
+          setHistory(result.data);
+        } else {
+          setError(result.message || 'Failed to load history');
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    _fetchData();
+  }, []);
 
-  const getTypeIcon = (type) => {
+  var formatDate = function(dateString) {
+    var date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  };
+
+  var getTypeIcon = function(type) {
     switch (type) {
       case "pastor_change":
         return (
@@ -123,7 +89,7 @@ export default function ZoneHistory({ history = [] }) {
     }
   };
 
-  const getTypeColor = (type) => {
+  var getTypeColor = function(type) {
     switch (type) {
       case "pastor_change": return "violet";
       case "achievement": return "gold";
@@ -134,22 +100,37 @@ export default function ZoneHistory({ history = [] }) {
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const filterOptions = [
+  var filterOptions = [
     { value: "all", label: "All Events" },
     { value: "pastor_change", label: "Pastor Changes" },
     { value: "achievement", label: "Achievements" },
     { value: "event", label: "Events" },
     { value: "growth", label: "Growth" },
   ];
+
+  var filteredHistory = filter === "all"
+    ? history
+    : history.filter(item => item.type === filter);
+
+  if (loading) {
+    return (
+      <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 shadow-sm overflow-hidden">
+        <div className="p-12 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 shadow-sm overflow-hidden">
+        <div className="p-6 text-center text-red-500">
+          <p>Error loading history: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 shadow-sm overflow-hidden">
@@ -164,7 +145,7 @@ export default function ZoneHistory({ history = [] }) {
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Zone History</h3>
           </div>
-          
+
           {/* Filter Dropdown */}
           <select
             value={filter}
@@ -211,7 +192,7 @@ export default function ZoneHistory({ history = [] }) {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">{item.description}</p>
-                        
+
                         {/* Pastor info if available */}
                         {item.pastor && (
                           <div className="mt-3 flex items-center gap-2">
@@ -227,7 +208,7 @@ export default function ZoneHistory({ history = [] }) {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Date */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-xs font-medium text-gray-400">{formatDate(item.date)}</p>
@@ -255,4 +236,3 @@ export default function ZoneHistory({ history = [] }) {
     </div>
   );
 }
-

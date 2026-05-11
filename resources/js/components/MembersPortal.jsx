@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "../context/UserContext";
 import api from "../lib/api";
 import StatCard from "./dashboard/StatCard";
+import InvitationsManager from "./InvitationsManager";
+import HomeGroupCommunity from "./HomeGroupCommunity";
+import NotificationBell from "./notifications/NotificationBell";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND COMPONENT
@@ -118,6 +121,7 @@ const Icons = {
     ChatBubbleLeftRight: ({ className }) => (<svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>),
     Envelope: ({ className }) => (<svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>),
     Phone: ({ className }) => (<svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>),
+    Star: ({ className }) => (<svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>),
 };
 
 // ============================================================================
@@ -156,9 +160,9 @@ const FeatureDrawer = ({ isOpen, onClose, title, icon: Icon, children }) => {
 // ============================================================================
 
 const ZoneInfoDrawer = ({ isOpen, onClose, user }) => {
-    const zoneName    = user?.zone?.name            || '—';
-    const pastorName  = user?.pastor?.user?.name    || 'Not Assigned';
-    const address     = user?.member?.address       || user?.address || '—';
+    const zoneName    = user && user.zone && user.zone.name            || '—';
+    const pastorName  = user && user.pastor && user.pastor.user && user.pastor.user.name    || 'Not Assigned';
+    const address     = user && user.member && user.member.address       || (user && user.address) || '—';
 
     return (
         <FeatureDrawer isOpen={isOpen} onClose={onClose} title="My Zone" icon={Icons.MapPin}>
@@ -192,13 +196,13 @@ const ZoneInfoDrawer = ({ isOpen, onClose, user }) => {
 // ============================================================================
 
 const PastorHODDrawer = ({ isOpen, onClose, user }) => {
-    const pastorName  = user?.pastor?.user?.name    || 'Not Assigned';
-    const pastorPhone = user?.pastor?.user?.phone   || '—';
-    const pastorEmail = user?.pastor?.user?.email   || '—';
+    const pastorName  = (user && user.pastor && user.pastor.user && user.pastor.user.name) || 'Not Assigned';
+    const pastorPhone = (user && user.pastor && user.pastor.user && user.pastor.user.phone) || '—';
+    const pastorEmail = (user && user.pastor && user.pastor.user && user.pastor.user.email) || '—';
 
     // HOD info lives inside the member relationship if your API exposes it
-    const hodName  = user?.member?.hod_name         || 'Not Assigned';
-    const hodDept  = user?.department?.name         || '—';
+    const hodName  = (user && user.member && user.member.hod_name) || 'Not Assigned';
+    const hodDept  = (user && user.department && user.department.name) || '—';
 
     return (
         <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Pastor & HOD Info" icon={Icons.Users}>
@@ -391,7 +395,7 @@ const WelcomeCard = ({ user }) => {
                             }
                         </span>
                         <h2 className="text-2xl font-bold text-gray-900">
-                            Good {greeting}, {user?.name?.split(' ')[0] || 'Beloved'}!
+                            Good {greeting}, {(user && user.name && user.name.split(' ')[0]) || 'Beloved'}!
                         </h2>
                     </div>
                     <p className="text-gray-600 text-lg mb-4">{msg}</p>
@@ -400,28 +404,22 @@ const WelcomeCard = ({ user }) => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div className="bg-white/50 rounded-xl p-3">
                             <p className="text-xs text-gray-500 mb-1">Zone</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.zone?.name || '—'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Homegroup</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.home_group?.name || 'Not Assigned'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Department</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.department?.name || 'None'}</p>
-                        </div>
-                        <div className="bg-white/50 rounded-xl p-3">
-                            <p className="text-xs text-gray-500 mb-1">Role</p>
-                            <p className="font-semibold text-gray-900 truncate">{user?.role_label || user?.role || '—'}</p>
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.zone && user.zone.name) || '—'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.home_group && user.home_group.name) || 'Not Assigned'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.department && user.department.name) || 'None'}</p>
+
+                            <p className="font-semibold text-gray-900 truncate">{(user && user.role_label) || (user && user.role) || '—'}</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="relative flex-shrink-0">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30 overflow-hidden">
-                        {user?.profile_photo
+                        {user && user.profile_photo
                             ? <img src={user.profile_photo} alt={user.name} className="w-full h-full object-cover" />
-                            : <span className="text-white font-bold text-4xl">{user?.name?.charAt(0) || 'M'}</span>
+                            : <span className="text-white font-bold text-4xl">{(user && user.name && user.name.charAt(0)) || 'M'}</span>
                         }
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
@@ -437,13 +435,15 @@ const WelcomeCard = ({ user }) => {
 // QUICK ACTIONS
 // ============================================================================
 
-const QuickActions = ({ onAction }) => {
-    const actions = [
-        { id: 'view-zone',       icon: Icons.MapPin,       label: 'View My Zone',    description: 'Zone details & info',   color: 'from-gold-400 to-amber-500' },
-        { id: 'view-pastor-hod', icon: Icons.Users,        label: 'Pastor & HOD',    description: 'Contact leadership',    color: 'from-purple-400 to-purple-600' },
-        { id: 'view-events',     icon: Icons.Calendar,     label: 'Upcoming Events', description: 'Church activities',     color: 'from-sky-400 to-sky-600' },
-        { id: 'submit-reports',  icon: Icons.DocumentText, label: 'Submit Reports',  description: 'Requests & reports',    color: 'from-emerald-400 to-emerald-600' },
-    ];
+const QuickActions = ({ onAction, pendingInvitations = 0 }) => {
+  const actions = [
+      { id: 'view-invitations', icon: Icons.Envelope, label: 'Invitations', description: 'Accept or decline homegroup invites', color: 'from-rose-400 to-red-500', badge: pendingInvitations },
+      { id: 'view-zone',       icon: Icons.MapPin,    label: 'View My Zone',   description: 'Zone details & info',          color: 'from-gold-400 to-amber-500' },
+      { id: 'view-pastor-hod', icon: Icons.Users,      label: 'Pastor & HOD',   description: 'Contact leadership',           color: 'from-purple-400 to-purple-600' },
+      { id: 'view-events',     icon: Icons.Calendar,   label: 'Upcoming Events',description: 'Church activities',            color: 'from-sky-400 to-sky-600' },
+      { id: 'submit-reports',  icon: Icons.DocumentText,label: 'Submit Reports', description: 'Requests & reports',           color: 'from-emerald-400 to-emerald-600' },
+      { id: 'feedback',        icon: Icons.Star,       label: 'Feedback',       description: 'Rate & review the app',        color: 'from-orange-400 to-red-500' },
+  ];
     return (
         <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
@@ -452,8 +452,13 @@ const QuickActions = ({ onAction }) => {
                     <button key={action.id} onClick={() => onAction(action.id)} className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className={`absolute -inset-0.5 bg-gradient-to-r ${action.color} rounded-2xl opacity-0 group-hover:opacity-25 blur-lg transition-all duration-300`} />
                         <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-xl p-3 md:p-4 transition-all duration-300 hover:bg-white/80">
-                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${action.color} shadow-md flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300 relative`}>
                                 <action.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                {action.badge > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[14px] h-4 px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full shadow-sm animate-pulse">
+                                        {action.badge > 9 ? '9+' : action.badge}
+                                    </span>
+                                )}
                             </div>
                             <p className="font-semibold text-gray-900 text-xs md:text-sm">{action.label}</p>
                             <p className="text-gray-500 text-xs mt-1 hidden md:block">{action.description}</p>
@@ -469,8 +474,8 @@ const QuickActions = ({ onAction }) => {
 // HOMEGROUP SECTION — uses user.home_group from UserResource
 // ============================================================================
 
-const HomegroupSection = ({ user, onViewHomegroup }) => {
-    const hg = user?.home_group;
+const HomegroupSection = ({ user, onViewHomegroup, onLeaveHomegroup }) => {
+    const hg = user && user.home_group;
     return (
         <div>
             <div className="flex items-center justify-between mb-4">
@@ -483,10 +488,57 @@ const HomegroupSection = ({ user, onViewHomegroup }) => {
                         <Icons.Users className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-gray-900 text-lg">{hg?.name || 'Not Assigned'}</h4>
+                        <h4 className="font-bold text-gray-900 text-lg">{hg && hg.name ? hg.name : 'Not Assigned'}</h4>
                         <p className="text-gray-500 text-sm">{hg ? 'Active Group' : 'You have not been assigned a homegroup yet'}</p>
                     </div>
                 </div>
+                {hg && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onLeaveHomegroup}
+                            className="flex-1 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                        >
+                            Leave Group
+                        </button>
+                    </div>
+                )}
+            </GlassCard>
+        </div>
+    );
+};
+
+// ============================================================================
+// DEPARTMENTS SECTION — shows user's department and allows viewing all
+// ============================================================================
+
+const DepartmentsSection = ({ user, onViewDepartments, onLeaveDepartment }) => {
+    const dept = user && user.department;
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">My Department</h3>
+                <button onClick={onViewDepartments} className="text-gold-600 hover:text-gold-700 text-sm font-medium transition-colors">View All →</button>
+            </div>
+            <GlassCard className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+                        <Icons.BuildingOffice className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-gray-900 text-lg">{dept && dept.name ? dept.name : 'Not Assigned'}</h4>
+                        <p className="text-gray-500 text-sm">{dept ? 'Active Department' : 'You have not been assigned to a department yet'}</p>
+                    </div>
+                </div>
+                {dept && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onLeaveDepartment}
+                            className="flex-1 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                        >
+                            Leave Department
+                        </button>
+                    </div>
+                )}
             </GlassCard>
         </div>
     );
@@ -528,25 +580,489 @@ const EventsSection = ({ onRSVP }) => {
 };
 
 // ============================================================================
+// HOME GROUPS BROWSER — shows all home groups and allows requesting to join
+// ============================================================================
+
+const HomeGroupsBrowser = ({ isOpen, onClose, user }) => {
+    const { data: homeGroups = [], isLoading, error } = useQuery({
+        queryKey: ['home-groups-available'],
+        queryFn: async () => {
+            const response = await api.get('/home-groups/available');
+            if (response.data && response.data.success) {
+                return response.data.home_groups || [];
+            }
+            throw new Error(response.data?.message || 'Failed to load home groups');
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: true,
+        retry: 1,
+        enabled: isOpen, // Only fetch when drawer is open
+    });
+
+    const handleRequestJoin = async (homeGroupId) => {
+        try {
+            const response = await api.post('/home-group/request', {
+                home_group_id: homeGroupId
+            });
+
+            if (response.data && response.data.success) {
+                alert('Request submitted successfully! Please wait for approval.');
+            } else {
+                alert(response.data?.message || 'Failed to submit request');
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to submit request');
+        }
+    };
+
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="All Home Groups" icon={Icons.Users}>
+            <div className="space-y-4">
+                <p className="text-gray-600 text-sm">
+                    Browse all home groups in your zone and request to join.
+                </p>
+
+                {isLoading ? (
+                    <div className="space-y-3">
+                        {[1,2,3,4,5,6].map(i => (
+                            <div key={i} className="animate-pulse bg-gray-100 rounded-xl p-4">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-2/3 mb-3"></div>
+                                <div className="h-8 bg-gray-200 rounded w-24"></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+                        {error.message}
+                    </div>
+                ) : homeGroups.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                        <Icons.Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        No home groups available
+                    </div>
+                ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {homeGroups.map(homeGroup => {
+                            const isCurrentHG = user?.home_group?.id === homeGroup.id;
+
+                            return (
+                                <div key={homeGroup.id} className="bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200 p-4 hover:bg-white/80 transition-colors">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-gray-900">{homeGroup.name}</h4>
+                                            {homeGroup.location && (
+                                                <p className="text-sm text-gray-600 mt-1">{homeGroup.location}</p>
+                                            )}
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {homeGroup.meeting_day && homeGroup.meeting_time && (
+                                                    <span className="text-xs text-gray-500">
+                                                        {homeGroup.meeting_day} at {homeGroup.meeting_time}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {isCurrentHG && (
+                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                                Current
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-3">
+                                        <div className="text-sm text-gray-500">
+                                            {homeGroup.leader && `Led by ${homeGroup.leader.name}`}
+                                        </div>
+
+                                        {!isCurrentHG && (
+                                            <button
+                                                onClick={() => handleRequestJoin(homeGroup.id)}
+                                                className="px-3 py-1.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors"
+                                            >
+                                                Request to Join
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// DEPARTMENTS DRAWER — shows all departments and allows requesting to join
+// ============================================================================
+
+const DepartmentsDrawer = ({ isOpen, onClose, user }) => {
+    const { data: departments = [], isLoading, error } = useQuery({
+        queryKey: ['departments'],
+        queryFn: async () => {
+            const response = await api.get('/departments');
+            if (response.data && response.data.success) {
+                return response.data.departments || [];
+            }
+            throw new Error(response.data?.message || 'Failed to load departments');
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: true,
+        retry: 1,
+        enabled: isOpen, // Only fetch when drawer is open
+    });
+
+    const handleRequestJoin = async (departmentId) => {
+        try {
+            const response = await api.post('/department-request', {
+                department_id: departmentId
+            });
+
+            if (response.data && response.data.success) {
+                alert('Request submitted successfully! Please wait for approval.');
+            } else {
+                alert(response.data?.message || 'Failed to submit request');
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to submit request');
+        }
+    };
+
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Departments" icon={Icons.BuildingOffice}>
+            <div className="space-y-4">
+                <p className="text-gray-600 text-sm">
+                    View all departments in your zone and request to join.
+                </p>
+
+                {isLoading ? (
+                    <div className="space-y-3">
+                        {[1,2,3,4,5].map(i => (
+                            <div key={i} className="animate-pulse bg-gray-100 rounded-xl p-4">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+                                <div className="h-8 bg-gray-200 rounded w-24"></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+                        {error.message}
+                    </div>
+                ) : departments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                        <Icons.BuildingOffice className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        No departments available
+                    </div>
+                ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {departments.map(department => {
+                            const isCurrentDept = user?.department?.id === department.id;
+                            const hasHod = department.hod;
+
+                            return (
+                                <div key={department.id} className="bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200 p-4 hover:bg-white/80 transition-colors">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-gray-900">{department.name}</h4>
+                                            {department.description && (
+                                                <p className="text-sm text-gray-600 mt-1">{department.description}</p>
+                                            )}
+                                        </div>
+                                        {isCurrentDept && (
+                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                                Current
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-3">
+                                        <div className="text-sm text-gray-500">
+                                            {department.members_count || 0} members
+                                            {hasHod && ` • Led by ${department.hod.name}`}
+                                        </div>
+
+                                        {!isCurrentDept && (
+                                            <button
+                                                onClick={() => handleRequestJoin(department.id)}
+                                                className="px-3 py-1.5 bg-purple-500 text-white text-sm font-medium rounded-lg hover:bg-purple-600 transition-colors"
+                                            >
+                                                Request to Join
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// LEAVE GROUP DRAWER — allows leaving home group or department with reason
+// ============================================================================
+
+const LeaveGroupDrawer = ({ isOpen, onClose, user, type }) => {
+    const [reason, setReason] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleLeave = async () => {
+        if (!reason.trim()) {
+            alert('Please provide a reason for leaving.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            let endpoint, data;
+            if (type === 'homegroup') {
+                endpoint = '/home-group/leave';
+                data = { reason };
+            } else {
+                endpoint = '/department-request/cancel';
+                data = { reason };
+            }
+
+            const response = await api.delete(endpoint, { data });
+
+            if (response.data && response.data.success) {
+                alert(`${type === 'homegroup' ? 'Home group' : 'Department'} left successfully.`);
+                onClose();
+                // Refresh user data
+                window.location.reload();
+            } else {
+                alert(response.data?.message || 'Failed to leave');
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to leave');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const title = type === 'homegroup' ? 'Leave Home Group' : 'Leave Department';
+    const currentGroup = type === 'homegroup' ? user?.home_group : user?.department;
+
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title={title} icon={Icons.ArrowLeft}>
+            <div className="space-y-6">
+                <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                        </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Leaving</h3>
+                    <p className="text-gray-600">
+                        Are you sure you want to leave <strong>{currentGroup?.name}</strong>?
+                        This action cannot be undone.
+                    </p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for leaving (required)
+                    </label>
+                    <textarea
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder={`Please explain why you want to leave this ${type}...`}
+                        rows={4}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-red-400/50 focus:border-red-400 transition-all"
+                    />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleLeave}
+                        disabled={isSubmitting || !reason.trim()}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-400 to-red-500 text-white font-semibold hover:from-red-500 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        {isSubmitting ? 'Leaving...' : `Leave ${type === 'homegroup' ? 'Group' : 'Department'}`}
+                    </button>
+                </div>
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
+// FEEDBACK DRAWER — allows rating and leaving feedback for the app
+// ============================================================================
+
+const FeedbackDrawer = ({ isOpen, onClose, user }) => {
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [feedback, setFeedback] = useState("");
+    const [category, setCategory] = useState("general");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (rating === 0) {
+            alert('Please provide a rating.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // For now, just show success. In production, this would send to backend
+            alert(`Thank you for your feedback! Rating: ${rating} stars\nFeedback submitted successfully.`);
+            onClose();
+            setRating(0);
+            setFeedback("");
+            setCategory("general");
+        } catch (err) {
+            alert('Failed to submit feedback. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="Share Feedback" icon={Icons.Star}>
+            <div className="space-y-6">
+                <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <Icons.Star className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Rate Your Experience</h3>
+                    <p className="text-gray-600">
+                        Help us improve by sharing your feedback about the {user?.role === 'pastor' ? 'Pastor' : user?.role === 'hod' ? 'HOD' : 'Member'} portal.
+                    </p>
+                </div>
+
+                {/* Star Rating */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Overall Rating
+                    </label>
+                    <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                                key={star}
+                                onClick={() => setRating(star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                className="p-1"
+                            >
+                                <svg
+                                    className={`w-8 h-8 ${
+                                        star <= (hoverRating || rating)
+                                            ? 'text-yellow-400 fill-current'
+                                            : 'text-gray-300'
+                                    } transition-colors`}
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                            </button>
+                        ))}
+                        <span className="ml-2 text-sm text-gray-600">
+                            {rating > 0 && `${rating} star${rating !== 1 ? 's' : ''}`}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Category */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Feedback Category
+                    </label>
+                    <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400 transition-all"
+                    >
+                        <option value="general">General Experience</option>
+                        <option value="features">Features & Functionality</option>
+                        <option value="design">Design & Usability</option>
+                        <option value="performance">Performance & Speed</option>
+                        <option value="support">Support & Help</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                {/* Feedback Text */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Your Feedback (optional)
+                    </label>
+                    <textarea
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        placeholder="Tell us what you think, what we can improve, or any suggestions..."
+                        rows={4}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400 transition-all"
+                    />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || rating === 0}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold hover:from-yellow-500 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                    </button>
+                </div>
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+// ============================================================================
 // MAIN MEMBERS PORTAL COMPONENT
 // ============================================================================
 
 export default function MembersPortal({ onLogout }) {
     const user = useCurrentUser();
 
-    // Fetch member dashboard data
-    const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
-        queryKey: ['member-dashboard'],
-        queryFn: async () => {
-            const res = await api.get('/api/member/dashboard');
-            if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
-            return res.data.data;
-        },
-        staleTime: 30000,
-        cacheTime: 300000,
-        refetchOnWindowFocus: true,
-        retry: 1,
-    });
+  // Fetch member dashboard data
+  const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
+      queryKey: ['member-dashboard'],
+      queryFn: async () => {
+          const res = await api.get('/api/member/dashboard');
+          if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
+          return res.data.data;
+      },
+      staleTime: 30000,
+      cacheTime: 300000,
+      refetchOnWindowFocus: true,
+      retry: 1,
+  });
+
+  // Fetch pending invitations count for badge
+  const { data: invitationsData } = useQuery({
+      queryKey: ['homegroup-invitations-count'],
+      queryFn: async () => {
+          const res = await api.get('/homegroup-invitations');
+          if (!res.data.success) throw new Error();
+          return res.data.invitations || [];
+      },
+      staleTime: 15000,
+      refetchInterval: 30000,
+  });
+
+   const pendingInvitationsCount = (invitationsData && invitationsData.filter ? invitationsData.filter(inv => inv.status === 'pending').length : 0) || 0;
 
     const [activeDrawer,       setActiveDrawer]       = useState(null);
     const [notificationsOpen,  setNotificationsOpen]  = useState(false);
@@ -561,15 +1077,18 @@ export default function MembersPortal({ onLogout }) {
             <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Members Portal</h1>
-                        <p className="text-gray-500">Welcome to your spiritual home</p>
+                    <div className="flex items-center gap-4">
+                        {/* Logo */}
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-gold-500/30 overflow-hidden bg-white">
+                            <img src="/images/favicon.ico" alt="Heartfelt Logo" className="w-full h-full object-contain p-1" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">Members Portal</h1>
+                            <p className="text-gray-500">Welcome to your spiritual home</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setNotificationsOpen(true)} className="relative p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <Icons.Bell className="w-6 h-6 text-gray-700" />
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">2</span>
-                        </button>
+                        <NotificationBell userId={user?.id} />
                         <button onClick={onLogout} className="p-3 rounded-xl bg-white/30 backdrop-blur-xl border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
                             <Icons.ArrowRightOnRectangle className="w-6 h-6 text-gray-700" />
                         </button>
@@ -593,31 +1112,49 @@ export default function MembersPortal({ onLogout }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <StatCard
                                 title="Upcoming Events"
-                                value={memberData?.my_events_upcoming ?? 0}
+                                value={(memberData && memberData.my_events_upcoming) || 0}
                                 icon={<Icons.Calendar className="w-6 h-6" />}
                                 color="sky"
-                                aria-label={`Upcoming events: ${memberData?.my_events_upcoming ?? 0}`}
+                                aria-label={`Upcoming events: ${(memberData && memberData.my_events_upcoming) || 0}`}
                             />
                             <StatCard
                                 title="Home Group Members"
-                                value={memberData?.my_home_group?.total_members ?? 0}
+                                value={(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}
                                 icon={<Icons.Users className="w-6 h-6" />}
                                 color="emerald"
-                                aria-label={`Home group members: ${memberData?.my_home_group?.total_members ?? 0}`}
+                                aria-label={`Home group members: ${(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}`}
                             />
                         </div>
                     )}
                 </div>
 
-                <div className="mt-8"><QuickActions onAction={handleAction} /></div>
-                <div className="mt-8"><HomegroupSection user={user} onViewHomegroup={() => handleAction('homegroup')} /></div>
+                <div className="mt-8"><QuickActions onAction={handleAction} pendingInvitations={pendingInvitationsCount} /></div>
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <HomegroupSection
+                        user={user}
+                        onViewHomegroup={() => handleAction('homegroups')}
+                        onLeaveHomegroup={() => handleAction('leave-homegroup')}
+                    />
+                    <DepartmentsSection
+                        user={user}
+                        onViewDepartments={() => handleAction('departments')}
+                        onLeaveDepartment={() => handleAction('leave-department')}
+                    />
+                </div>
                 <div className="mt-8"><EventsSection onRSVP={(id) => console.log('RSVP:', id)} /></div>
             </div>
 
-            <ZoneInfoDrawer    isOpen={activeDrawer === 'view-zone'}       onClose={closeDrawer} user={user} />
-            <PastorHODDrawer   isOpen={activeDrawer === 'view-pastor-hod'} onClose={closeDrawer} user={user} />
-            <ReportsDrawer     isOpen={activeDrawer === 'submit-reports'}  onClose={closeDrawer} />
-            <NotificationsPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+            <ZoneInfoDrawer       isOpen={activeDrawer === 'view-zone'}         onClose={closeDrawer} user={user} />
+            <PastorHODDrawer      isOpen={activeDrawer === 'view-pastor-hod'}  onClose={closeDrawer} user={user} />
+            <ReportsDrawer        isOpen={activeDrawer === 'submit-reports'}    onClose={closeDrawer} />
+            <InvitationsManager   isOpen={activeDrawer === 'view-invitations'} onClose={closeDrawer} userId={(user && user.id) || 0} />
+            <HomeGroupsBrowser     isOpen={activeDrawer === 'homegroups'}       onClose={closeDrawer} user={user} />
+            <HomeGroupCommunity   isOpen={activeDrawer === 'homegroup'}        onClose={closeDrawer} homeGroup={user?.home_group} />
+            <DepartmentsDrawer    isOpen={activeDrawer === 'departments'}     onClose={closeDrawer} user={user} />
+            <LeaveGroupDrawer     isOpen={activeDrawer === 'leave-homegroup'} onClose={closeDrawer} user={user} type="homegroup" />
+            <LeaveGroupDrawer     isOpen={activeDrawer === 'leave-department'} onClose={closeDrawer} user={user} type="department" />
+            <FeedbackDrawer       isOpen={activeDrawer === 'feedback'}         onClose={closeDrawer} user={user} />
+            <NotificationsPanel  isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
         </div>
     );
 }

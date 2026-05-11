@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
 import PremiumCard from "./PremiumCard";
@@ -97,29 +98,35 @@ const metricDefinitions = [
 export default function DashboardStats({ onNavigate }) {
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    error,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: ["dashboard-metrics"],
-    queryFn: async () => {
-      try {
-        const res = await api.get("/dashboard/metrics");
-        if (!res.data.success) {
-          throw new Error(res.data.message || "Failed to fetch metrics");
-        }
+   const {
+     data,
+     isLoading,
+     error,
+     isError,
+     refetch,
+   } = useQuery({
+     queryKey: ["dashboard-metrics"],
+     queryFn: async () => {
+       try {
+         const res = await api.get("/dashboard/metrics");
+         console.log('[DashboardStats] API response:', res);
+         console.log('[DashboardStats] Response status:', res.status);
+         console.log('[DashboardStats] Response data:', res.data);
+         if (!res.data.success) {
+           throw new Error(res.data.message || "Failed to fetch metrics");
+         }
 
-        // Enrich with trend + sparkline data
-        const enriched = enrichWithTrendsAndSparklines(res.data.data);
-        return enriched;
-      } catch (err) {
-        const message = err.response?.data?.message || err.message || "Network error";
-        throw new Error(message);
-      }
-    },
+         // Enrich with trend + sparkline data
+         const enriched = enrichWithTrendsAndSparklines(res.data.data);
+         return enriched;
+       } catch (err) {
+         console.error('[DashboardStats] API error details:', err);
+         console.error('[DashboardStats] Error response:', err.response);
+         console.error('[DashboardStats] Error request:', err.request);
+         const message = (err.response && err.response.data && err.response.data.message) || err.message || "Network error";
+         throw new Error(message);
+       }
+     },
     staleTime: 30000,
     cacheTime: 300000,
     refetchInterval: 30000,
@@ -155,39 +162,28 @@ export default function DashboardStats({ onNavigate }) {
   if (isLoading && !data) {
     return (
        <div
-         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5"
+         className="flex flex-wrap gap-5 overflow-x-auto pb-4"
          role="status"
          aria-label="Loading dashboard statistics"
        >
-        {metricDefinitions.map((metric, index) => {
-          const isThird = index === 2;
-          const wrapperClasses = isThird
-            ? 'lg:col-span-2 flex justify-center'
-            : '';
-          const innerWidthClass = isThird
-            ? 'w-full md:w-[calc(50%-10px)] max-w-[480px]'
-            : 'w-full';
-          return (
-            <div
-              key={metric.key}
-              className={`opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards] ${wrapperClasses}`}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className={innerWidthClass}>
-                <PremiumCard
-                  title={metric.label}
-                  value={0}
-                  icon={metric.icon}
-                  variant={metric.variant}
-                  loading={true}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
+         {metricDefinitions.map((metric, index) => (
+           <div
+             key={metric.key}
+             className="opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards] flex-shrink-0"
+             style={{ animationDelay: `${index * 100}ms`, minWidth: '280px' }}
+           >
+             <PremiumCard
+               title={metric.label}
+               value={0}
+               icon={metric.icon}
+               variant={metric.variant}
+               loading={true}
+             />
+           </div>
+         ))}
+       </div>
+     );
+   }
 
   // ==========================================================================
   // ERROR STATE
@@ -245,9 +241,11 @@ export default function DashboardStats({ onNavigate }) {
       aria-label="Dashboard statistics"
     >
       {metricDefinitions.map((metric, index) => {
-        const metricData = data?.[metric.key] ?? 0;
-        const trendData = data?.trends?.[metric.key];
-        const sparklineData = data?.sparklines?.[metric.key] || [];
+        const metricData = (data && data[metric.key]) || 0;
+
+        const trendData = data && data.trends && data.trends[metric.key];
+
+        const sparklineData = (data && data.sparklines && data.sparklines[metric.key]) || [];
         const isThird = index === 2;
         const wrapperClasses = isThird
           ? 'lg:col-span-2 flex justify-center'
@@ -273,11 +271,11 @@ export default function DashboardStats({ onNavigate }) {
                 value={metricData}
                 icon={metric.icon}
                 variant={metric.variant}
-                trend={trendData?.value}
-                trendDirection={trendData?.direction || "up"}
-                trendLabel="vs last month"
-                sparklineData={sparklineData}
-                onClick={() => onNavigate?.(metric.navigateTo)}
+                trend={trendData && trendData.value}
+
+                trendDirection={(trendData && trendData.direction) || "up"}
+
+                onClick={() => onNavigate && onNavigate(metric.navigateTo)}
                 animateValue={true}
                 aria-label={`${metric.label}: ${metricData.toLocaleString()}`}
               />

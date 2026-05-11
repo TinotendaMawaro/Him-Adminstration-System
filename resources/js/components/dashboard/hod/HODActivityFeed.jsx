@@ -98,7 +98,7 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
     const fetchActivities = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
+            const him_token = localStorage.getItem('him_token');
             
             // Try to fetch from multiple endpoints
             const endpoints = [
@@ -111,7 +111,7 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
             for (const endpoint of endpoints) {
                 try {
                     const response = await fetch(endpoint, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                        headers: { 'Authorization': `Bearer ${him_token}` }
                     });
                     
                     if (response.ok) {
@@ -166,7 +166,8 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
     }, [departmentId, limit]);
 
     // Get icon component
-    const IconComponent = getIcon(activities[0]?.icon || 'Bell');
+    const iconName = (activities && activities[0] && activities[0].icon) ? activities[0].icon : 'Bell';
+    const IconComponent = getIcon(iconName);
 
     return (
         <HODGlassCard title="Recent Activity" className="h-full">

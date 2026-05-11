@@ -361,7 +361,7 @@ export default function PremiumCard({
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onClick?.();
+              onClick && onClick();
             }
           }}
           onMouseEnter={() => setIsHover(true)}

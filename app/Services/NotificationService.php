@@ -148,23 +148,73 @@ class NotificationService
         return $notifications;
     }
 
-    /**
-     * Send notification to all pastors in a zone
-     */
-    public static function sendToZonePastors(int $zoneId, string $title, string $message, string $type = self::TYPE_INFO): array
-    {
-        $pastors = User::where('role', 'pastor')
-            ->where('zone_id', $zoneId)
-            ->get();
-        
-        return self::sendToUsers(
-            $pastors->pluck('id')->toArray(),
-            $title,
-            $message,
-            $type,
-            self::CATEGORY_SYSTEM
-        );
-    }
+     /**
+      * Send notification to all pastors in a zone
+      */
+     public static function sendToZonePastors(int $zoneId, string $title, string $message, string $type = self::TYPE_INFO): array
+     {
+         $pastors = User::where('role', 'pastor')
+             ->where('zone_id', $zoneId)
+             ->get();
+         
+         return self::sendToUsers(
+             $pastors->pluck('id')->toArray(),
+             $title,
+             $message,
+             $type,
+             self::CATEGORY_SYSTEM
+         );
+     }
+
+     /**
+      * Create homegroup invitation notification (member invited)
+      */
+     public static function createHomeGroupInvitation(User $member, HomeGroup $homeGroup, User $pastor): Notification
+     {
+         return Notification::create([
+             'user_id' => $member->id,
+             'title' => "🏠 Home Group Invitation",
+             'message' => "Pastor {$pastor->name} has invited you to join {$homeGroup->name} Home Group. Please accept or decline in your member portal.",
+             'type' => self::TYPE_INFO,
+             'category' => 'homegroup_invitation',
+             'is_read' => false,
+         ]);
+     }
+
+     /**
+      * Create invitation accepted notification (pastor notified)
+      */
+     public static function createInvitationAccepted(User $pastor, HomeGroup $homeGroup, User $member): Notification
+     {
+         return Notification::create([
+             'user_id' => $pastor->id,
+             'title' => "✅ Invitation Accepted",
+             'message' => "{$member->name} has accepted your invitation to join {$homeGroup->name} Home Group.",
+             'type' => self::TYPE_SUCCESS,
+             'category' => 'homegroup_invitation',
+             'is_read' => false,
+         ]);
+     }
+
+     /**
+      * Create invitation declined notification (pastor notified)
+      */
+     public static function createInvitationDeclined(User $pastor, HomeGroup $homeGroup, User $member, $reason = null): Notification
+     {
+         $message = "{$member->name} has declined your invitation to join {$homeGroup->name} Home Group.";
+         if ($reason) {
+             $message .= " Reason: {$reason}";
+         }
+         
+         return Notification::create([
+             'user_id' => $pastor->id,
+             'title' => "❌ Invitation Declined",
+             'message' => $message,
+             'type' => self::TYPE_WARNING,
+             'category' => 'homegroup_invitation',
+             'is_read' => false,
+         ]);
+     }
 
     /**
      * Get notification icon based on category
