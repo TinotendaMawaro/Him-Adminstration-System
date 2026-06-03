@@ -12,6 +12,7 @@
         "build": "vite build"
     },
     "dependencies": {
+        "@babel/preset-react": "^7.29.7",
         "@tanstack/react-query": "^5.90.21",
         "axios": "^1.6.4",
         "react": "^18.2.0",
