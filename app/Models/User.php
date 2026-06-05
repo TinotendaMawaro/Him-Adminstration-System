@@ -21,6 +21,7 @@ class User extends Authenticatable
         'role', 'unique_code', 'hod_code',
         'is_active', 'terms_accepted', 'terms_accepted_at',
         'first_login_at', 'completed_tour', 'profile_photo',
+        'zone_id', 'phone', 'address',
     ];
 
     protected $hidden = ['password', 'remember_token'];

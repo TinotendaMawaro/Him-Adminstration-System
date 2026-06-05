@@ -21,6 +21,7 @@ class Pastor extends Model
         'title',
         'is_zone_pastor',
         'is_regional_leader',
+        'is_general_overseer',
         'region_id',
     ];
 
@@ -29,7 +30,8 @@ class Pastor extends Model
         return [
             'ordained_date'  => 'date',
             'is_zone_pastor' => 'boolean',
-            'is_regional_leader' => 'boolean'
+            'is_regional_leader' => 'boolean',
+            'is_general_overseer' => 'boolean',
         ];
     }
 

@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -402,5 +403,72 @@ class DashboardController extends Controller
             })
             ->where('status', 'pending')
             ->count();
+    }
+
+    /**
+     * GET /api/zones/lookup
+     * Public endpoint — returns zone and pastor info for a given zone code.
+     * Used during member registration for real-time zone code validation.
+     */
+    public function lookupZone(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => 'required|string|max:50',
+        ]);
+
+        $inputCode = strtoupper(trim($request->query('code')));
+
+        // Normalize: accept both "0101" and "R0101" formats
+        // Remove R prefix if present, then re-add it with zero-padding
+        $zoneCode = preg_replace('/^R/', '', $inputCode);
+        $zoneCode = 'R' . str_pad($zoneCode, 4, '0', STR_PAD_LEFT);
+
+        $zone = Zone::query()->with('region:id,name,code')->where('code', $zoneCode)->first();
+
+        if (! $zone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Zone Code. Please contact your Zone Pastor or Administrator for assistance.',
+            ], 404);
+        }
+
+        // Manual pastor lookup — avoids HasManyThrough ambiguous id issue
+        $pastor = null;
+        try {
+            $history = \App\Models\ZoneHistory::where('zone_id', $zone->id)
+                ->whereNull('end_date')
+                ->orderByDesc('start_date')
+                ->first();
+
+            if ($history) {
+                $pastorUser = \App\Models\User::find($history->pastor_id);
+                if ($pastorUser) {
+                    $pastor = [
+                        'name'        => $pastorUser->name,
+                        'title'       => $pastorUser->title ?? 'Pastor',
+                        'unique_code' => $pastorUser->unique_code,
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+            $pastor = null;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'        => $zone->id,
+                'code'      => $zone->code,
+                'name'      => $zone->name,
+                'address'   => $zone->address,
+                'phone'     => $zone->phone,
+                'region'    => $zone->region ? [
+                    'id'   => $zone->region->id,
+                    'name' => $zone->region->name,
+                    'code' => $zone->region->code,
+                ] : null,
+                'pastor'    => $pastor,
+            ],
+        ]);
     }
 }

@@ -4,16 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Zone extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'name',
         'code',
@@ -22,64 +19,52 @@ class Zone extends Model
         'region_id',
     ];
 
-    public function region()
+    public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
     }
 
-    public function home_groups()
+    public function home_groups(): HasMany
     {
         return $this->hasMany(HomeGroup::class);
     }
 
-    public function users()
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    public function pastors()
+    public function pastors(): HasMany
     {
         return $this->users()->where('role', 'pastor');
     }
 
-    public function members()
+    public function members(): HasMany
     {
         return $this->users()->where('role', 'member');
     }
 
-    public function partners()
+    public function partners(): HasMany
     {
         return $this->users()->where('role', 'partner');
     }
 
-    public function hods()
+    public function hods(): HasMany
     {
         return $this->users()->where('role', 'hod');
     }
 
-    public function zoneHistories()
+    public function zoneHistories(): HasMany
     {
         return $this->hasMany(ZoneHistory::class);
     }
 
-    public function currentPastor()
-    {
-        return $this->hasOneThrough(
-            User::class,
-            ZoneHistory::class,
-            'zone_id',      // Foreign key on ZoneHistory table
-            'id',           // Foreign key on User table
-            'id',           // Local key on Zone table
-            'pastor_id'     // Local key on ZoneHistory table
-        )->whereNull('zone_histories.end_date');
-    }
-
-    public function weddings()
+    public function weddings(): HasMany
     {
         return $this->hasMany(Wedding::class);
     }
 
-    public function reports()
+    public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
     }

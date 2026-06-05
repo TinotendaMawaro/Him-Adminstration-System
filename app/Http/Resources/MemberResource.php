@@ -16,14 +16,14 @@ class MemberResource extends JsonResource
             'full_name'       => $this->full_name,
             'member_number'   => $this->member_number,
             'member_code'     => $this->member_code,
-            'status'          => $this->status,
+            'status'          => match(true) {
+                $this->status instanceof \App\Enums\MemberStatus => $this->status->value,
+                default => $this->status ?? 'active',
+            },
             'is_baptised'     => $this->is_baptised,
             'can_be_partner'  => $this->can_be_partner,
             'membership_date' => $this->membership_date?->format('Y-m-d'),
             'date_of_birth'   => $this->date_of_birth?->format('Y-m-d'),
-            'email'           => $this->email,
-            'phone'           => $this->phone,
-            'mobile'          => $this->mobile,
             'zone'            => $this->whenLoaded('zone', fn () => [
                 'id'   => $this->zone->id,
                 'name' => $this->zone->name,

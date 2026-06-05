@@ -34,6 +34,10 @@ Route::post('/login', [AuthController::class, 'login'])
 Route::post('/register', RegisterController::class)
      ->middleware('throttle:3,1'); // 3 registrations per minute
 
+// ── Zone Lookup (public — no auth required, used during registration) ───────
+Route::get('/zones/lookup', [DashboardController::class, 'lookupZone'])
+     ->middleware('throttle:30,1');
+
 // ─── AUTHENTICATED ───────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
      // ── Auth ───────────────────────────────────────────────────────────────────
@@ -85,7 +89,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
          Route::get('/home-groups', [PastorController::class, 'homeGroups']);
          Route::get('/activities', [PastorController::class, 'activities']);
          Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
-     });
+      });
 
     // ── Dashboard Metrics ──────────────────────────────────────────────────────
     Route::get('/dashboard/metrics', [DashboardController::class, 'metrics']);

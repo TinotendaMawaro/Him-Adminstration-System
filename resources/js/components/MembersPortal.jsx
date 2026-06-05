@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "../context/UserContext";
 import api from "../lib/api";
-import StatCard from "./dashboard/StatCard";
 import InvitationsManager from "./InvitationsManager";
 import HomeGroupCommunity from "./HomeGroupCommunity";
 import NotificationBell from "./notifications/NotificationBell";
@@ -374,6 +373,129 @@ const GlassCard = ({ children, className = "", hoverEffect = true }) => (
 // WELCOME CARD — uses real UserResource fields
 // ============================================================================
 
+// ============================================================================
+// MINISTRY INFO CARD — displays full membership information
+// ============================================================================
+
+const MinistryInfoCard = ({ user, memberData }) => {
+    const zone = user && user.zone;
+    const member = user && user.member;
+    const pastorName = zone?.pastor_title && zone?.pastor_name
+        ? `${zone.pastor_title} ${zone.pastor_name}`
+        : (zone?.pastor_name || "Not Assigned");
+    const regionName = zone?.region?.name || "—";
+    const zoneName = zone?.name || "—";
+    const zoneCode = zone?.code || user?.zone_id || "—";
+    const memberCode = member?.member_code || "—";
+    const registrationDate = member?.membership_date || memberData?.member_since || "—";
+
+    return (
+        <GlassCard className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg`}>
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                        </span>
+                        <h2 className="text-2xl font-bold text-gray-900">My Ministry Information</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="bg-white/60 rounded-xl p-4 border border-gold-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Membership Code</p>
+                            <p className="text-lg font-bold text-gray-900 font-mono tracking-wide">{memberCode}</p>
+                        </div>
+                        <div className="bg-white/60 rounded-xl p-4 border border-sky-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Zone</p>
+                            <p className="text-lg font-bold text-gray-900 truncate">{zoneName}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Code: {zoneCode}</p>
+                        </div>
+                        <div className="bg-white/60 rounded-xl p-4 border border-purple-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Region</p>
+                            <p className="text-lg font-bold text-gray-900">{regionName}</p>
+                        </div>
+                        <div className="bg-white/60 rounded-xl p-4 border border-emerald-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Pastor</p>
+                            <p className="text-lg font-bold text-gray-900 truncate">{pastorName}</p>
+                        </div>
+                        <div className="bg-white/60 rounded-xl p-4 border border-amber-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Registration Date</p>
+                            <p className="text-lg font-bold text-gray-900">{registrationDate}</p>
+                        </div>
+                        <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Member Number</p>
+                            <p className="text-lg font-bold text-gray-900 font-mono">{member?.member_number || "—"}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative flex-shrink-0">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl shadow-gold-500/30 overflow-hidden">
+                        {user && user.profile_photo
+                            ? <img src={user.profile_photo} alt={user.name} className="w-full h-full object-cover" />
+                            : <span className="text-white font-bold text-4xl">{(user && user.name && user.name.charAt(0)) || 'M'}</span>
+                        }
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+                    </div>
+                </div>
+            </div>
+        </GlassCard>
+    );
+};
+
+// ============================================================================
+// REGISTRATION CONFIRMATION BANNER
+// ============================================================================
+
+const RegistrationConfirmation = ({ user }) => {
+    if (!user) return null;
+    const zone = user.zone;
+    const member = user.member;
+    const pastorName = zone?.pastor_title && zone?.pastor_name
+        ? `${zone.pastor_title} ${zone.pastor_name}`
+        : (zone?.pastor_name || "Not Assigned");
+
+    return (
+        <div className="mb-8 bg-gradient-to-r from-emerald-50 via-emerald-50 to-sky-50 rounded-2xl p-6 border border-emerald-200 shadow-lg">
+            <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">Welcome to HIM, {(user.name || "").split(" ")[0]}!</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Your membership has been registered successfully. You are now part of <strong>{zone?.name || "your zone"}</strong>.
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                        <div className="bg-white/70 rounded-lg p-3">
+                            <p className="text-[10px] text-gray-500 font-medium uppercase">Membership Code</p>
+                            <p className="text-sm font-bold text-gray-900 font-mono">{member?.member_code || "—"}</p>
+                        </div>
+                        <div className="bg-white/70 rounded-lg p-3">
+                            <p className="text-[10px] text-gray-500 font-medium uppercase">Zone</p>
+                            <p className="text-sm font-bold text-gray-900">{zone?.name || "—"}</p>
+                        </div>
+                        <div className="bg-white/70 rounded-lg p-3">
+                            <p className="text-[10px] text-gray-500 font-medium uppercase">Region</p>
+                            <p className="text-sm font-bold text-gray-900">{zone?.region?.name || "—"}</p>
+                        </div>
+                        <div className="bg-white/70 rounded-lg p-3">
+                            <p className="text-[10px] text-gray-500 font-medium uppercase">Pastor</p>
+                            <p className="text-sm font-bold text-gray-900 truncate">{pastorName}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
+// WELCOME CARD (legacy — kept for backward compat)
+// ============================================================================
+
 const WelcomeCard = ({ user }) => {
     const now        = new Date();
     const africaTime = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 3600000 * 2);
@@ -405,12 +527,22 @@ const WelcomeCard = ({ user }) => {
                         <div className="bg-white/50 rounded-xl p-3">
                             <p className="text-xs text-gray-500 mb-1">Zone</p>
                             <p className="font-semibold text-gray-900 truncate">{(user && user.zone && user.zone.name) || '—'}</p>
+                            {(user && user.zone && user.zone.pastor_name) && (
+                                <p className="text-xs text-gray-500 mt-1 truncate">
+                                    Pastor: {(user.zone.pastor_title ?? "") + " " + user.zone.pastor_name}
+                                </p>
+                            )}
+                            {(user && user.zone && user.zone.pastor_name) && (
+                                <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                    Code: {user.zone.pastor_name ? (user.zone.code ?? user.zone.id ?? "—") : "—"}
+                                </p>
+                            )}
 
-                            <p className="font-semibold text-gray-900 truncate">{(user && user.home_group && user.home_group.name) || 'Not Assigned'}</p>
+                            <p className="font-semibold text-gray-900 truncate mt-2">{(user && user.home_group && user.home_group.name) || 'Not Assigned'}</p>
 
-                            <p className="font-semibold text-gray-900 truncate">{(user && user.department && user.department.name) || 'None'}</p>
+                            <p className="font-semibold text-gray-900 truncate mt-2">{(user && user.department && user.department.name) || 'None'}</p>
 
-                            <p className="font-semibold text-gray-900 truncate">{(user && user.role_label) || (user && user.role) || '—'}</p>
+                            <p className="font-semibold text-gray-900 truncate mt-2">{(user && user.role_label) || (user && user.role) || '—'}</p>
                         </div>
                     </div>
                 </div>
@@ -1040,7 +1172,7 @@ export default function MembersPortal({ onLogout }) {
   const { data: memberData, isLoading: memberLoading, error: memberError } = useQuery({
       queryKey: ['member-dashboard'],
       queryFn: async () => {
-          const res = await api.get('/api/member/dashboard');
+          const res = await api.get('/member/dashboard');
           if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch member dashboard');
           return res.data.data;
       },
@@ -1095,40 +1227,10 @@ export default function MembersPortal({ onLogout }) {
                     </div>
                 </div>
 
-                <WelcomeCard user={user} />
-                
-                {/* Member Stats */}
-                <div className="mt-8">
-                    {memberLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <StatCard title="Upcoming Events" value={0} icon={<Icons.Calendar className="w-6 h-6" />} color="sky" loading />
-                            <StatCard title="Home Group Members" value={0} icon={<Icons.Users className="w-6 h-6" />} color="emerald" loading />
-                        </div>
-                    ) : memberError ? (
-                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700">
-                            Error loading your statistics.
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <StatCard
-                                title="Upcoming Events"
-                                value={(memberData && memberData.my_events_upcoming) || 0}
-                                icon={<Icons.Calendar className="w-6 h-6" />}
-                                color="sky"
-                                aria-label={`Upcoming events: ${(memberData && memberData.my_events_upcoming) || 0}`}
-                            />
-                            <StatCard
-                                title="Home Group Members"
-                                value={(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}
-                                icon={<Icons.Users className="w-6 h-6" />}
-                                color="emerald"
-                                aria-label={`Home group members: ${(memberData && memberData.my_home_group && memberData.my_home_group.total_members) || 0}`}
-                            />
-                        </div>
-                    )}
-                </div>
+<RegistrationConfirmation user={user} />
+                 <MinistryInfoCard user={user} memberData={memberData} />
 
-                <div className="mt-8"><QuickActions onAction={handleAction} pendingInvitations={pendingInvitationsCount} /></div>
+                 <div className="mt-8"><QuickActions onAction={handleAction} pendingInvitations={pendingInvitationsCount} /></div>
                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <HomegroupSection
                         user={user}

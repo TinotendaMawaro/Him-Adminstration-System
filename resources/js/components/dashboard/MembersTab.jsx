@@ -22,6 +22,7 @@ export default function MembersTab() {
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
+    const [groupByZone, setGroupByZone] = useState(false);
 
     // Fetch members with pagination
     const {
@@ -213,40 +214,50 @@ export default function MembersTab() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+           <select
+             value={filterStatus}
+             onChange={(e) => setFilterStatus(e.target.value)}
+             className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
+           >
+             <option value="">All Status</option>
+             <option value="active">Active</option>
+             <option value="inactive">Inactive</option>
+           </select>
 
-          <select
-            value={filterMinistry}
-            onChange={(e) => setFilterMinistry(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
-          >
-            <option value="">All Ministries</option>
-            <option value="R">Revival (R)</option>
-            <option value="M">Ministry (M)</option>
-            <option value="H">Harvest (H)</option>
-            <option value="P">Purpose (P)</option>
-          </select>
+           <select
+             value={filterMinistry}
+             onChange={(e) => setFilterMinistry(e.target.value)}
+             className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
+           >
+             <option value="">All Ministries</option>
+             <option value="R">Revival (R)</option>
+             <option value="M">Ministry (M)</option>
+             <option value="H">Harvest (H)</option>
+             <option value="P">Purpose (P)</option>
+           </select>
 
-          <select
-            value={filterHomeGroup}
-            onChange={(e) => setFilterHomeGroup(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
-          >
-            <option value="">All Home Groups</option>
-            {homegroups.map((hg) => (
-              <option key={hg.id} value={hg.id}>
-                {hg.name}
-              </option>
-            ))}
-          </select>
+           <select
+             value={filterHomeGroup}
+             onChange={(e) => setFilterHomeGroup(e.target.value)}
+             className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all text-sm"
+           >
+             <option value="">All Home Groups</option>
+             {homegroups.map((hg) => (
+               <option key={hg.id} value={hg.id}>
+                 {hg.name}
+               </option>
+             ))}
+           </select>
+
+           <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 cursor-pointer select-none">
+             <input
+               type="checkbox"
+               checked={groupByZone}
+               onChange={(e) => setGroupByZone(e.target.checked)}
+               className="rounded border-gray-300 text-gold-600 focus:ring-gold-500"
+             />
+             <span className="text-sm text-gray-700 font-medium">Group by Zone</span>
+           </label>
         </div>
       </div>
 

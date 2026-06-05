@@ -13,9 +13,9 @@ class ZoneContactSeeder extends Seeder
      */
     private array $contacts = [
         // Region 01
-        ['R0101', 'IOC Dzivarasekwa', '2nd Floor, Munyarari Building, Glenview 3 Shops, Harare', '0780292352'],
-        ['R0102', 'AFDIS Stapleford', 'HIM Church Stand, Stapleford', '0777971325, 0715616565'],
-        ['R0103', 'Zone R0103', 'To be assigned', null],
+        ['R0101', 'IOC',            '1 Sandy Lane, Ashdown Park, Harare', '0780292352'],
+        ['R0102', 'Dzivarasekwa',   'HIM Church Stand, Stapleford',      '0777971325, 0715616565'],
+        ['R0103', 'AFDIS',          'To be assigned',                    null],
 
         // Region 02
         ['R0201', 'Mandra (Rsk)', 'To be assigned', null],

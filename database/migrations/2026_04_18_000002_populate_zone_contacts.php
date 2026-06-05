@@ -11,7 +11,7 @@ return new class extends Migration
      */
     private array $zoneContactData = [
         // Region 01
-        ['R0101', 'IOC Dzivarasekwa', '2nd Floor, Munyarari Building, Glenview 3 Shops, Harare', '0780292352'],
+        ['R0101', 'IOC', '2nd Floor, Munyarari Building, Glenview 3 Shops, Harare', '0780292352'],
         ['R0102', 'AFDIS Stapleford', 'HIM Church Stand, Stapleford', '0777971325, 0715616565'],
         ['R0103', 'Zone R0103', 'To be assigned', null],
 

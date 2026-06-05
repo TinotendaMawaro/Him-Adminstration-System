@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,14 +10,16 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Ensure role is a UserRole enum (may be string during serialization)
+        $role = $this->role instanceof UserRole ? $this->role : UserRole::from($this->role);
+
         return [
             'id'             => $this->id,
             'name'           => $this->name,
             'email'          => $this->email,
-            // Serialize the enum to its string value for the frontend
-            'role'           => $this->role->value,
-            'role_label'     => $this->role->getLabel(),
-            'unique_code'    => $this->when($this->isPastor(), $this->unique_code),
+            'role'           => $role->value,
+            'role_label'     => $role->getLabel(),
+            'unique_code'    => $this->when($role === UserRole::Pastor, $this->unique_code),
             'profile_photo'  => $this->profile_photo,
             'phone'          => $this->phone,
             'is_active'      => $this->is_active,
@@ -24,63 +27,49 @@ class UserResource extends JsonResource
             'completed_tour' => $this->completed_tour,
             'is_first_time'  => $this->isFirstTimeLogin(),
 
-            'hod_code'       => $this->when($this->isHOD(), $this->hod_code),
+            'hod_code'       => $this->when($role === UserRole::HOD, $this->hod_code),
 
-            'zone_id'        => $this->when($this->isPastor() || $this->isMember() || $this->isPartner(), function () {
-                return $this->isMember() && $this->member?->zone_id 
-                    ? $this->member->zone_id 
-                    : $this->zone_id;
-            }),
-            'zone'           => $this->whenLoaded('member', function () {
-                if ($this->isMember() && $this->member?->zone) {
-                    $region = $this->member->zone->relationLoaded('region') ? $this->member->zone->region : null;
+            'zone_id'        => $this->zone_id,
+            'zone'           => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () {
+                // Build zone data array - pastor info requires pastors to be loaded
+                $buildZone = function ($zone) {
+                    $pastors = $zone->pastors ?? collect();
+                    $pastorUser = $pastors->first(fn ($user) => str_ends_with($user->unique_code ?? '', 'P01'));
+
                     return [
-                        'id'   => $this->member->zone->id,
-                        'code' => $this->member->zone->code,
-                        'name' => $this->member->zone->name,
-                        'address' => $this->member->zone->address,
-                        'phone'   => $this->member->zone->phone,
-                        'region'  => $region ? [
-                            'id'   => $region->id,
-                            'name' => $region->name,
-                            'country' => $region->relationLoaded('country') ? [
-                                'id'   => $region->country->id,
-                                'name' => $region->country->name,
-                                'code' => $region->country->country_code,
-                            ] : null,
-                        ] : null,
-                        'created_at' => $this->member->zone->created_at?->format('Y-m-d'),
+                        'id'           => $zone->id,
+                        'code'         => $zone->code,
+                        'name'         => $zone->name,
+                        'address'      => $zone->address,
+                        'phone'        => $zone->phone,
+                        'pastor_id'    => null,
+                        'pastor_name'  => null,
+                        'pastor_title' => null,
+                        'region'       => $zone->relationLoaded('region') ? ($zone->region ? [
+                            'id'   => $zone->region->id,
+                            'name' => $zone->region->name,
+                            'code' => $zone->region->code,
+                        ] : null) : null,
+                        'created_at' => $zone->created_at?->format('Y-m-d'),
                     ];
+                };
+
+                if ($role === UserRole::Member && $this->member?->zone) {
+                    return $buildZone($this->member->zone);
                 }
-                return $this->whenLoaded('zone', function () {
-                    $region = $this->zone->relationLoaded('region') ? $this->zone->region : null;
-                    return [
-                        'id'      => $this->zone->id,
-                        'name'    => $this->zone->name,
-                        'code'    => $this->zone->code,
-                        'address' => $this->zone->address,
-                        'phone'   => $this->zone->phone,
-                        'region'  => $region ? [
-                            'id'   => $region->id,
-                            'name' => $region->name,
-                            'country' => $region->relationLoaded('country') ? [
-                                'id'   => $region->country->id,
-                                'name' => $region->country->name,
-                                'code' => $region->country->country_code,
-                            ] : null,
-                        ] : null,
-                        'created_at' => $this->zone->created_at?->format('Y-m-d'),
-                    ];
-                });
+                if ($this->relationLoaded('zone') && $this->zone) {
+                    return $buildZone($this->zone);
+                }
+                return null;
             }),
 
-            'home_group_id'  => $this->when($this->isPastor() || $this->isMember() || $this->isPartner(), function () {
-                return $this->isMember() && $this->member?->home_group_id
+            'home_group_id'  => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () use ($role) {
+                return $role === UserRole::Member && $this->member?->home_group_id
                     ? $this->member->home_group_id
                     : $this->home_group_id;
             }),
             'home_group'     => $this->whenLoaded('member', function () {
-                if ($this->isMember() && $this->member?->homeGroup) {
+                if ($this->member?->homeGroup) {
                     return [
                         'id'   => $this->member->homeGroup->id,
                         'name' => $this->member->homeGroup->name,
@@ -90,7 +79,7 @@ class UserResource extends JsonResource
                     ];
                 }
                 return $this->whenLoaded('homeGroup', fn () => [
-                    'id' => $this->homeGroup->id, 
+                    'id' => $this->homeGroup->id,
                     'name' => $this->homeGroup->name,
                 ]);
             }),
@@ -99,8 +88,8 @@ class UserResource extends JsonResource
                 'id' => $this->department->id, 'name' => $this->department->name,
             ]),
 
-'pastor'  => $this->when($this->isPastor(), fn () => new PastorResource($this->pastor)),
-            'member'  => $this->whenLoaded('member',  fn () => new MemberResource($this->member)),
+            'pastor'  => $this->when($role === UserRole::Pastor, fn () => new PastorResource($this->pastor)),
+            'member'  => $this->whenLoaded('member', fn () => new MemberResource($this->member)),
             'partner' => $this->whenLoaded('partner', fn () => new PartnerResource($this->partner)),
             'contact' => $this->whenLoaded('contact', fn () => new ContactResource($this->contact)),
         ];

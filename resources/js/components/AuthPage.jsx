@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { CSSTransition, SwitchTransition } from "react-transition-group";
 import AnimatedBackground from "./AnimatedBackground";
 import "./authAnimations.css";
@@ -24,6 +24,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
     const [errors, setErrors]               = useState({});
     const [touched, setTouched]             = useState({});
     const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
+    const [registrationResult, setRegistrationResult] = useState(null);
 
     const [code, setCode]               = useState("");
     const [emailLogin, setEmailLogin]   = useState({ email: "", password: "" });
@@ -31,8 +32,11 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
         firstName: "", lastName: "", email: "",
         phoneNumber: "", physicalAddress: "",
         password: "", confirmPassword: "",
+        zoneCode: "",
     });
     const [acceptTerms, setAcceptTerms] = useState(false);
+    const [zoneLookup, setZoneLookup]   = useState(null);
+    const [zoneChecking, setZoneChecking] = useState(false);
     const inputRef = useRef(null);
 
     // ─── Validation ───────────────────────────────────────────────────────────
@@ -63,6 +67,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
             if (!formData.email || !validateEmail(formData.email)) e.email = "Valid email is required";
             if (!formData.phoneNumber || formData.phoneNumber.length < 7) e.phoneNumber = "Valid phone number is required";
             if (!formData.physicalAddress) e.physicalAddress = "Physical address is required";
+            if (!formData.zoneCode || !(/^\d{4}$/.test(formData.zoneCode) || /^R\d{4}$/.test(formData.zoneCode))) e.zoneCode = "Invalid Zone Code. Please contact your Zone Pastor or Administrator for assistance.";
             if (!formData.password || !validatePassword(formData.password)) e.password = "Password must be at least 6 characters";
             if (formData.password !== formData.confirmPassword) e.confirmPassword = "Passwords do not match";
             if (!acceptTerms) e.acceptTerms = "You must accept the terms and conditions";
@@ -86,6 +91,30 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
         const k = name === "email" ? "emailLoginEmail" : "emailLoginPassword";
         if (errors[k]) setErrors((p) => ({ ...p, [k]: "" }));
     }, [errors]);
+
+    useEffect(() => {
+        const isValid = /^(R\d{4}|\d{4})$/.test(formData.zoneCode);
+        if (!isValid) {
+            setZoneLookup(null);
+            return;
+        }
+        if (mode !== "register" || !formData.zoneCode) {
+            if (mode !== "register") setZoneLookup(null);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setZoneChecking(true);
+            try {
+                const { data } = await api.get(`/zones/lookup?code=${encodeURIComponent(formData.zoneCode)}`);
+                if (data.success) setZoneLookup(data.data);
+                else setZoneLookup("invalid");
+            } catch {
+                setZoneLookup("invalid");
+            }
+            setZoneChecking(false);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [formData.zoneCode, mode]);
 
     // ─── Login response handler ───────────────────────────────────────────────
 
@@ -138,6 +167,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                 payload.append('password_confirmation', formData.confirmPassword);
                 payload.append('phone', formData.phoneNumber);
                 payload.append('address', formData.physicalAddress);
+                payload.append('zone_code', formData.zoneCode);
                 const { data } = await api.post("/register", payload, {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 });
@@ -148,10 +178,11 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                 } else {
                     if (data.errors) {
                         const mapped = {};
-                        if (data.errors.email)    mapped.email    = data.errors.email[0];
-                        if (data.errors.password) mapped.password = data.errors.password[0];
-                        if (data.errors.name)     mapped.firstName = data.errors.name[0];
-                        setErrors(mapped);
+                        if (data.errors.email)          mapped.email    = data.errors.email[0];
+                        if (data.errors.password)       mapped.password = data.errors.password[0];
+                        if (data.errors.name)           mapped.firstName = data.errors.name[0];
+                        if (data.errors.zone_code)      mapped.zoneCode = data.errors.zone_code[0];
+                        setErrors(Object.keys(mapped).length ? mapped : { submit: data.message || "Registration failed." });
                     } else {
                         setErrors({ submit: data.message || "Registration failed." });
                     }
@@ -287,6 +318,33 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                                 <input type="text" name="physicalAddress" placeholder="Physical Address" value={formData.physicalAddress} onChange={handleInputChange} onBlur={() => handleBlur("physicalAddress")}
                                                        className={`${inputBase} ${getFieldClass("physicalAddress", formData.physicalAddress)}`} />
                                                 {errors.physicalAddress && <p className="text-red-400 text-xs mt-0.5">{errors.physicalAddress}</p>}
+                                            </div>
+                                            <div>
+                                                <input type="text" name="zoneCode" placeholder="zone code  xxxx or Rxxxx" value={formData.zoneCode}
+                                                       onChange={(e) => {
+                                                           const v = e.target.value.toUpperCase();
+                                                           const cleaned = /^R\d{0,4}$/.test(v) ? v : (/^\d{0,4}$/.test(v) ? v : formData.zoneCode);
+                                                           setFormData((p) => ({ ...p, zoneCode: cleaned }));
+                                                           if (errors.zoneCode) setErrors((p) => ({ ...p, zoneCode: "" }));
+                                                       }}
+onBlur={() => {
+                                                            const v = formData.zoneCode;
+                                                            // Normalize: add R prefix if zone code is 4 digits without it
+                                                            if (/^\d{4}$/.test(v)) {
+                                                                setFormData((p) => ({ ...p, zoneCode: "R" + v }));
+                                                            }
+                                                            handleBlur("zoneCode");
+                                                        }}
+                                                       className={`${inputBase} ${getFieldClass("zoneCode", formData.zoneCode)} tracking-wider uppercase`} />
+                                                {zoneChecking && <span className="text-xs text-white/40 mt-0.5">Checking…</span>}
+                                                {zoneLookup === "invalid" && <span className="text-xs text-red-400 mt-0.5">Invalid Zone Code. Please contact your Zone Pastor or Administrator for assistance.</span>}
+                                                {zoneLookup && typeof zoneLookup === "object" && (
+                                                    <span className="text-xs text-emerald-400 mt-0.5">
+                                                         ✓ {zoneLookup.name}
+                                                         {zoneLookup.pastor ? ` · Pastor: ${zoneLookup.pastor.title ?? ""} ${zoneLookup.pastor.name}` : " · No pastor assigned"}
+                                                    </span>
+                                                )}
+                                                {errors.zoneCode && <p className="text-red-400 text-xs mt-0.5">{errors.zoneCode}</p>}
                                             </div>
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div>

@@ -2,141 +2,212 @@
 
 namespace Database\Seeders;
 
-use App\Models\Zone;
-use App\Models\User;
-use App\Models\ZoneHistory;
 use App\Models\Pastor;
+use App\Models\Zone;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ZoneHistorySeeder extends Seeder
 {
     /**
-     * Seed zone history records linking zones to pastors over time.
-     * Aligns with ChurchStructureSeeder zones and pastors.
+     * Map zone code → first pastor code from the spec.
+     * Inserts active histories into zone_histories.
      */
+    private array $map = [
+        // Region 01 - Harare North
+        'R0101' => 'R0101P01',
+        'R0102' => 'R0102P01',
+        'R0103' => 'R0103P01',
+
+        // Region 02 - Marondera
+        'R0201' => 'R0201P01',
+        'R0202' => 'R0202P01',
+        // R0203 - Wedza - TBA
+
+        // Region 03 - Ruwa
+        'R0301' => 'R0301P01',
+        'R0302' => 'R0302P01',
+        'R0303' => 'R0303P01',
+
+        // Region 04 - Chitungwiza
+        'R0401' => 'R0401P01',
+        'R0402' => 'R0402P01',
+        'R0403' => 'R0403P01',
+        'R0404' => 'R0404P01',
+
+        // Region 05 - Epworth
+        'R0501' => 'R0501P01',
+        'R0502' => 'R0502P01',
+        'R0503' => 'R0503P01',
+        'R0504' => 'R0504P01',
+        'R0505' => 'R0505P01',
+
+        // Region 06 - West Harare
+        'R0601' => 'R0601P01',
+        'R0602' => 'R0602P01',
+        'R0603' => 'R0603P01',
+        'R0604' => 'R0604P01',
+        'R0605' => 'R0605P01',
+
+        // Region 07 - South Harare
+        'R0701' => 'R0701P01',
+        'R0702' => 'R0702P01',
+        'R0703' => 'R0703P01',
+        'R0704' => 'R0704P01',
+        'R0705' => 'R0705P01',
+
+        // Region 08 - South West Harare
+        'R0801' => 'R0801P01',
+        'R0802' => 'R0802P01',
+        'R0803' => 'R0803P01',
+        'R0804' => 'R0804P01',
+
+        // Region 10 - Midlands West
+        'R1001' => 'R1001P01',
+        'R1002' => 'R1002P01',
+        'R1003' => 'R1003P01',
+        'R1004' => 'R1004P01',
+        'R1005' => 'R1005P01',
+        'R1006' => 'R1006P01',
+
+        // Region 11 - Kwekwe
+        'R1101' => 'R1101P01',
+        'R1102' => 'R1102P01',
+        'R1103' => 'R1103P01',
+
+        // Region 12 - Mazowe
+        'R1201' => 'R1201P01',
+        'R1202' => 'R1202P01',
+        'R1203' => 'R1203P01',
+        // R1204 - Mazowe - TBA
+
+        // Region 13 - Mutoko
+        'R1301' => 'R1301P01',
+        'R1302' => 'R1302P01',
+        'R1303' => 'R1303P01',
+
+        // Region 14 - Mashonaland West
+        'R1401' => 'R1401P01',
+        'R1402' => 'R1402P01',
+        'R1403' => 'R1403P01',
+        'R1404' => 'R1404P01',
+        'R1405' => 'R1405P01',
+
+        // Region 15 - International
+        'R1501' => 'R1501P01',
+        'R1502' => 'R1502P01',
+        // R1503 - UK - TBA
+
+        // Region 16 - Masvingo
+        'R1601' => 'R1601P01',
+        'R1602' => 'R1602P01',
+        'R1603' => 'R1603P01',
+
+        // Region 17 - South Africa & Mozambique
+        'R1701' => 'R1701P01',
+        'R1702' => 'R1702P01',
+        'R1703' => 'R1703P01',
+        // R1704 - Germiston - TBA
+        'R1705' => 'R1705P01',
+        'R1706' => 'R1706P01',
+
+        // Region 18 - Bulawayo North
+        'R1801' => 'R1801P01',
+        // R1802 - Cowdray Park - TBA
+
+        // Region 19 - Mozambique/Malawi
+        'R1901' => 'R1901P01',
+        'R1902' => 'R1902P01',
+
+        // Region 20 - Gwanda
+        'R2001' => 'R2001P01',
+        // R2002 - Makwe - TBA
+        // R2003 - Gwanda City - TBA
+
+        // Region 21 - Manicaland
+        'R2101' => 'R2101P01',
+        'R2102' => 'R2102P01',
+        'R2103' => 'R2103P01',
+        'R2104' => 'R2104P01',
+        'R2105' => 'R2105P01',
+
+        // Region 22 - Gweru
+        'R2201' => 'R2201P01',
+        'R2202' => 'R2202P01',
+        'R2203' => 'R2203P01',
+        'R2204' => 'R2204P01',
+
+        // Region 23 - Hatcliff
+        'R2301' => 'R2301P01',
+        'R2302' => 'R2302P01',
+    ];
+
     public function run(): void
     {
-        // Get all zones and pastors with relationships
-        $zones = Zone::all();
-        $pastors = User::where('role', 'pastor')->with('pastor')->get();
+        $zones   = Zone::all()->keyBy('code');
+        $pastors = Pastor::all()->keyBy('code');
+        $now     = now();
+        $inserted = 0;
+        $fixed    = 0;
+        $skipped  = 0;
+        $errors   = 0;
 
-        if ($zones->isEmpty() || $pastors->isEmpty()) {
-            $this->command->warn('Zones or pastors not found. Run ChurchStructureSeeder first.');
-            return;
-        }
+        foreach ($this->map as $zoneCode => $pastorCode) {
+            $zone   = $zones[$zoneCode] ?? null;
+            $pastor = $pastors[$pastorCode] ?? null;
 
-        $historyData = [];
-
-        foreach ($zones as $zone) {
-            // Find pastors assigned to this zone via the Pastor model
-            $zonePastors = $pastors->filter(function ($pastor) use ($zone) {
-                return $pastor->pastor && $pastor->pastor->zone_id == $zone->id;
-            });
-
-            if ($zonePastors->isEmpty()) {
+            if (! $zone || ! $pastor) {
+                $this->command->warn("Missing zone={$zoneCode} or pastor={$pastorCode}");
+                $skipped++;
                 continue;
             }
 
-            // Take first pastor as current
-            $currentPastor = $zonePastors->first();
-            $otherPastors = $zonePastors->slice(1);
-
-            // Current pastor - started at beginning of current year or zone creation
-            $startYear = $zone->created_at ? $zone->created_at->year : now()->year;
-            $historyData[] = [
-                'zone_id' => $zone->id,
-                'pastor_id' => $currentPastor->id,
-                'start_date' => Carbon::create($startYear, 1, 1)->toDateString(),
-                'end_date' => null,
-                'notes' => 'Current zone pastor',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-
-            // Previous pastors - create 1-2 historical assignments
-            $pastorCount = 0;
-            foreach ($otherPastors as $pastor) {
-                if ($pastorCount >= 2) break;
-
-                $startYearPast = rand(max(2018, $startYear - 3), $startYear - 1);
-                $endYear = $startYearPast + rand(1, 2);
-
-                $historyData[] = [
-                    'zone_id' => $zone->id,
-                    'pastor_id' => $pastor->id,
-                    'start_date' => Carbon::create($startYearPast, rand(1, 6), 1)->toDateString(),
-                    'end_date' => Carbon::create(min($endYear, $startYear - 1), rand(7, 12), 31)->toDateString(),
-                    'notes' => 'Previous zone pastor',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-                $pastorCount++;
+            $userId = $pastor->user_id;
+            if (! $userId) {
+                $this->command->warn("Pastor {$pastorCode} has no user_id — skipping zone {$zoneCode}");
+                $skipped++;
+                continue;
             }
 
-            // Add zone creation event for the first few zones as special history
-            if ($zone->id <= 3) {
-                $historyData[] = [
-                    'zone_id' => $zone->id,
-                    'pastor_id' => $currentPastor->id,
-                    'start_date' => $zone->created_at?->toDateString() ?? Carbon::create(2017, 1, 1)->toDateString(),
-                    'end_date' => $startYear > 2018 ? Carbon::create($startYear - 1, 12, 31)->toDateString() : null,
-                    'notes' => 'Zone established',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
+            // Find an existing active history for this zone
+            $existing = DB::table('zone_histories')
+                ->where('zone_id', $zone->id)
+                ->whereNull('end_date')
+                ->first();
 
-            // ── Additional timeline events (achievement, event, growth) ──────────────
-            // Generic events to populate timeline beyond pastor changes
-            $extraEvents = [
-                ['month' => 4, 'notes' => 'Zone Achievement: Reached 250 members milestone', 'type_hint' => 'achievement'],
-                ['month' => 8, 'notes' => 'Zone Conference: Annual zone conference held with 180 attendees', 'type_hint' => 'event'],
-                ['month' => 11, 'notes' => 'Home Group Expansion: Opened 3 new home groups in the region', 'type_hint' => 'growth'],
-            ];
-
-            // Choose a pastor for these events: preferably current pastor, else any assigned pastor
-            $eventPastor = $currentPastor;
-
-            foreach ($extraEvents as $ev) {
-                // Ensure month is valid for the year; use same year as current pastor start, or previous year
-                $eventYear = $startYear;
-                // If the month would be after current date in that year, use previous year
-                $eventDate = Carbon::create($eventYear, $ev['month'], 1);
-                if ($eventDate->isFuture()) {
-                    $eventDate = $eventDate->subYear();
+            if ($existing) {
+                try {
+                    DB::table('zone_histories')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'pastor_id'  => $userId,
+                            'updated_at' => $now,
+                        ]);
+                    $fixed++;
+                } catch (\Throwable $e) {
+                    $this->command->error("Failed updating zone_histories {$existing->id}: " . $e->getMessage());
+                    $errors++;
                 }
+                continue;
+            }
 
-                $historyData[] = [
-                    'zone_id' => $zone->id,
-                    'pastor_id' => $eventPastor->id,
-                    'start_date' => $eventDate->toDateString(),
-                    'end_date' => null,
-                    'notes' => $ev['notes'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+            try {
+                DB::table('zone_histories')->insert([
+                    'zone_id'    => $zone->id,
+                    'pastor_id'  => $userId,
+                    'start_date' => $now,
+                    'end_date'   => null,
+                    'notes'      => 'Assigned from ChurchStructureSeeder',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $inserted++;
+            } catch (\Throwable $e) {
+                $this->command->error("Failed inserting zone_histories for {$zoneCode}: " . $e->getMessage());
+                $errors++;
             }
         }
 
-        // Bulk upsert
-        foreach ($historyData as $record) {
-            ZoneHistory::updateOrCreate(
-                [
-                    'zone_id' => $record['zone_id'],
-                    'pastor_id' => $record['pastor_id'],
-                    'start_date' => $record['start_date'],
-                ],
-                [
-                    'end_date' => $record['end_date'],
-                    'notes' => $record['notes'],
-                    'created_at' => $record['created_at'],
-                    'updated_at' => $record['updated_at'],
-                ]
-            );
-        }
-
-        $this->command->info('Zone history seeded: ' . count($historyData) . ' records');
+        $this->command->info("ZoneHistorySeeder: inserted={$inserted}, fixed={$fixed}, skipped={$skipped}, errors={$errors}");
     }
 }
