@@ -12,6 +12,7 @@ use Database\Seeders\ChurchStructureSeeder;
 use Database\Seeders\ZoneHistorySeeder;
 use Database\Seeders\DepartmentSeeder;
 use Database\Seeders\HomeGroupSeeder;
+use Database\Seeders\IocHomeGroupsSeeder;
 use Database\Seeders\GenderSeeder;
 use Database\Seeders\DemographySeeder;
 use Database\Seeders\AdditionalMembersSeeder;
@@ -34,6 +35,10 @@ class DatabaseSeeder extends Seeder
         // ── Home Groups ───────────────────────────────────────────────────────────
         $this->call([
             HomeGroupSeeder::class,
+        ]);
+
+        $this->call([
+            IocHomeGroupsSeeder::class,
         ]);
 
         // ── Zone Histories ───────────────────────────────────────────────────────

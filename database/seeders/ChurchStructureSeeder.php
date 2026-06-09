@@ -488,19 +488,16 @@ class ChurchStructureSeeder extends Seeder
     // ─────────────────────────────────────────────────────────────────────────
     private function seedPastors(array $zoneIds, array $regionIds): void
     {
+        $zonePastorsAssigned = [];
+
         foreach ($this->pastors as [$code, $fullName, $zoneOverride]) {
             $parts     = explode(' ', $fullName, 2);
             $surname   = $parts[0];
             $firstName = $parts[1] ?? '';
 
-            // Derive zone code from pastor code: first 5 chars = zone code
-            // e.g. R0101P01 → zone = R0101
             $derivedZoneCode = strtoupper(substr($code, 0, 5));
-
-            // Use override if provided (for R0901/R0902 → R2301/R2302 migration)
             $zoneCode = $zoneOverride ?? $derivedZoneCode;
 
-            // Derive region key: chars 1-2 of zone code (e.g. R0101 → '01')
             if (preg_match('/^R(\d{2})/', $zoneCode, $matches)) {
                 $regionKey = $matches[1];
             } else {
@@ -511,6 +508,7 @@ class ChurchStructureSeeder extends Seeder
             $regionId   = $regionIds[$regionKey] ?? null;
             $isRegionalLeader = in_array($code, $this->regionalLeaderCodes, true);
             $isGeneralOverseer = in_array($code, $this->generalOverseerCodes, true);
+            $isZonePastor = !isset($zonePastorsAssigned[$zoneCode]);
 
             $email = strtolower($code).'@heartfelt.church';
 
@@ -537,11 +535,13 @@ class ChurchStructureSeeder extends Seeder
                     'title'             => 'Pastor',
                     'zone_id'           => $zoneId,
                     'region_id'         => $regionId,
-                    'is_zone_pastor'    => true,
+                    'is_zone_pastor'    => $isZonePastor,
                     'is_regional_leader'=> $isRegionalLeader,
                     'is_general_overseer' => $isGeneralOverseer,
                 ]
             );
+
+            $zonePastorsAssigned[$zoneCode] = true;
         }
     }
 }

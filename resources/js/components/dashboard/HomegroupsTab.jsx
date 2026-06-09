@@ -593,37 +593,38 @@ export default function HomegroupsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
 
-  // Use react-query to fetch homegroups from pastor's zone endpoint with pagination
-  const { data: homegroupsResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['pastor-homegroups', currentPage, perPage],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: currentPage,
-        per_page: perPage,
-      });
-      const res = await api.get(`/pastors/home-groups?${params}`);
-      if (!res.data.success) throw new Error(res.data.message || 'Failed');
-      // Map members_count to members for component compatibility
-      const data = res.data.data.map((hg) => ({
-        ...hg,
-        members: hg.members_count,
-      }));
+   // Use react-query to fetch homegroups from pastor's zone endpoint with pagination
+   const homegroupsCacheKey = `homegroups-data-${api.defaults.headers.common['Authorization']?.split(' ')[1]?.slice(0, 8) || 'anon'}`;
+   const { data: homegroupsResponse, isLoading, error, refetch } = useQuery({
+     queryKey: ['pastor-homegroups', currentPage, perPage],
+     queryFn: async () => {
+       const params = new URLSearchParams({
+         page: currentPage,
+         per_page: perPage,
+       });
+       const res = await api.get(`/pastors/home-groups?${params}`);
+       if (!res.data.success) throw new Error(res.data.message || 'Failed');
+       // Map members_count to members for component compatibility
+       const data = res.data.data.map((hg) => ({
+         ...hg,
+         members: hg.members_count,
+       }));
 
-      // Save to localStorage for persistence
-      localStorage.setItem('homegroups-data', JSON.stringify(res.data));
-      return { data, meta: res.data.meta };
-    },
-    staleTime: 30000, // 30 seconds cache
-    gcTime: 300000,
-    refetchOnWindowFocus: true,
-    retry: 1,
-    keepPreviousData: true,
-    initialData: () => {
-      // Load from localStorage if available
-      const cached = localStorage.getItem('homegroups-data');
-      return cached ? JSON.parse(cached) : undefined;
-    },
-  });
+       // Save to localStorage for persistence
+       localStorage.setItem(homegroupsCacheKey, JSON.stringify(res.data));
+       return { data, meta: res.data.meta };
+     },
+     staleTime: 30000, // 30 seconds cache
+     gcTime: 300000,
+     refetchOnWindowFocus: true,
+     retry: 1,
+     keepPreviousData: true,
+     initialData: () => {
+       // Load from localStorage if available
+       const cached = localStorage.getItem(homegroupsCacheKey);
+       return cached ? JSON.parse(cached) : undefined;
+     },
+   });
 
   const homegroups = homegroupsResponse?.data || [];
   const paginationMeta = homegroupsResponse?.meta || {

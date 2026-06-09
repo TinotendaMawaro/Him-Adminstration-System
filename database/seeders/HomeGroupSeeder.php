@@ -7,15 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 class HomeGroupSeeder extends Seeder
 {
-    /**
-     * Home group data mapped by zone code
-     * Each zone gets at least one home group
-     */
     private array $homeGroups = [
         // Region 01
-        ['R0101', 'IOC Dzivarasekwa Home Group', 'Munyarari Building, Glenview 3 Shops, Harare', 'Sunday', '09:00:00'],
-        ['R0102', 'AFDIS Stapleford Home Group', 'HIM Church Stand, Stapleford', 'Sunday', '09:00:00'],
-        ['R0103', 'Zone R0103 Home Group', 'To be assigned', 'Sunday', '09:00:00'],
+        ['R0101', 'IOC Home Group', '1 Sandy Lane, Ashdown Park, Harare', 'Sunday', '09:00:00'],
+        ['R0102', 'Dzivarasekwa Home Group', 'Munyarari Building, Glenview 3 Shops, Harare', 'Sunday', '09:00:00'],
+        ['R0103', 'Afdis Home Group', 'To be assigned', 'Sunday', '09:00:00'],
 
         // Region 02
         ['R0201', 'Mandra (Rsk) Home Group', 'To be assigned', 'Sunday', '09:00:00'],

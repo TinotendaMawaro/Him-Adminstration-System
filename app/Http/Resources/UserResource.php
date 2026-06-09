@@ -30,7 +30,7 @@ class UserResource extends JsonResource
             'hod_code'       => $this->when($role === UserRole::HOD, $this->hod_code),
 
             'zone_id'        => $this->zone_id,
-            'zone'           => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () {
+            'zone'           => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () use ($role) {
                 // Build zone data array - pastor info requires pastors to be loaded
                 $buildZone = function ($zone) {
                     $pastors = $zone->pastors ?? collect();

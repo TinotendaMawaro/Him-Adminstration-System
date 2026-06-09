@@ -250,9 +250,9 @@ class PastorController extends Controller
          }
 
          // 4️⃣ SECURE QUERY: Parameter binding via Eloquent prevents SQL injection
-         $query = Member::where('zone_id', $user->zone_id)
-             ->active()
-             ->with(['homeGroup:id,name', 'department:id,name', 'gender:id,name']);
+          $query = Member::where('zone_id', $user->zone_id)
+              ->active()
+              ->with(['user:id,name,email,phone,title', 'homeGroup:id,name', 'department:id,name', 'gender:id,name']);
 
          // 5️⃣ FILTERING: Server-side only - client filters are secondary
          if (!empty($search)) {
@@ -413,80 +413,142 @@ class PastorController extends Controller
          ]);
      }
 
-     /** GET /api/pastors/zone-history — Zone history timeline data */
-     public function zoneHistory(Request $request): JsonResponse
-     {
-         $user = $request->user();
+      /** GET /api/pastors/zone-history — Zone history timeline data */
+      public function zoneHistory(Request $request): JsonResponse
+      {
+          $user = $request->user();
 
-         if (!$user->isPastor() || !$user->zone_id) {
-             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-         }
+          if (!$user->isPastor() || !$user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
 
-         $zoneId = $user->zone_id;
-         $now = now();
+          $zoneId = $user->zone_id;
+          $now = now();
 
-         // Fetch zone history records ordered by start_date descending
-         $historyRecords = ZoneHistory::where('zone_id', $zoneId)
-             ->with(['pastor:id,name,unique_code'])
-             ->orderBy('start_date', 'desc')
-             ->get();
+          $historyRecords = ZoneHistory::where('zone_id', $zoneId)
+              ->with(['pastor:id,name,unique_code'])
+              ->orderBy('start_date', 'desc')
+              ->get();
 
-         // Build timeline items from zone_histories
-         $timeline = [];
-         foreach ($historyRecords as $record) {
-             $pastor = $record->pastor;
-             $isCurrent = is_null($record->end_date);
+          $timeline = [];
+          foreach ($historyRecords as $record) {
+              $pastor = $record->pastor;
+              $isCurrent = is_null($record->end_date);
 
-             // Determine event type based on notes or infer from context
-             $type = 'pastor_change';
-             if ($record->notes) {
-                 $lowerNotes = strtolower($record->notes);
-                 if (str_contains($lowerNotes, 'achievement') || str_contains($lowerNotes, 'milestone')) {
-                     $type = 'achievement';
-                 } elseif (str_contains($lowerNotes, 'event') || str_contains($lowerNotes, 'conference')) {
-                     $type = 'event';
-                 } elseif (str_contains($lowerNotes, 'growth') || str_contains($lowerNotes, 'expansion')) {
-                     $type = 'growth';
-                 } elseif (str_contains($lowerNotes, 'established') || str_contains($lowerNotes, 'created')) {
-                     $type = 'zone_created';
-                 }
-             }
+              $type = 'pastor_change';
+              if ($record->notes) {
+                  $lowerNotes = strtolower($record->notes);
+                  if (str_contains($lowerNotes, 'achievement') || str_contains($lowerNotes, 'milestone')) {
+                      $type = 'achievement';
+                  } elseif (str_contains($lowerNotes, 'event') || str_contains($lowerNotes, 'conference')) {
+                      $type = 'event';
+                  } elseif (str_contains($lowerNotes, 'growth') || str_contains($lowerNotes, 'expansion')) {
+                      $type = 'growth';
+                  } elseif (str_contains($lowerNotes, 'established') || str_contains($lowerNotes, 'created')) {
+                      $type = 'zone_created';
+                  }
+              }
 
-             $description = $record->notes ?: "Pastoral assignment for " . ($pastor?->name ?? 'Unknown');
+              $description = $record->notes ?: "Pastoral assignment for " . ($pastor?->name ?? 'Unknown');
 
-             $timeline[] = [
-                 'id' => $record->id,
-                 'type' => $type,
-                 'title' => $isCurrent ? 'Current Zone Pastor' : 'Zone Pastor',
-                 'description' => $description,
-                 'date' => $record->start_date->format('Y-m-d'),
-                 'pastor' => [
-                     'name' => $pastor?->name ?? 'Unknown',
-                     'isCurrent' => $isCurrent,
-                 ],
-                 'start_date' => $record->start_date->format('Y-m-d'),
-                 'end_date' => $record->end_date?->format('Y-m-d'),
-             ];
-         }
+              $timeline[] = [
+                  'id' => $record->id,
+                  'type' => $type,
+                  'title' => $isCurrent ? 'Current Zone Pastor' : 'Zone Pastor',
+                  'description' => $description,
+                  'date' => $record->start_date->format('Y-m-d'),
+                  'pastor' => [
+                      'name' => $pastor?->name ?? 'Unknown',
+                      'isCurrent' => $isCurrent,
+                  ],
+                  'start_date' => $record->start_date->format('Y-m-d'),
+                  'end_date' => $record->end_date?->format('Y-m-d'),
+              ];
+          }
 
-         // Also include zone creation event if no history exists
-         if ($historyRecords->isEmpty()) {
-             $zone = Zone::find($zoneId);
-             if ($zone) {
-                 $timeline[] = [
-                     'id' => 0,
-                     'type' => 'zone_created',
-                     'title' => 'Zone Established',
-                     'description' => $zone->name . ' was established',
-                     'date' => $zone->created_at?->format('Y-m-d') ?? $now->format('Y-m-d'),
-                     'pastor' => null,
-                 ];
-             }
-         }
+          if ($historyRecords->isEmpty()) {
+              $zone = Zone::find($zoneId);
+              if ($zone) {
+                  $timeline[] = [
+                      'id' => 0,
+                      'type' => 'zone_created',
+                      'title' => 'Zone Established',
+                      'description' => $zone->name . ' was established',
+                      'date' => $zone->created_at?->format('Y-m-d') ?? $now->format('Y-m-d'),
+                      'pastor' => null,
+                  ];
+              }
+          }
 
-         return response()->json([
-             'success' => true,
-             'data' => $timeline,
-         ]);
-     }
-}
+          return response()->json([
+              'success' => true,
+              'data' => $timeline,
+          ]);
+      }
+
+      /** POST /api/pastors/members/bulk — bulk actions for selected zone members */
+      public function bulkMemberAction(Request $request): JsonResponse
+      {
+          $user = $request->user();
+
+          if (!$user->isPastor() || !$user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
+
+          $validated = $request->validate([
+              'ids'   => ['required', 'array', 'min:1'],
+              'ids.*' => ['integer', 'exists:members,id'],
+              'action'=> ['required', 'string', Rule::in(['activate', 'deactivate'])],
+          ]);
+
+          $members = Member::whereIn('id', $validated['ids'])
+              ->where('zone_id', $user->zone_id)
+              ->get();
+
+          if ($members->isEmpty()) {
+              return response()->json(['success' => false, 'message' => 'No matching members found in your zone.'], 404);
+          }
+
+          $newStatus = $validated['action'] === 'activate' ? 'active' : 'inactive';
+          $updated = 0;
+
+          foreach ($members as $member) {
+              if ($member->status !== $newStatus) {
+                  $member->status = $newStatus;
+                  $member->save();
+                  $updated++;
+              }
+          }
+
+          return response()->json([
+              'success' => true,
+              'message' => "{$updated} member(s) updated.",
+          ]);
+      }
+
+      /** POST /api/pastors/members/{member}/status — change member status */
+      public function updateMemberStatus(Request $request, Member $member): JsonResponse
+      {
+          $user = $request->user();
+
+          if (!$user->isPastor() || !$user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
+
+          if ($member->zone_id !== $user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
+
+          $validated = $request->validate([
+              'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
+          ]);
+
+          $member->status = $validated['status'];
+          $member->save();
+
+          return response()->json([
+              'success' => true,
+              'data' => new MemberResource($member->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
+          ]);
+      }
+ }

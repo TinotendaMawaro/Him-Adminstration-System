@@ -85,7 +85,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
          Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
          Route::get('/dashboard', [PastorController::class, 'dashboard']);
          Route::get('/members', [PastorController::class, 'members'])
-              ->middleware('throttle:120,1'); // Rate-limited to prevent mass export
+              ->middleware('throttle:120,1');
+         Route::post('/members/bulk', [PastorController::class, 'bulkMemberAction']);
+         Route::post('/members/{member}/status', [PastorController::class, 'updateMemberStatus']);
          Route::get('/home-groups', [PastorController::class, 'homeGroups']);
          Route::get('/activities', [PastorController::class, 'activities']);
          Route::get('/zone-history', [PastorController::class, 'zoneHistory']);

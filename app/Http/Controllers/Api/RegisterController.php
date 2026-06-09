@@ -88,6 +88,14 @@ class RegisterController extends Controller
                 'zone_id'         => $zone->id,
             ]);
 
+            $member = $user->member;
+            if ($member && $validated['phone'] ?? null) {
+                $member->phone = $validated['phone'];
+            }
+            if ($member) {
+                $member->save();
+            }
+
             // 3. Associate zone is already set on both User and Member above; no separate counter update needed
 
             DB::commit();

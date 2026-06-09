@@ -13,279 +13,83 @@ class IocHomeGroupsSeeder extends Seeder
     public function run(): void
     {
         $iocHomeGroups = [
-            [
-                'name' => 'Mabelreign',
-                'location' => '26 Cotswold Way, Cotswold Hills Mabelreign',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr & Mrs Chikanya (0775909292, 0773868677)',
-            ],
-            [
-                'name' => 'Ashdown Park',
-                'location' => '19 Sandy Lane Ashdown Park, Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Gogo Chindawi (0712623162)',
-            ],
-            [
-                'name' => 'Bloomingdale',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Machine (0779520757)',
-            ],
-            [
-                'name' => 'Spitzkop Rainham',
-                'location' => 'Plot Number 11, Spitzkop Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastors Chinoyevedza (0774130042, 0774832829)',
-            ],
-            [
-                'name' => 'Cold Comfort',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastors Mudhefi (0714336002, 0773448707)',
-            ],
-            [
-                'name' => 'Tynwald North',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'No Leader',
-            ],
-            [
-                'name' => 'Sunridge',
-                'location' => 'Proposed to combine with Avonlea/Greencroft',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Home Group Leader relocated to DZ – Ext NBS',
-            ],
-            [
-                'name' => 'Marlborough',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Kasokoya (0772372995, 0779124528)',
-            ],
-            [
-                'name' => 'NBS Gillingham',
-                'location' => 'New Home Group',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Tafadzwa Mushiwekufa (0776581886)',
-            ],
-            [
-                'name' => 'Westlea, Nkwisi, Lenana, Matidoda',
-                'location' => '5349 Nkwisi Gardens Tynwald Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr & Mrs Madamombe (0772298137, 0772471291), Mr & Mrs Zitsenga (0772455944), Ms Nyamatore (0773548513)',
-            ],
-            [
-                'name' => 'Avonlea and Greencroft',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Deacons Masava (0772996067, 0773486413)',
-            ],
-            [
-                'name' => 'Borrowdale',
-                'location' => 'Sister Takunda Taderera 0772593558',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Taderera (0772593558)',
-            ],
-            [
-                'name' => 'Southview Park',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastor Makoni (0772850444)',
-            ],
-            [
-                'name' => 'Kambuzuma/Westwood',
-                'location' => '9056 section 3, Kambuzuma Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Proposed: Mrs Muchenje, Mr Chirume',
-            ],
-            [
-                'name' => 'Rugare',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Mabasa (0775606593)',
-            ],
-            [
-                'name' => 'Eyecourt',
-                'location' => '154 Eyecourt, Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastors Munemo (0772684612)',
-            ],
-            [
-                'name' => 'Warren Park 1&2',
-                'location' => '20 8th Close Warren Park harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Nyazamba (0772687091, 0719687091), Mrs Jekecha (0773236566), Mr Dzuda (0772970519/0719970519)',
-            ],
-            [
-                'name' => 'Waterfalls',
-                'location' => '712 Reelar Parktown, Waterfalls Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastors Tembo (0773470796, 0775206244)',
-            ],
-            [
-                'name' => 'Mainway Meadows',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Machabe (0717115000, 0774072745), Mrs Mufunga (0773497197), Tanyaradzwa Mufunga (0719497197)',
-            ],
-            [
-                'name' => 'Msasa/Chadcome/Hillside/Braeside',
-                'location' => 'Provisional until appointment of the new Leader',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Deacon & Deaconess Masava (0772996067, 0773486413)',
-            ],
-            [
-                'name' => 'Avondale',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Matiringe (0773172339, 0778843257)',
-            ],
-            [
-                'name' => 'Warren Park D',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr Jiri (0771033175)',
-            ],
-            [
-                'name' => 'Belvedere South',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Zizhou (0772466933)',
-            ],
-            [
-                'name' => 'Madokere',
-                'location' => '13047 Madokero Tynwald',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Takototsa (0772222530, 0772366530), Mrs Mawarura (0772652408)',
-            ],
-            [
-                'name' => 'Hatfield',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mrs Mapani (0772604238), Mrs L Mugari (0775141046), Mrs H Chaponda (0772222835), Mr & Mrs Matenda (0772974775/0772222444)',
-            ],
-            [
-                'name' => 'Kuwadzana Phase 3',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastor Brian (0783014271)',
-            ],
-            [
-                'name' => 'Dzivarasekwa ext',
-                'location' => '308 Nehanda Dzivarasekwa Extension Harare',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Msipa (0775052515, 0773790612), Mrs Matare (0772808251)',
-            ],
-            [
-                'name' => 'Harare City centre',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastor Emma (0772859739)',
-            ],
-            [
-                'name' => 'Domboshawa',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mrs Badza (0772496793), Pastors Masendeke',
-            ],
-            [
-                'name' => 'Fairview',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mrs Makombe (0772742872)',
-            ],
-            [
-                'name' => 'Belvedere North',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr/s Magunje (0772978145, 0783185523)',
-            ],
-            [
-                'name' => 'Mount Pleasant',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mrs Bwerinofa (0772205324)',
-            ],
-            [
-                'name' => 'Whitecliff Granary',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Pfumayaramba (0772445611, 0784456741)',
-            ],
-            [
-                'name' => 'Chisipiti, Mandara, Glen Lorne, Chishawasha',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mr and Mrs Chigiya (0773901018, 0782260888)',
-            ],
-            [
-                'name' => 'Waterfalls Retreat',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Pastors Nyamanhari (0772384466, 0772936014)',
-            ],
-            [
-                'name' => 'Greendale',
-                'location' => 'To be assigned',
-                'meeting_day' => 'Sunday',
-                'meeting_time' => '09:00:00',
-                'leader_info' => 'Mrs Musakanda (0772407001)',
-            ],
+            // IOC Zone R0101 - Harare North
+            ['R0101', 'Mabelreign', '26 Cotswold Way, Cotswold Hills Mabelreign', 'Sunday', '09:00:00'],
+            ['R0101', 'Ashdown Park', '19 Sandy Lane Ashdown Park, Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Bloomingdale', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Spitzkop Rainham', 'Plot Number 11, Spitzkop Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Cold Comfort', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Tynwald North', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Sunridge', 'Proposed to combine with Avonlea/Greencroft', 'Sunday', '09:00:00'],
+            ['R0101', 'Marlborough', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'NBS Gillingham', 'New Home Group', 'Sunday', '09:00:00'],
+            ['R0101', 'Westlea, Nkwisi, Lenana, Matidoda', '5349 Nkwisi Gardens Tynwald Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Avonlea and Greencroft', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Borrowdale', 'Sister Takunda Taderera 0772593558', 'Sunday', '09:00:00'],
+            ['R0101', 'Southview Park', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Rugare', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Eyecourt', '154 Eyecourt, Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Waterfalls', '712 Reelar Parktown, Waterfalls Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Mainway Meadows', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Msasa/Chadcome/Hillside/Braeside', 'Provisional until appointment of the new Leader', 'Sunday', '09:00:00'],
+            ['R0101', 'Avondale', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Madokere', '13047 Madokero Tynwald', 'Sunday', '09:00:00'],
+            ['R0101', 'Hatfield', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Dzivarasekwa ext', '308 Nehanda Dzivarasekwa Extension Harare', 'Sunday', '09:00:00'],
+            ['R0101', 'Harare City centre', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Fairview', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Belvedere North', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Mount Pleasant', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Belvedere South', 'To be assigned', 'Sunday', '09:00:00'],
+            ['R0101', 'Warren Park 1&2', '20 8th Close Warren Park harare', 'Sunday', '09:00:00'],
+
+            // Zone R0603 - Kuwadzana (Home Group: Kuwadzana Phase 3)
+            // Kuwadzana Phase 3 is in West Harare
+            ['R0603', 'Kuwadzana Phase 3', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R0604 - Granary (Home Group: Whitecliff Granary)
+            // Whitecliff / Granary area is in North-West Harare = Granary zone
+            ['R0604', 'Whitecliff Granary', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R0605 - Kambuzuma (Home Group: Kambuzuma/Westwood)
+            // Kambuzuma address is in South-West Harare
+            ['R0605', 'Kambuzuma/Westwood', '9056 section 3, Kambuzuma Harare', 'Sunday', '09:00:00'],
+
+            // Zone R0702 - Retreat (Home Group: Waterfalls Retreat)
+            // Waterfalls Retreat is in South Harare
+            ['R0702', 'Waterfalls Retreat', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R0704 - Stoneridge (Home Group: Chisipiti/Mandara/Glen Lorne/Chishawasha)
+            // These areas are in South-East Harare
+            ['R0704', 'Chisipiti, Mandara, Glen Lorne, Chishawasha', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R0804 - Highfields (Home Group: Warren Park D)
+            // Warren Park D is in South-West Harare, grouped with Highfields area
+            ['R0804', 'Warren Park D', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R0502 - Greendale (Home Group: Greendale)
+            ['R0502', 'Greendale', 'To be assigned', 'Sunday', '09:00:00'],
+
+            // Zone R2302 - Domboshava (Home Group: Domboshava)
+            ['R2302', 'Domboshava', 'To be assigned', 'Sunday', '09:00:00'],
         ];
 
-        // Get IOC zone
-        $zone = DB::table('zones')->where('code', 'R0101')->first();
-        if (!$zone) {
-            $this->command->error('IOC zone (R0101) not found!');
-            return;
-        }
-
         $created = 0;
-        foreach ($iocHomeGroups as $hgData) {
+        foreach ($iocHomeGroups as [$zoneCode, $name, $location, $meetingDay, $meetingTime]) {
+            $zone = DB::table('zones')->where('code', $zoneCode)->first();
+            if (!$zone) {
+                $this->command->warn("Zone {$zoneCode} not found. Skipping home group '{$name}'.");
+                continue;
+            }
+
             DB::table('home_groups')->updateOrInsert(
+                ['zone_id' => $zone->id, 'name' => $name],
                 [
-                    'zone_id' => $zone->id,
-                    'name' => $hgData['name']
-                ],
-                [
-                    'location' => $hgData['location'],
-                    'meeting_day' => $hgData['meeting_day'],
-                    'meeting_time' => $hgData['meeting_time'],
-                    'updated_at' => now(),
+                    'location'      => $location,
+                    'meeting_day'   => $meetingDay,
+                    'meeting_time'  => $meetingTime,
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
                 ]
             );
             $created++;

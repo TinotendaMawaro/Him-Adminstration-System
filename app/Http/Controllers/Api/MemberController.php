@@ -44,10 +44,12 @@ class MemberController extends Controller
         }
 
         $query = Member::with([
-            'zone:id,name',
+            'user:id,name,email,phone,role,unique_code',
+            'zone:id,name,code',
             'homeGroup:id,name',
             'department:id,name',
-            'gender:id,name'
+            'gender:id,name',
+            'demography:id,name',
         ]);
 
         // Role-based data isolation - prevents cross-zone access

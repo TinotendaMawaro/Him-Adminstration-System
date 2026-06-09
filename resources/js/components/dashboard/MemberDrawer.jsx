@@ -1,188 +1,144 @@
-export default function MemberDrawer({ member, onClose }) {
-  if (!member) return null;
+import { useState, useEffect } from "react";
+import api from "../../lib/api.js";
 
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+const ROW_CLASS = "h-9";
+const TH_CLASS = "px-2 py-1 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-200";
+const TD_CLASS = "px-2 py-1 text-xs text-gray-900 border-b border-gray-100 align-middle";
+const INPUT_CLASS = "h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs focus:ring-1 focus:ring-gold-400/60 focus:border-gold-400";
+
+export default function MemberDrawer({ member, onClose, onUpdated }) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    surname: "",
+    phone: "",
+    email: "",
+  });
+
+  useEffect(() => {
+    if (!member) return;
+    setForm({
+      name: member.name || "",
+      surname: member.surname || "",
+      phone: member.phone || "",
+      email: member.email || "",
     });
-  };
+    setEditing(false);
+  }, [member?.id]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-red-100 text-red-800';
-      case 'transferred':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'deceased':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const updateField = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await api.put("/members/me", {
+        name: form.name,
+        surname: form.surname,
+      });
+      if (res.data.success) {
+        setEditing(false);
+        onUpdated?.();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || "Update failed");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const InfoCard = ({ label, value }) => (
-    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-      <div className="flex-shrink-0 w-8 h-8 bg-gold-100 rounded-lg flex items-center justify-center">
-        <span className="text-gold-700 text-sm">★</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-        <p className="text-sm text-gray-900 font-medium truncate" title={value || 'N/A'}>
-          {value || 'N/A'}
-        </p>
-      </div>
-    </div>
-  );
+  const memberCode = member?.member_code || member?.member_number || "N/A";
+  const fullName = member?.full_name || [member?.name, member?.surname].filter(Boolean).join(" ") || "Unknown";
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 transition-opacity duration-300"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 transition-opacity duration-300" onClick={onClose} />
 
-      {/* Drawer */}
       <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-out">
         <div className="h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-gold-100 flex items-center justify-center">
-                <span className="text-lg font-semibold text-gold-700">
-                  {member.name?.charAt(0)?.toUpperCase() || '?'}
-                </span>
+              <div className="h-10 w-10 rounded-full bg-gold-100 flex items-center justify-center">
+                <span className="text-sm font-semibold text-gold-700">{(member?.name || "?")?.charAt(0)?.toUpperCase()}</span>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {member.name || 'Unknown Member'}
-                </h2>
+                <h2 className="text-base font-semibold text-gray-900 leading-tight">{fullName}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm font-mono text-gray-500">
-                    {member.member_code || member.member_number || 'N/A'}
+                  <span className="text-xs font-mono text-gray-500">{memberCode}</span>
+                  <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${member?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    {member?.status || "N/A"}
                   </span>
-                  {member.status && (
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(member.status)}`}>
-                      {member.status}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
-          {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            {/* Personal Information */}
-            <section>
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                Personal Information
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard label="Full Name" value={member.name} />
-                {member.surname && (
-                  <InfoCard label="Surname" value={member.surname} />
-                )}
-                <InfoCard label="Phone" value={member.phone || member.mobile} />
-                {member.email && (
-                  <InfoCard label="Email" value={member.email} />
-                )}
-                {member.date_of_birth && (
-                  <InfoCard label="Date of Birth" value={formatDate(member.date_of_birth)} />
-                )}
-                {member.gender?.name && (
-                  <InfoCard label="Gender" value={member.gender.name} />
+          <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Full Name</p>
+                {editing ? (
+                  <input className={INPUT_CLASS} value={form.name} onChange={(e) => updateField("name", e.target.value)} />
+                ) : (
+                  <p className="text-xs text-gray-900 font-medium truncate" title={member?.name || "N/A"}>{member?.name || "N/A"}</p>
                 )}
               </div>
-            </section>
-
-            {/* Church Assignment */}
-            <section>
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                Church Assignment
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {member.zone?.name && (
-                  <InfoCard label="Zone" value={member.zone.name} />
-                )}
-                {member.homeGroup?.name && (
-                  <InfoCard label="Home Group" value={member.homeGroup.name} />
-                )}
-                {member.department?.name && (
-                  <InfoCard label="Department" value={member.department.name} />
-                )}
-                {member.membership_date && (
-                  <InfoCard label="Membership Date" value={formatDate(member.membership_date)} />
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Surname</p>
+                {editing ? (
+                  <input className={INPUT_CLASS} value={form.surname} onChange={(e) => updateField("surname", e.target.value)} />
+                ) : (
+                  <p className="text-xs text-gray-900 font-medium truncate" title={member?.surname || "N/A"}>{member?.surname || "N/A"}</p>
                 )}
               </div>
-            </section>
-
-            {/* Additional Information */}
-            <section>
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                Additional Information
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard
-                  label="Baptised"
-                  value={member.is_baptised ? 'Yes' : 'No'}
-                />
-                <InfoCard
-                  label="Can Be Partner"
-                  value={member.can_be_partner ? 'Yes' : 'No'}
-                />
-                {member.demography?.name && (
-                  <InfoCard label="Demography" value={member.demography.name} />
-                )}
-                {member.partner && (
-                  <InfoCard
-                    label="Partner"
-                    value={`${member.partner.name} ${member.partner.surname || ''}`.trim()}
-                  />
-                )}
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Phone</p>
+                <p className="text-xs text-gray-900 font-medium truncate" title={member?.phone || "N/A"}>{member?.phone || "N/A"}</p>
               </div>
-            </section>
-
-            {/* Timestamps */}
-            <section>
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                Record Info
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard
-                  label="Created"
-                  value={formatDate(member.created_at)}
-                />
-                <InfoCard
-                  label="Updated"
-                  value={formatDate(member.updated_at)}
-                />
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Email</p>
+                <p className="text-xs text-gray-900 font-medium truncate" title={member?.email || "N/A"}>{member?.email || "N/A"}</p>
               </div>
-            </section>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Zone</p>
+                <p className="text-xs text-gray-900 font-medium truncate" title={member?.zone?.name || "N/A"}>{member?.zone?.name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Home Group</p>
+                <p className="text-xs text-gray-900 font-medium truncate" title={member?.homeGroup?.name || "N/A"}>{member?.homeGroup?.name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Department</p>
+                <p className="text-xs text-gray-900 font-medium truncate" title={member?.department?.name || "N/A"}>{member?.department?.name || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">Membership Date</p>
+                <p className="text-xs text-gray-900 font-medium">{member?.membership_date ? new Date(member.membership_date).toLocaleDateString() : "N/A"}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex gap-3">
-              <button className="flex-1 px-4 py-2 bg-gold-500 text-white text-sm font-medium rounded-xl hover:bg-gold-600 transition-colors">
-                Edit Member
-              </button>
-              <button className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-100 transition-colors">
-                View History
-              </button>
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <div className="flex gap-2">
+              {editing ? (
+                <>
+                  <button disabled={saving} onClick={handleSave} className="flex-1 h-8 bg-gold-500 text-white text-xs font-medium rounded-lg hover:bg-gold-600 disabled:opacity-50">
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button disabled={saving} onClick={() => setEditing(false)} className="flex-1 h-8 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-100 disabled:opacity-50">
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setEditing(true)} className="flex-1 h-8 bg-gold-500 text-white text-xs font-medium rounded-lg hover:bg-gold-600">
+                  Edit Profile
+                </button>
+              )}
             </div>
           </div>
         </div>
