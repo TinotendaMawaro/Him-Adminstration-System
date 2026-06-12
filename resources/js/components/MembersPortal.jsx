@@ -574,6 +574,7 @@ const QuickActions = ({ onAction, pendingInvitations = 0 }) => {
       { id: 'view-pastor-hod', icon: Icons.Users,      label: 'Pastor & HOD',   description: 'Contact leadership',           color: 'from-purple-400 to-purple-600' },
       { id: 'view-events',     icon: Icons.Calendar,   label: 'Upcoming Events',description: 'Church activities',            color: 'from-sky-400 to-sky-600' },
       { id: 'submit-reports',  icon: Icons.DocumentText,label: 'Submit Reports', description: 'Requests & reports',           color: 'from-emerald-400 to-emerald-600' },
+      { id: 'partnership',     icon: Icons.Heart,      label: 'Partnership',    description: 'Tithes, offerings, giving',    color: 'from-gold-400 to-amber-500' },
       { id: 'feedback',        icon: Icons.Star,       label: 'Feedback',       description: 'Rate & review the app',        color: 'from-orange-400 to-red-500' },
   ];
     return (
@@ -680,35 +681,102 @@ const DepartmentsSection = ({ user, onViewDepartments, onLeaveDepartment }) => {
 // EVENTS SECTION (static placeholder — replace with useEvents hook later)
 // ============================================================================
 
+const CHURCH_EVENTS_2026 = Object.freeze([
+  { id: "e1", title: "21 Days of Prayer and Fasting", startDate: "2026-01-11", endDate: "2026-01-31", category: "International", location: "IOC and Zones" },
+  { id: "e2", title: "Anointing Night", startDate: "2026-01-30", endDate: "2026-01-30", category: "International", location: "IOC" },
+  { id: "e3", title: "Operation Come and See", startDate: "2026-01-18", endDate: "2026-01-18", category: "Events" },
+  { id: "e4", title: "Homegroup Opening", startDate: "2026-02-03", endDate: "2026-02-03", category: "Events" },
+  { id: "e5", title: "International Day of Fruitfulness", startDate: "2026-02-07", endDate: "2026-02-07", category: "International", location: "IOC" },
+  { id: "e6", title: "Mega Worship", startDate: "2026-02-11", endDate: "2026-02-14", category: "International", location: "Richland" },
+  { id: "e7", title: "Operation Come and See", startDate: "2026-02-15", endDate: "2026-02-15", category: "Events" },
+  { id: "e8", title: "Kingdom Service Conference", startDate: "2026-02-26", endDate: "2026-02-28", category: "International", location: "Richland" },
+  { id: "e9", title: "Anointing Night", startDate: "2026-02-27", endDate: "2026-02-27", category: "International", location: "Richland" },
+  { id: "e10", title: "Intercessors Conference", startDate: "2026-03-11", endDate: "2026-03-14", category: "International", location: "Richland" },
+  { id: "e11", title: "Helpers Day", startDate: "2026-03-15", endDate: "2026-03-15", category: "International", location: "IOC and Zones" },
+  { id: "e12", title: "Festival Of Joy", startDate: "2026-03-21", endDate: "2026-03-21", category: "International", location: "Zones" },
+  { id: "e13", title: "Super Sunday", startDate: "2026-03-22", endDate: "2026-03-22", category: "International", location: "IOC" },
+  { id: "e14", title: "Operation Come and See", startDate: "2026-03-22", endDate: "2026-03-22", category: "Events" },
+  { id: "e15", title: "Anointing Night", startDate: "2026-04-03", endDate: "2026-04-03", category: "International", location: "IOC" },
+  { id: "e16", title: "Regional Passover", startDate: "2026-04-03", endDate: "2026-04-05", category: "International", location: "IOC and Zones" },
+  { id: "e17", title: "Children's Church Revival", startDate: "2026-04-12", endDate: "2026-04-14", category: "International", location: "IOC and Zones" },
+  { id: "e18", title: "Shine Camp", startDate: "2026-04-15", endDate: "2026-04-18", category: "International", location: "Richland" },
+  { id: "e19", title: "Operation Come and See", startDate: "2026-04-19", endDate: "2026-04-19", category: "Events" },
+  { id: "e20", title: "Anointing Night – Pastors", startDate: "2026-05-01", endDate: "2026-05-01", category: "International", location: "Richland" },
+  { id: "e21", title: "Super Singles", startDate: "2026-05-07", endDate: "2026-05-09", category: "International", location: "Richland" },
+  { id: "e22", title: "Operation Come and See", startDate: "2026-05-17", endDate: "2026-05-17", category: "Events" },
+  { id: "e23", title: "Marketplace Breakthrough Summit", startDate: "2026-05-27", endDate: "2026-05-30", category: "International", location: "IOC" },
+  { id: "e24", title: "Covenant Days Of Blessing", startDate: "2026-06-07", endDate: "2026-06-07", category: "International", location: "IOC" },
+  { id: "e25", title: "Marriages Conference", startDate: "2026-06-18", endDate: "2026-06-20", category: "International", location: "IOC" },
+  { id: "e26", title: "Operation Come and See", startDate: "2026-06-21", endDate: "2026-06-21", category: "Events" },
+  { id: "e27", title: "Liberation Night", startDate: "2026-06-26", endDate: "2026-06-26", category: "International" },
+  { id: "e28", title: "Women on Fire Conference", startDate: "2026-07-01", endDate: "2026-07-04", category: "International", location: "Richland" },
+  { id: "e29", title: "Operation Come and See", startDate: "2026-07-19", endDate: "2026-07-19", category: "Events" },
+  { id: "e30", title: "Empowerment Summit SA", startDate: "2026-07-23", endDate: "2026-07-25", category: "International", location: "South Africa" },
+  { id: "e31", title: "Anointing Night – Men on Fire", startDate: "2026-07-30", endDate: "2026-07-30", category: "International", location: "IOC" },
+  { id: "e32", title: "Pastors Prayer Outing", startDate: "2026-08-03", endDate: "2026-08-05", category: "International", location: "Richland" },
+  { id: "e33", title: "Operation Come and See", startDate: "2026-08-16", endDate: "2026-08-16", category: "Events" },
+  { id: "e34", title: "Gideon Prayer Army", startDate: "2026-08-19", endDate: "2026-08-21", category: "International", location: "Richland" },
+  { id: "e35", title: "Catch The Fire Conference", startDate: "2026-08-24", endDate: "2026-08-30", category: "International", location: "Richland", image: "/images/CTF.jpg" },
+  { id: "e36", title: "Operation Come and See", startDate: "2026-09-20", endDate: "2026-09-20", category: "Events" },
+  { id: "e37", title: "Anointing Night – Night to Remember", startDate: "2026-10-02", endDate: "2026-10-02", category: "International", location: "IOC" },
+  { id: "e38", title: "Parents Day", startDate: "2026-10-04", endDate: "2026-10-04", category: "Events", location: "All Zones" },
+  { id: "e39", title: "Dubai Apostolic Visit (Fresh Oil)", startDate: "2026-10-08", endDate: "2026-10-10", category: "International", location: "UAE" },
+  { id: "e40", title: "Men on Fire", startDate: "2026-10-14", endDate: "2026-10-17", category: "International", location: "Richland" },
+  { id: "e41", title: "International Sports Day", startDate: "2026-10-17", endDate: "2026-10-17", category: "International", location: "Richland" },
+  { id: "e42", title: "Operation Come and See", startDate: "2026-10-18", endDate: "2026-10-18", category: "Events" },
+  { id: "e43", title: "Super Sunday", startDate: "2026-10-18", endDate: "2026-10-18", category: "International", location: "Richland" },
+  { id: "e44", title: "White Sunday", startDate: "2026-10-25", endDate: "2026-10-25", category: "Events", location: "All Zones" },
+  { id: "e45", title: "Success Night", startDate: "2026-10-30", endDate: "2026-10-30", category: "International", location: "IOC" },
+  { id: "e46", title: "Interdenominational Ministers and Leaders Conference", startDate: "2026-11-12", endDate: "2026-11-14", category: "International", location: "Richland" },
+  { id: "e47", title: "Spiritual Heritage Week", startDate: "2026-11-16", endDate: "2026-11-22", category: "International", location: "IOC and Zones" },
+  { id: "e48", title: "Operation Come and See", startDate: "2026-11-22", endDate: "2026-11-22", category: "Events" },
+  { id: "e49", title: "Anointing Night – Children's Ministry", startDate: "2026-11-27", endDate: "2026-11-27", category: "International", location: "IOC" },
+  { id: "e50", title: "Day of Honor", startDate: "2026-12-06", endDate: "2026-12-06", category: "Events", location: "All Zones" },
+  { id: "e51", title: "Pastor's Seminar", startDate: "2026-12-07", endDate: "2026-12-09", category: "International" },
+  { id: "e52", title: "Home Groups Close", startDate: "2026-12-08", endDate: "2026-12-08", category: "Events", location: "All Zones" },
+  { id: "e53", title: "Operation Come and See & Welfare Day & Children's Church Service", startDate: "2026-12-13", endDate: "2026-12-13", category: "Events", location: "All Zones" },
+  { id: "e54", title: "Success Camp", startDate: "2026-12-16", endDate: "2026-12-19", category: "International", image: "/images/Success.jpg" },
+  { id: "e55", title: "Absolute Fasting", startDate: "2026-12-28", endDate: "2026-12-29", category: "International", location: "IOC and Zones" },
+  { id: "e56", title: "Marchover Night & Thanksgiving Service", startDate: "2026-12-31", endDate: "2026-12-31", category: "International", location: "Richland" },
+]);
+
 const EventsSection = ({ onRSVP }) => {
-    const events = [
-        { id: 1, title: "Sunday Service",   date: "March 23, 2026", time: "9:00 AM", location: "Main Sanctuary", color: "from-gold-400 to-amber-500" },
-        { id: 2, title: "Youth Fellowship", date: "March 24, 2026", time: "6:00 PM", location: "Youth Center",   color: "from-purple-400 to-purple-600" },
-    ];
-    return (
-        <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {events.map((event) => (
-                    <GlassCard key={event.id} className="p-4">
-                        <div className="flex items-start gap-3">
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
-                                <Icons.Calendar className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                                <p className="text-sm text-gray-500">{event.date} at {event.time}</p>
-                                <p className="text-sm text-gray-400 mt-1">{event.location}</p>
-                            </div>
-                        </div>
-                        <button onClick={() => onRSVP(event.id)} className="mt-3 w-full py-2 bg-gold-500 text-white text-sm font-medium rounded-lg hover:bg-gold-600 transition-colors">
-                            RSVP
-                        </button>
-                    </GlassCard>
-                ))}
+  const events = CHURCH_EVENTS_2026.slice(0, 12).map((ev) => ({
+    id: ev.id,
+    title: ev.title,
+    date: ev.startDate,
+    endDate: ev.endDate,
+    location: ev.location || "TBC",
+    color: ev.category === "International" ? "from-gold-400 to-amber-500" : "from-sky-400 to-sky-600",
+    image: ev.image,
+  }));
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {events.map((event) => (
+          <GlassCard key={event.id} className="p-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
+                <Icons.Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                <p className="text-sm text-gray-500">
+                  {event.date}
+                  {event.endDate && event.endDate !== event.date ? ` – ${event.endDate}` : ""}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">{event.location}</p>
+              </div>
             </div>
-        </div>
-    );
+            <button onClick={() => onRSVP(event.id)} className="mt-3 w-full py-2 bg-gold-500 text-white text-sm font-medium rounded-lg hover:bg-gold-600 transition-colors">
+              RSVP
+            </button>
+          </GlassCard>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 // ============================================================================

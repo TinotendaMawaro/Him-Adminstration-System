@@ -17,6 +17,9 @@ class Zone extends Model
         'address',
         'phone',
         'region_id',
+        'location',
+        'year_established',
+        'description',
     ];
 
     public function region(): BelongsTo

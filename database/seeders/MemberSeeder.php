@@ -14,11 +14,11 @@ class MemberSeeder extends Seeder
      */
     public function run(): void
     {
-        // Map zone names to IDs from zones table
-        $zoneMap = [
-            'IOC Zone' => 1,       // IOC
-            'AFDIS Zone' => 2,     // AFDIS
-            'Glenview Zone' => 29, // Glen View
+        // Map zone names to zone codes
+        $zoneCodeMap = [
+            'IOC Zone' => 'R0101',
+            'AFDIS Zone' => 'R0103',
+            'Glenview Zone' => 'R0801',
         ];
 
         $members = [
@@ -31,6 +31,9 @@ class MemberSeeder extends Seeder
         $data = [];
         foreach ($members as $index => $member) {
             $code = sprintf('ME%02d', $index + 1);
+            $zoneCode = $zoneCodeMap[$member['zone']];
+            $zone = DB::table('zones')->where('code', $zoneCode)->first();
+            $zoneId = $zone ? $zone->id : null;
             
             // Create a simple user for each member
             $email = strtolower(str_replace(' ', '.', $member['name'])) . '@test.local';
@@ -40,7 +43,7 @@ class MemberSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'member',
                 'is_active' => true,
-                'zone_id' => $zoneMap[$member['zone']],
+                'zone_id' => $zoneId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -50,7 +53,7 @@ class MemberSeeder extends Seeder
                 'name'          => $member['name'],
                 'surname'       => '',
                 'user_id'       => $userId,
-                'zone_id'       => $zoneMap[$member['zone']],
+                'zone_id'       => $zoneId,
                 'status'        => 'active',
                 'is_baptised'   => 0,
                 'can_be_partner'=> 1,

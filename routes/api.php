@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AssetController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
@@ -63,6 +64,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/events/{id}/registrations', [EventController::class, 'registrations']);
 
+    // ── Assets ──────────────────────────────────────────────────────────────────
+    Route::get('/assets', [AssetController::class, 'index']);
+    Route::get('/assets/options', [AssetController::class, 'options']);
+    Route::post('/assets', [AssetController::class, 'store']);
+    Route::get('/assets/{id}', [AssetController::class, 'show']);
+    Route::put('/assets/{id}', [AssetController::class, 'update']);
+    Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
+
     // ── Payments ───────────────────────────────────────────────────────────────
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/summary', [PaymentController::class, 'summary']);
@@ -90,7 +99,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
          Route::post('/members/{member}/status', [PastorController::class, 'updateMemberStatus']);
          Route::get('/home-groups', [PastorController::class, 'homeGroups']);
          Route::get('/activities', [PastorController::class, 'activities']);
-         Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
+          Route::put('/zone', [PastorController::class, 'updateZoneInfo']);
+          Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
+         Route::get('/partners', [PastorController::class, 'partners']);
       });
 
     // ── Dashboard Metrics ──────────────────────────────────────────────────────
@@ -108,6 +119,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('/me', [PartnerController::class, 'me']);
         Route::get('/me/payments', [PartnerController::class, 'myPayments']);
         Route::get('/me/summary', [PartnerController::class, 'mySummary']);
+        Route::get('/me/benefits', [PartnerController::class, 'myBenefits']);
+        Route::post('/me/upgrade', [PartnerController::class, 'upgrade']);
+        Route::get('/options', [PartnerController::class, 'options']);
+        Route::post('/me/payment', [PartnerController::class, 'submitPayment']);
     });
 
      // ── Home Groups ────────────────────────────────────────────────────────────

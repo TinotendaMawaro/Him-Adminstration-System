@@ -18,13 +18,12 @@ class PaymentPolicy
     {
         if ($user->isMaster() || $user->isFinance()) return true;
         if ($user->isEventRole()) return $payment->event_registration_id !== null;
-        // Portal users can see their own
         return $payment->user_id === $user->id;
     }
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['master', 'finance']);
+        return $user->hasAnyRole(['master', 'finance']) || $user->isPartner() || $user->isMember();
     }
 
     public function update(User $user, Payment $payment): bool

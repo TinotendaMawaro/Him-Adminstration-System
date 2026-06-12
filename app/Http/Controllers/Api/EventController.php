@@ -92,6 +92,8 @@ class EventController extends Controller
             'capacity'               => 'nullable|integer|min:1',
             'registration_closes_at' => 'nullable|date|before:starts_at',
             'is_public'              => 'boolean',
+            'category'               => 'nullable|string|max:100',
+            'image'                  => 'nullable|string|max:255',
         ]);
 
         $event = Event::create([
@@ -128,6 +130,8 @@ class EventController extends Controller
             'registration_closes_at' => 'nullable|date',
             'status'                 => 'in:draft,published,cancelled,completed',
             'is_public'              => 'boolean',
+            'category'               => 'nullable|string|max:100',
+            'image'                  => 'nullable|string|max:255',
         ]);
 
         $event->update($validated);

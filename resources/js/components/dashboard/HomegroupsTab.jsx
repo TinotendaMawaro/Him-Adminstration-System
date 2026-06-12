@@ -594,9 +594,11 @@ export default function HomegroupsTab() {
   const [perPage, setPerPage] = useState(20);
 
    // Use react-query to fetch homegroups from pastor's zone endpoint with pagination
-   const homegroupsCacheKey = `homegroups-data-${api.defaults.headers.common['Authorization']?.split(' ')[1]?.slice(0, 8) || 'anon'}`;
+   // Include token prefix in query key so different logged-in pastors get separate cache entries
+   const authToken = typeof window !== 'undefined' ? localStorage.getItem('him_token') || '' : '';
+   const tokenPrefix = authToken ? authToken.slice(0, 8) : 'anon';
    const { data: homegroupsResponse, isLoading, error, refetch } = useQuery({
-     queryKey: ['pastor-homegroups', currentPage, perPage],
+     queryKey: ['pastor-homegroups', tokenPrefix, currentPage, perPage],
      queryFn: async () => {
        const params = new URLSearchParams({
          page: currentPage,
@@ -604,27 +606,19 @@ export default function HomegroupsTab() {
        });
        const res = await api.get(`/pastors/home-groups?${params}`);
        if (!res.data.success) throw new Error(res.data.message || 'Failed');
-       // Map members_count to members for component compatibility
        const data = res.data.data.map((hg) => ({
          ...hg,
          members: hg.members_count,
        }));
 
-       // Save to localStorage for persistence
-       localStorage.setItem(homegroupsCacheKey, JSON.stringify(res.data));
        return { data, meta: res.data.meta };
      },
-     staleTime: 30000, // 30 seconds cache
+     staleTime: 30000,
      gcTime: 300000,
-     refetchOnWindowFocus: true,
-     retry: 1,
-     keepPreviousData: true,
-     initialData: () => {
-       // Load from localStorage if available
-       const cached = localStorage.getItem(homegroupsCacheKey);
-       return cached ? JSON.parse(cached) : undefined;
-     },
-   });
+      refetchOnWindowFocus: true,
+      retry: 1,
+      keepPreviousData: true,
+    });
 
   const homegroups = homegroupsResponse?.data || [];
   const paginationMeta = homegroupsResponse?.meta || {

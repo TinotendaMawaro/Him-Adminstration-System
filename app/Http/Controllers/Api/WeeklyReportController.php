@@ -109,7 +109,7 @@ class WeeklyReportController extends Controller
             'building_fund' => $validated['building_fund'] ?? 0,
             'missions' => $validated['missions'] ?? 0,
             'other_designations' => $validated['other_designations'] ?? 0,
-            'attendance' => ($validated['adults'] ?? 0) + ($validated['children'] ?? 0),
+            'attendance' => ($validated['adults'] ?? 0) + ($validated['children'] ?? 0) + ($validated['men'] ?? 0) + ($validated['women'] ?? 0) + ($validated['boys'] ?? 0) + ($validated['girls'] ?? 0) + ($validated['toddlers'] ?? 0),
             'adults' => $validated['adults'] ?? 0,
             'children' => $validated['children'] ?? 0,
             'men' => $validated['men'] ?? 0,

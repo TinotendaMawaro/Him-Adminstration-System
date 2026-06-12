@@ -196,6 +196,67 @@ class PastorController extends Controller
         }));
     }
 
+     /** GET /api/pastors/partners — List partners in pastor's zone */
+     public function partners(Request $request): JsonResponse
+     {
+         $user = $request->user();
+
+         if (!$user->isPastor() || !$user->zone_id) {
+             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+         }
+
+         $zoneId = $user->zone_id;
+
+         $query = Partner::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
+             ->with(['user:id,name,email,phone', 'zone:id,name'])
+             ->withSum('payments as total_giving', function ($q) {
+                 $q->where('status', \App\Enums\PaymentStatus::Completed);
+             });
+
+         $search = $request->query('search');
+         if ($search && strlen($search) > 100) {
+             return response()->json(['success' => false, 'message' => 'Search term too long'], 422);
+         }
+
+         if (!empty($search)) {
+             $query->where(function ($q) use ($search) {
+                 $q->where('name', 'LIKE', "%{$search}%")
+                   ->orWhere('surname', 'LIKE', "%{$search}%")
+                   ->orWhere('partner_number', 'LIKE', "%{$search}%")
+                   ->orWhereHas('user', fn ($uq) => $uq->where('email', 'LIKE', "%{$search}%"));
+             });
+         }
+
+         if ($request->has('tier') && in_array($request->tier, \App\Enums\PartnerTier::values(), true)) {
+             $query->where('tier', $request->tier);
+         }
+
+         if ($request->has('status') && in_array($request->status, \App\Enums\PartnerStatus::values(), true)) {
+             $query->where('status', $request->status);
+         }
+
+         $perPage = (int) $request->query('per_page', 20);
+         $perPage = \Illuminate\Support\Collection::make([10, 20, 50, 100])
+             ->filter()
+             ->contains($perPage) ? $perPage : 20;
+
+         $partners = $query->orderByDesc('partnership_date')
+             ->paginate($perPage)
+             ->withQueryString();
+
+         return response()->json([
+             'success' => true,
+             'data' => \App\Http\Resources\PartnerResource::collection($partners->items()),
+             'meta' => [
+                 'current_page' => $partners->currentPage(),
+                 'last_page' => $partners->lastPage(),
+                 'total' => $partners->total(),
+                 'per_page' => $partners->perPage(),
+                 'has_more' => $partners->hasMorePages(),
+             ],
+         ]);
+     }
+
      /** GET /api/pastors/members — List members in pastor's zone
       *  SECURITY:
       *  - Role & zone-based access control
@@ -483,6 +544,34 @@ class PastorController extends Controller
           return response()->json([
               'success' => true,
               'data' => $timeline,
+          ]);
+      }
+
+      /** PUT /api/pastors/zone — update zone information (pastor only) */
+      public function updateZoneInfo(Request $request): JsonResponse
+      {
+          $user = $request->user();
+
+          if (!$user->isPastor() || !$user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
+
+          $validated = $request->validate([
+              'name'             => 'sometimes|string|max:255',
+              'description'      => 'sometimes|string|nullable',
+              'location'         => 'sometimes|string|max:255',
+              'year_established' => 'sometimes|integer|min:1900|max:2100',
+              'address'          => 'sometimes|string|nullable',
+              'phone'            => 'sometimes|string|max:50',
+          ]);
+
+          $zone = Zone::findOrFail($user->zone_id);
+          $zone->update($validated);
+
+          return response()->json([
+              'success' => true,
+              'message' => 'Zone information updated successfully',
+              'data'    => $zone,
           ]);
       }
 

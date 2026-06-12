@@ -63,6 +63,12 @@ const LogoutIcon = ({ className }) => (
   </svg>
 );
 
+const HandCoinsIcon = ({ className }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+  </svg>
+);
+
 const AchievementsIcon = ({ className }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -106,7 +112,7 @@ export default function PortalLayout({ children, user, activePage, setActivePage
     { id: "members", icon: <UsersIcon className="w-5 h-5" />, label: "Members", to: "/pastor/members" },
     { id: "homegroups", icon: <HomeGroupIcon className="w-5 h-5" />, label: "Home Groups", to: "/pastor/homegroups" },
     { id: "departments", icon: <DepartmentIcon className="w-5 h-5" />, label: "Departments & HODs", to: "/pastor/departments" },
-    { id: "achievements", icon: <AchievementsIcon className="w-5 h-5" />, label: "Achievements", to: "/pastor/achievements" },
+    { id: "partnership", icon: <HandCoinsIcon className="w-5 h-5" />, label: "Partnership", to: "/pastor/partnership" },
     { id: "reports", icon: <ReportIcon className="w-5 h-5" />, label: "Reports", to: "/pastor/reports", badge: 1 },
     { id: "zone", icon: <DashboardIcon className="w-5 h-5" />, label: "My Zone", to: "/pastor/zone" },
   ];

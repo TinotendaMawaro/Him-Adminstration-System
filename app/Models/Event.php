@@ -21,6 +21,7 @@ class Event extends Model
         'registration_fee', 'currency', 'capacity',
         'registration_closes_at', 'status', 'is_public',
         'created_by', 'banner_image',
+        'category', 'image',
     ];
 
     protected function casts(): array

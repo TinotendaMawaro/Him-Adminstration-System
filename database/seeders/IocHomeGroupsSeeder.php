@@ -35,7 +35,11 @@ class IocHomeGroupsSeeder extends Seeder
             ['R0101', 'Avondale', 'To be assigned', 'Sunday', '09:00:00'],
             ['R0101', 'Madokere', '13047 Madokero Tynwald', 'Sunday', '09:00:00'],
             ['R0101', 'Hatfield', 'To be assigned', 'Sunday', '09:00:00'],
-            ['R0101', 'Dzivarasekwa ext', '308 Nehanda Dzivarasekwa Extension Harare', 'Sunday', '09:00:00'],
+            // Zone R0103 - AFDIS
+            ['R0103', 'AFDIS Stapleford Home Group', 'HIM Church Stand, Stapleford', 'Sunday', '09:00:00'],
+
+            // Zone R0102 - Dzivarasekwa
+            ['R0102', 'Dzivarasekwa Extension', '308 Nehanda Dzivarasekwa Extension Harare', 'Sunday', '09:00:00'],
             ['R0101', 'Harare City centre', 'To be assigned', 'Sunday', '09:00:00'],
             ['R0101', 'Fairview', 'To be assigned', 'Sunday', '09:00:00'],
             ['R0101', 'Belvedere North', 'To be assigned', 'Sunday', '09:00:00'],

@@ -11,7 +11,7 @@ class HomeGroupSeeder extends Seeder
         // Region 01
         ['R0101', 'IOC Home Group', '1 Sandy Lane, Ashdown Park, Harare', 'Sunday', '09:00:00'],
         ['R0102', 'Dzivarasekwa Home Group', 'Munyarari Building, Glenview 3 Shops, Harare', 'Sunday', '09:00:00'],
-        ['R0103', 'Afdis Home Group', 'To be assigned', 'Sunday', '09:00:00'],
+        ['R0103', 'AFDIS Home Group', 'To be assigned', 'Sunday', '09:00:00'],
 
         // Region 02
         ['R0201', 'Mandra (Rsk) Home Group', 'To be assigned', 'Sunday', '09:00:00'],
