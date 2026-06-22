@@ -5,15 +5,12 @@ namespace App\Models;
 use App\Enums\PartnerTier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PartnerBenefit extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
         'partner_id',
+        'catalog_id',
         'tier',
         'benefit_key',
         'unlocked_at',
@@ -31,6 +28,11 @@ class PartnerBenefit extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
+    }
+
+    public function catalog(): BelongsTo
+    {
+        return $this->belongsTo(PartnerBenefitCatalog::class, 'catalog_id');
     }
 
     public function payment(): BelongsTo

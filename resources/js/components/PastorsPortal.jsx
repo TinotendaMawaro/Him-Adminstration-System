@@ -319,7 +319,7 @@ const menuItems = [
     { id: "members",      label: "Members",     icon: Icons.Users          },
     { id: "homegroups",   label: "Home Groups", icon: Icons.HomeGroup      },
     { id: "departments",  label: "Departments", icon: Icons.BuildingOffice },
-    { id: "partnership",  label: "Partnership", icon: Icons.HandCoins  },
+    { id: "partnership",  label: "Partnership", icon: Icons.HandCoins      },
     { id: "reports",      label: "Reports",     icon: Icons.DocumentChart  },
     { id: "zone",         label: "My Zone",     icon: Icons.MapPin         },
 ];
@@ -1374,6 +1374,7 @@ const PartnershipPage = () => {
         () => [
             { key: "giving",        label: "Tithes & Offerings", icon: Icons.HandCoins },
             { key: "tiers",         label: "Partnership Tiers", icon: Icons.Achievements },
+            { key: "partners",      label: "Partners", icon: Icons.Users },
             { key: "calendar",      label: "Church Calendar",   icon: Icons.Calendar },
             { key: "registrations", label: "Registrations",     icon: Icons.Users },
         ],
@@ -1452,6 +1453,7 @@ const PartnershipPage = () => {
                     onCancel={handleCancelRegistration}
                 />
             )}
+            {activeView === "partners" && <PartnersPage />}
 
             {paymentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={closePaymentModal}>
@@ -1599,6 +1601,98 @@ const ZoneInfoPage = ({ user }) => (
         </div>
     </div>
 );
+
+const PartnersPage = () => {
+    const [tier, setTier] = useState("");
+    const [status, setStatus] = useState("");
+    const [search, setSearch] = useState("");
+    const [partners, setPartners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        setLoading(true);
+        setError("");
+        const params = new URLSearchParams();
+        if (tier) params.set('tier', tier);
+        if (status) params.set('status', status);
+        if (search) params.set('search', search);
+        const url = `pastors/partners?${params.toString()}`;
+        api.get(url)
+            .then(res => {
+                if (res.data.success) setPartners(res.data.data || []);
+                else setError(res.data.message || 'Failed to load partners');
+            })
+            .catch(() => setError('Unable to load partners'))
+            .finally(() => setLoading(false));
+    }, [tier, status, search]);
+
+    return (
+        <div className="p-6 space-y-6">
+            <div>
+                <h2 className="text-2xl font-bold text-gray-900">Partners</h2>
+                <p className="text-gray-500 text-sm mt-1">Partners within your zone</p>
+            </div>
+
+            {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
+
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <select value={tier} onChange={(e) => setTier(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2.5 text-sm">
+                        <option value="">All Tiers</option>
+                        <option value="gold">Gold</option>
+                        <option value="silver">Silver</option>
+                        <option value="platinum">Platinum</option>
+                        <option value="jubilee">Jubilee</option>
+                        <option value="game_changer">Game Changer</option>
+                        <option value="diamond">Diamond</option>
+                        <option value="executive">Executive</option>
+                        <option value="financial_apostle">Financial Apostle</option>
+                    </select>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2.5 text-sm">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                        <option value="suspended">Suspended</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <input type="text" placeholder="Search partner…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2.5 text-sm" />
+                </div>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead>
+                            <tr className="border-b border-gray-100">
+                                <th className="px-4 py-3 font-semibold text-gray-600">Partner</th>
+                                <th className="px-4 py-3 font-semibold text-gray-600">Number</th>
+                                <th className="px-4 py-3 font-semibold text-gray-600">Tier</th>
+                                <th className="px-4 py-3 font-semibold text-gray-600">Status</th>
+                                <th className="px-4 py-3 font-semibold text-gray-600">Pledge</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">Loading…</td></tr>}
+                            {!loading && partners.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">No partners found</td></tr>}
+                            {!loading && partners.map((p) => (
+                                <tr key={p.id} className="hover:bg-white/60 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-gray-900">{p.full_name || p.name || "—"}</td>
+                                    <td className="px-4 py-3 font-mono text-gray-700">{p.partner_number || "—"}</td>
+                                    <td className="px-4 py-3 capitalize text-gray-700">{p.tier_label || p.tier || "—"}</td>
+                                    <td className="px-4 py-3 capitalize text-gray-700">{p.status || "—"}</td>
+                                    <td className="px-4 py-3 text-gray-700">${p.pledge_amount || 0}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // ============================================================================
 // MAIN PASTORS PORTAL COMPONENT

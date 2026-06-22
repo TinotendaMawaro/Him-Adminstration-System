@@ -100,7 +100,7 @@ class RegisterController extends Controller
 
             DB::commit();
 
-            $user->load(['member.zone.region', 'zone.region']);
+            $user->load(['member.zone.region', 'zone.region', 'zone.pastors']);
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([

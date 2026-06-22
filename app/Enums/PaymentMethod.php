@@ -7,31 +7,40 @@ use Filament\Support\Contracts\HasLabel;
 
 enum PaymentMethod: string implements HasLabel, HasIcon
 {
-    case Cash         = 'cash';
+    case EcoCash      = 'ecocash';
+    case OneMoney     = 'onemoney';
+    case InnBucks     = 'innbucks';
+    case Paynow       = 'paynow';
+    case Visa         = 'visa';
+    case Mastercard   = 'mastercard';
+    case PayPal       = 'paypal';
     case BankTransfer = 'bank_transfer';
-    case Card         = 'card';
-    case MobileMoney  = 'mobile_money';
-    case Online       = 'online';
 
     public function getLabel(): string
     {
         return match($this) {
-            self::Cash         => 'Cash',
+            self::EcoCash      => 'EcoCash',
+            self::OneMoney     => 'OneMoney',
+            self::InnBucks     => 'InnBucks',
+            self::Paynow       => 'Paynow',
+            self::Visa         => 'Visa',
+            self::Mastercard   => 'Mastercard',
+            self::PayPal       => 'PayPal',
             self::BankTransfer => 'Bank Transfer',
-            self::Card         => 'Card',
-            self::MobileMoney  => 'Mobile Money',
-            self::Online       => 'Online',
         };
     }
 
     public function getIcon(): ?string
     {
         return match($this) {
-            self::Cash         => 'heroicon-o-banknotes',
+            self::EcoCash      => 'heroicon-o-device-phone-mobile',
+            self::OneMoney     => 'heroicon-o-device-phone-mobile',
+            self::InnBucks     => 'heroicon-o-device-phone-mobile',
+            self::Paynow       => 'heroicon-o-globe-alt',
+            self::Visa         => 'heroicon-o-credit-card',
+            self::Mastercard   => 'heroicon-o-credit-card',
+            self::PayPal       => 'heroicon-o-globe-alt',
             self::BankTransfer => 'heroicon-o-building-library',
-            self::Card         => 'heroicon-o-credit-card',
-            self::MobileMoney  => 'heroicon-o-device-phone-mobile',
-            self::Online       => 'heroicon-o-globe-alt',
         };
     }
 

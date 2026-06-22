@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PartnerController;
+use App\Http\Controllers\Api\PartnershipPackageController;
 use App\Http\Controllers\Api\PastorController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RegisterController;
@@ -35,9 +36,15 @@ Route::post('/login', [AuthController::class, 'login'])
 Route::post('/register', RegisterController::class)
      ->middleware('throttle:3,1'); // 3 registrations per minute
 
-// ── Zone Lookup (public — no auth required, used during registration) ───────
+// ── Zone Lookup (public — no auth required, used during registration) ─────────
 Route::get('/zones/lookup', [DashboardController::class, 'lookupZone'])
      ->middleware('throttle:30,1');
+
+// ── Partnership Packages (public — no auth required) ─────────────────────────
+Route::prefix('partnership-packages')->group(function () {
+    Route::get('/', [PartnershipPackageController::class, 'index']);
+    Route::get('/{id}', [PartnershipPackageController::class, 'show']);
+});
 
 // ─── AUTHENTICATED ───────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
@@ -116,10 +123,17 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // ── Partners ───────────────────────────────────────────────────────────────
     Route::prefix('partners')->group(function () {
+        Route::post('/enroll', [PartnerController::class, 'enroll']);
         Route::get('/me', [PartnerController::class, 'me']);
         Route::get('/me/payments', [PartnerController::class, 'myPayments']);
         Route::get('/me/summary', [PartnerController::class, 'mySummary']);
         Route::get('/me/benefits', [PartnerController::class, 'myBenefits']);
+        Route::get('/me/points', [PartnerController::class, 'myPoints']);
+        Route::get('/me/points/history', [PartnerController::class, 'myPointsHistory']);
+        Route::get('/me/statements', [PartnerController::class, 'myStatements']);
+        Route::post('/me/statements/generate', [PartnerController::class, 'generateStatement']);
+        Route::get('/me/rewards', [PartnerController::class, 'availableRewards']);
+        Route::post('/me/rewards/redeem', [PartnerController::class, 'redeemReward']);
         Route::post('/me/upgrade', [PartnerController::class, 'upgrade']);
         Route::get('/options', [PartnerController::class, 'options']);
         Route::post('/me/payment', [PartnerController::class, 'submitPayment']);

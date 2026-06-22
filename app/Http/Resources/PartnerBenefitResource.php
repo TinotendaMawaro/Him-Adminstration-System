@@ -11,10 +11,17 @@ class PartnerBenefitResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'tier' => $this->tier,
+            'tier' => $this->tier?->value,
             'benefit_key' => $this->benefit_key,
             'unlocked_at' => $this->unlocked_at?->toIso8601String(),
             'unlocked_by_payment_id' => $this->unlocked_by_payment_id,
+            'catalog' => $this->whenLoaded('catalog', fn () => [
+                'id' => $this->catalog->id,
+                'key' => $this->catalog->key,
+                'label' => $this->catalog->label,
+                'description' => $this->catalog->description,
+                'icon' => $this->catalog->icon,
+            ]),
         ];
     }
 }

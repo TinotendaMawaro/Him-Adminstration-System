@@ -8,25 +8,34 @@ use Filament\Support\Contracts\HasLabel;
 
 enum PartnerStatus: string implements HasLabel, HasColor
 {
-    case Active   = 'active';
-    case Inactive = 'inactive';
-    case Lapsed   = 'lapsed';
+    case Pending   = 'pending';
+    case Active    = 'active';
+    case Expired   = 'expired';
+    case Suspended = 'suspended';
+    case Cancelled = 'cancelled';
+    case Inactive  = 'inactive';
 
     public function getLabel(): string
     {
         return match($this) {
-            self::Active   => 'Active',
-            self::Inactive => 'Inactive',
-            self::Lapsed   => 'Lapsed',
+            self::Pending   => 'Pending',
+            self::Active    => 'Active',
+            self::Expired   => 'Expired',
+            self::Suspended => 'Suspended',
+            self::Cancelled => 'Cancelled',
+            self::Inactive  => 'Inactive',
         };
     }
 
     public function getColor(): string | array | null
     {
         return match($this) {
-            self::Active   => 'success',
-            self::Inactive => 'gray',
-            self::Lapsed   => 'warning',
+            self::Pending   => 'warning',
+            self::Active    => 'success',
+            self::Expired   => 'gray',
+            self::Suspended => 'danger',
+            self::Cancelled => 'danger',
+            self::Inactive  => 'gray',
         };
     }
 

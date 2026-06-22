@@ -3,7 +3,7 @@
 // Engaging workspace feel with visible logout button
 // ============================================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HODIcons } from "./dashboard/hod/HODIcons";
 
 // Import reusable HOD components
@@ -25,6 +25,7 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
     const menuItems = [
         { id: "workspace", label: "Workspace", Icon: HODIcons.BuildingOffice },
         { id: "members", label: "Members", Icon: HODIcons.Users },
+        { id: "partnership", label: "Partnership", Icon: HODIcons.Heart },
         { id: "activities", label: "Activities", Icon: HODIcons.Calendar },
         { id: "achievements", label: "Achievements", Icon: HODIcons.Trophy },
         { id: "communication", label: "Messages", Icon: HODIcons.ChatBubbleLeftRight },
@@ -122,6 +123,50 @@ const HODLayout = ({ user, activePage, setActivePage, onLogout, children }) => {
 // MAIN HOD PORTAL COMPONENT
 // ============================================================================
 
+const DepartmentPartnershipPage = ({ user }) => {
+    const [partners, setPartners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        setLoading(true);
+        setError("");
+        api.get('/pastors/partners')
+            .then(res => {
+                if (res.data.success) setPartners(res.data.data || []);
+                else setError(res.data.message || 'Failed to load partners');
+            })
+            .catch(() => setError('Unable to load partners'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    return (
+        <div className="p-6 space-y-6">
+            <div>
+                <h2 className="text-2xl font-bold text-gray-900">Partnership</h2>
+                <p className="text-gray-500 text-sm mt-1">Partnership insights for {user?.department?.name || 'your department'}</p>
+            </div>
+
+            {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-6">
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Partners</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{partners.length}</p>
+                </div>
+                <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-6">
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Active Partners</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{partners.filter(p => p.status === 'active').length}</p>
+                </div>
+                <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg p-6">
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Pledge</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">${partners.reduce((sum, p) => sum + (parseFloat(p.pledge_amount) || 0), 0).toLocaleString()}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function HODPortal({ user: initialUser, onLogout }) {
     const [activePage, setActivePage] = useState("workspace");
     const [user, setUser] = useState(initialUser);
@@ -132,6 +177,8 @@ export default function HODPortal({ user: initialUser, onLogout }) {
                 return <DepartmentWorkspace user={user} onNavigate={setActivePage} />;
             case "members":
                 return <DepartmentMembersPage onNavigate={setActivePage} />;
+            case "partnership":
+                return <DepartmentPartnershipPage user={user} />;
             case "activities":
                 return <HODActivitiesPage />;
             case "achievements":

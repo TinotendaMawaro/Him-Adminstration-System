@@ -14,6 +14,7 @@ import PastorsPortal   from "./components/PastorsPortal.jsx";
 import HODPortal       from "./components/HODPortal.jsx";
 import MembersPortal   from "./components/MembersPortal.jsx";
 import PartnerPortal   from "./components/PartnerPortal.jsx";
+import PartnerEnrollmentPage from "./components/PartnerEnrollmentPage.jsx";
 import api             from "./lib/api.js";
 
 const queryClient = new QueryClient({
@@ -201,20 +202,38 @@ function RootRedirect() {
 function LoginPage() {
     const navigate = useNavigate();
     const { user, updateUser } = useUser();
+    const location = useLocation();
 
-    // Redirect if already logged in
     useEffect(() => {
-        if (user) {
+        const params = new URLSearchParams(location.search);
+        const intent = params.get('intent');
+        if (intent === 'partner') {
+            if (user) {
+                if (user.role === 'pastor') {
+                    navigate("/dashboard", { replace: true });
+                } else {
+                    navigate("/partner/enroll", { replace: true });
+                }
+            }
+        } else if (user) {
             navigate("/dashboard", { replace: true });
         }
-    }, [user, navigate]);
+    }, [user, navigate, location]);
 
     const handleLoginSuccess = (userData) => {
         updateUser(userData);
-        navigate("/dashboard", { replace: true });
+        const params = new URLSearchParams(location.search);
+        const intent = params.get('intent');
+        if (intent === 'partner' && userData.role === 'pastor') {
+            navigate("/dashboard", { replace: true });
+        } else if (intent === 'partner') {
+            navigate("/partner/enroll", { replace: true });
+        } else {
+            navigate("/dashboard", { replace: true });
+        }
     };
 
-    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+    return <AuthPage onLoginSuccess={handleLoginSuccess} onPartnerEnroll={() => navigate("/partner/enroll", { replace: true })} />;
 }
 
 // ─── Protected route guard ─────────────────────────────────────────────────────
@@ -245,16 +264,17 @@ function App() {
                 <UserProvider initialUser={cachedUser} token={cachedToken}>
                      <GlobalStateProvider>
                          <BrowserRouter>
-                             <Routes>
-                                 {/* Public routes */}
-                                 <Route path="/" element={<RootRedirect />} />
-                                 <Route path="/login" element={<LoginPage />} />
+                              <Routes>
+                                  {/* Public routes */}
+                                  <Route path="/" element={<RootRedirect />} />
+                                  <Route path="/login" element={<LoginPage />} />
 
-                                 {/* Protected routes */}
-                                 <Route element={<RequireAuth />}>
-                                     <Route path="*" element={<AppInner />} />
-                                 </Route>
-                             </Routes>
+                                   {/* Protected routes */}
+                                   <Route element={<RequireAuth />}>
+                                       <Route path="/partner/enroll" element={<PartnerEnrollmentPage />} />
+                                       <Route path="*" element={<AppInner />} />
+                                   </Route>
+                              </Routes>
                          </BrowserRouter>
                      </GlobalStateProvider>
                 </UserProvider>

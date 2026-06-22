@@ -18,13 +18,23 @@ const LoadingSpinner = () => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function AuthPage({ onLoginSuccess = () => {} }) {
+export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = () => {} }) {
     const [mode, setMode]                   = useState("code");
     const [isLoading, setIsLoading]         = useState(false);
     const [errors, setErrors]               = useState({});
     const [touched, setTouched]             = useState({});
     const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
     const [registrationResult, setRegistrationResult] = useState(null);
+    const [partnerIntent, setPartnerIntent] = useState(false);
+    const [showPartnerPrompt, setShowPartnerPrompt] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('intent') === 'partner') {
+            setPartnerIntent(true);
+            setMode('register');
+        }
+    }, []);
 
     const [code, setCode]               = useState("");
     const [emailLogin, setEmailLogin]   = useState({ email: "", password: "" });
@@ -173,8 +183,13 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                 });
 
                 if (data.success) {
-                    setShowRegisterSuccess(true);
-                    setTimeout(() => handleLoginResponse(data), 1500);
+                    if (partnerIntent) {
+                        setShowPartnerPrompt(true);
+                        setRegistrationResult(data);
+                    } else {
+                        setShowRegisterSuccess(true);
+                        setTimeout(() => handleLoginResponse(data), 1500);
+                    }
                 } else {
                     if (data.errors) {
                         const mapped = {};
@@ -287,7 +302,25 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
                                     {/* Register */}
                                     {mode === "register" && (
                                         <>
-                                            {showRegisterSuccess && (
+                                            {showPartnerPrompt && registrationResult && (
+                                                <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-xl p-4 text-center">
+                                                    <p className="text-emerald-300 text-sm font-semibold mb-2">✓ Account created!</p>
+                                                    <p className="text-white/80 text-xs mb-1">Congratulations! Your account has been created.</p>
+                                                    {registrationResult.user?.zone && (
+                                                        <div className="text-[10px] text-white/60 space-y-0.5 mb-3">
+                                                            <p>Assigned Zone: <span className="text-white/80">{registrationResult.user.zone.name || registrationResult.user.zone.code}</span></p>
+                                                            <p>Assigned Pastor: <span className="text-white/80">{registrationResult.user.zone?.pastor_name || '—'}</span></p>
+                                                            <p>Assigned Region: <span className="text-white/80">{registrationResult.user.zone?.region?.name || '—'}</span></p>
+                                                        </div>
+                                                    )}
+                                                    <p className="text-white/70 text-xs mb-3">Would you like to become a Partner?</p>
+                                                    <div className="flex gap-2">
+                                                        <button type="button" onClick={() => { handleLoginResponse(registrationResult); onPartnerEnroll(); }} className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#1e3a5f] font-bold rounded-lg text-xs">Partner Now</button>
+                                                        <button type="button" onClick={() => { handleLoginResponse(registrationResult); }} className="flex-1 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-xs font-medium">Maybe Later</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {!showPartnerPrompt && showRegisterSuccess && (
                                                 <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-xl p-3 text-center">
                                                     <p className="text-emerald-300 text-sm font-semibold">✓ Account created! Redirecting…</p>
                                                 </div>
@@ -392,7 +425,7 @@ onBlur={() => {
                                     {/* Submit button */}
                                     <button
                                         type="submit"
-                                        disabled={isLoading || showRegisterSuccess}
+                                        disabled={isLoading || showRegisterSuccess || showPartnerPrompt}
                                         className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white font-bold py-1.5 px-3 rounded shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-xs"
                                     >
                                         {isLoading && <LoadingSpinner />}

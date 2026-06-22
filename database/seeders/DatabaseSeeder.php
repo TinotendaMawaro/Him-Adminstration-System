@@ -16,6 +16,9 @@ use Database\Seeders\IocHomeGroupsSeeder;
 use Database\Seeders\GenderSeeder;
 use Database\Seeders\DemographySeeder;
 use Database\Seeders\AdditionalMembersSeeder;
+use Database\Seeders\PartnershipPackageSeeder;
+use Database\Seeders\PartnerRewardSeeder;
+use Database\Seeders\PartnerBenefitCatalogSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -178,6 +181,7 @@ class DatabaseSeeder extends Seeder
                 'name'           => 'Tino Partner',
                 'password'       => Hash::make('password'),
                 'role'           => 'partner',
+                'zone_id'        => $zoneId,
                 'is_active'      => true,
                 'terms_accepted' => true,
                 'completed_tour' => true,
@@ -195,7 +199,14 @@ class DatabaseSeeder extends Seeder
                 'pledge_frequency' => 'monthly',
                 'partnership_date' => now()->subYear(),
                 'status'           => 'active',
+                'zone_id'          => $zoneId,
             ]
         );
+
+        $this->call([
+            PartnershipPackageSeeder::class,
+            PartnerRewardSeeder::class,
+            PartnerBenefitCatalogSeeder::class,
+        ]);
     }
 }

@@ -1229,7 +1229,164 @@ const FeedbackDrawer = ({ isOpen, onClose, user }) => {
     );
 };
 
-// ============================================================================
+const PartnerDrawer = ({ isOpen, onClose, user }) => {
+    const [partner, setPartner] = useState(null);
+    const [benefits, setBenefits] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+
+    useEffect(() => {
+        if (!isOpen || !user) return;
+        setLoading(true);
+        setError("");
+        setPartner(null);
+        setBenefits([]);
+        setSuccessMsg("");
+        Promise.all([
+            api.get('/api/partners/me').catch(() => ({ data: { success: false, data: null } })),
+            api.get('/api/partners/me/benefits').catch(() => ({ data: { success: false, data: [] } })),
+        ]).then(([partnerRes, benefitsRes]) => {
+            if (partnerRes.data.success) {
+                setPartner(partnerRes.data.data);
+            } else {
+                setPartner(null);
+            }
+            if (benefitsRes.data.success) {
+                setBenefits(benefitsRes.data.data || []);
+            }
+        }).catch(() => {
+            setPartner(null);
+            setBenefits([]);
+        }).finally(() => setLoading(false));
+    }, [isOpen, user]);
+
+    if (!isOpen) return null;
+
+    const ctLabel = partner?.contribution_type || "—";
+    const pmLabel = partner?.payment_method || "—";
+    const pkg = partner?.package;
+    const startDate = partner?.partnership_date ? new Date(partner.partnership_date).toLocaleDateString() : "—";
+    const renewalDate = partner?.renewal_date ? new Date(partner.renewal_date).toLocaleDateString() : "—";
+    const yearsInPartnership = partner?.partnership_date
+        ? ((new Date() - new Date(partner.partnership_date)) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1)
+        : "0";
+
+    const handleUpgrade = () => {
+        onClose();
+        window.location.href = "/partner/enroll";
+    };
+
+    const handleBecomePartner = () => {
+        onClose();
+        window.location.href = "/register?intent=partner";
+    };
+
+    return (
+        <FeatureDrawer isOpen={isOpen} onClose={onClose} title="My Partnership" icon={Icons.Heart}>
+            <div className="space-y-6">
+                {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
+                {successMsg && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{successMsg}</div>}
+
+                {loading && <p className="text-sm text-gray-500">Loading partnership details…</p>}
+
+                {!loading && !partner && (
+                    <div className="text-center py-10">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-lg">
+                            <Icons.Heart className="w-8 h-8 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">You are not yet a partner</h3>
+                        <p className="text-sm text-gray-600 mb-6">Join a partnership level and start your journey of covenant giving.</p>
+                        <button onClick={handleBecomePartner} className="px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-[#1e3a5f] font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
+                            Become a Partner
+                        </button>
+                    </div>
+                )}
+
+                {!loading && partner && (
+                    <div className="space-y-6">
+                        {/* Summary */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/70 rounded-xl p-3 border border-gold-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Partner Number</p>
+                                <p className="text-sm font-bold text-gray-900 font-mono">{partner.partner_number || "—"}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-emerald-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Status</p>
+                                <p className="text-sm font-bold text-gray-900">{partner.status_label || partner.status || "—"}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-sky-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Package</p>
+                                <p className="text-sm font-bold text-gray-900">{pkg?.name || "—"}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-purple-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Monthly Commitment</p>
+                                <p className="text-sm font-bold text-gray-900">${partner.pledge_amount || "0"}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-amber-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Start Date</p>
+                                <p className="text-sm font-bold text-gray-900">{startDate}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-gray-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Renewal Date</p>
+                                <p className="text-sm font-bold text-gray-900">{renewalDate}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-emerald-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Years in Partnership</p>
+                                <p className="text-sm font-bold text-gray-900">{yearsInPartnership}</p>
+                            </div>
+                            <div className="bg-white/70 rounded-xl p-3 border border-gold-100">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Points Earned</p>
+                                <p className="text-sm font-bold text-gray-900">{partner.points_earned ?? 0}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white/70 rounded-xl p-4 border border-white/60">
+                            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Benefits Access</p>
+                            {benefits.length > 0 ? (
+                                <ul className="space-y-1 text-sm text-gray-700">
+                                    {benefits.map((b) => (
+                                        <li key={b.id}>✨ {b.label}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-gray-500">No benefits unlocked yet.</p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">Contribution Type</p>
+                                <p className="text-sm font-semibold text-gray-900">{ctLabel}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">Payment Method</p>
+                                <p className="text-sm font-semibold text-gray-900">{pmLabel}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <button onClick={handleUpgrade} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-gold-400 to-amber-500 text-white font-semibold shadow hover:shadow-lg transition-all">
+                                {partner && partner.package ? 'Upgrade Package' : 'Activate Partnership'}
+                            </button>
+                            <button className="w-full py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all">
+                                Download Statements
+                            </button>
+                            <button onClick={() => alert('Renewal coming soon.')} className="w-full py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all">
+                                Renew Package
+                            </button>
+                            <button onClick={() => alert('Cancellation request submitted.')} className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 font-semibold hover:bg-red-100 transition-all">
+                                Cancel Package
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </FeatureDrawer>
+    );
+};
+
+ // ============================================================================
 // MAIN MEMBERS PORTAL COMPONENT
 // ============================================================================
 
@@ -1324,6 +1481,7 @@ export default function MembersPortal({ onLogout }) {
             <LeaveGroupDrawer     isOpen={activeDrawer === 'leave-homegroup'} onClose={closeDrawer} user={user} type="homegroup" />
             <LeaveGroupDrawer     isOpen={activeDrawer === 'leave-department'} onClose={closeDrawer} user={user} type="department" />
             <FeedbackDrawer       isOpen={activeDrawer === 'feedback'}         onClose={closeDrawer} user={user} />
+            <PartnerDrawer        isOpen={activeDrawer === 'partnership'}      onClose={closeDrawer} user={user} />
             <NotificationsPanel  isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
         </div>
     );

@@ -59,19 +59,6 @@ enum PartnerTier: string implements HasLabel, HasColor, HasIcon
         };
     }
 
-    public function getIcon(): ?string
-    {
-        return match($this) {
-            self::Gold     => 'heroicon-o-star',
-            self::Platinum => 'heroicon-o-sparkles',
-            self::Jubilee   => 'heroicon-o-trophy',
-            self::GameChanger   => 'heroicon-o-trophy',
-            self::Diamond   => 'heroicon-o-trophy',
-            self::Executive   => 'heroicon-o-crown',
-            self::FinancialApostle  => 'heroicon-o-crown',
-        };
-    }
-
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

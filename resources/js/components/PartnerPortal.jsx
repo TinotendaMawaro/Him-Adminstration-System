@@ -117,7 +117,8 @@ function PartnerDashboard({ user }) {
     const partner = meData;
     const tierKey = partner?.tier?.value || partner?.tier || "gold";
     const tierLabel = TIER_LABELS[tierKey] || TIER_LABELS.gold;
-    const benefits = TIER_BENEFITS_MAP[tierKey] || TIER_BENEFITS_MAP.gold;
+    const apiBenefits = (benefitsData || []).map(b => b.label);
+    const benefits = apiBenefits.length > 0 ? apiBenefits : (TIER_BENEFITS_MAP[tierKey] || TIER_BENEFITS_MAP.gold);
     const colorMap = {
         gold: "from-yellow-100 to-yellow-200 text-yellow-800",
         silver: "from-gray-100 to-gray-200 text-gray-800",
