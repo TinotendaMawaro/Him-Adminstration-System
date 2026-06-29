@@ -169,10 +169,10 @@ class HomeGroupApiController extends Controller
              ->where('zone_id', $request->user()->zone_id)
              ->firstOrFail();
 
-         // Auto-add leader to the homegroup if not already a member
-         if ($leader->homegroup_id !== $homegroup->id) {
-             $leader->update(['homegroup_id' => $homegroup->id]);
-         }
+// Auto-add leader to the homegroup if not already a member
+        if ($leader->home_group_id !== $homegroup->id) {
+            $leader->update(['home_group_id' => $homegroup->id]);
+        }
 
          $homegroup->update(['leader_id' => $validated['leader_id']]);
 
@@ -217,12 +217,12 @@ class HomeGroupApiController extends Controller
 
            // Get all active users in the pastor's zone who are not leaders of other homegroups
            // Available: users with no homegroup OR already in this homegroup (potential co-leader scenario)
-           $members = User::where('zone_id', $request->user()->zone_id)
-               ->where('is_active', true)
-               ->where(function ($query) use ($homegroup) {
-                   $query->whereNull('home_group_id')
-                       ->orWhere('home_group_id', $homegroup->id);
-               })
+$members = User::where('zone_id', $request->user()->zone_id)
+            ->where('is_active', true)
+            ->where(function ($query) use ($homegroup) {
+                $query->whereNull('home_group_id')
+                    ->orWhere('home_group_id', $homegroup->id);
+            })
                ->whereNotIn('id', function ($query) {
                    $query->select('leader_id')
                        ->from('home_groups')
@@ -259,13 +259,13 @@ class HomeGroupApiController extends Controller
           // 1. Are not already in this homegroup
           // 2. Don't have pending invitations to this homegroup
           // 3. Have role 'member'
-          $members = User::where('zone_id', $user->zone_id)
-              ->where('is_active', true)
-              ->where('role', 'member')
-              ->where(function ($query) use ($homegroup) {
-                  $query->whereNull('home_group_id')
-                        ->orWhere('home_group_id', '!=', $homegroup->id);
-              }) // Not already in this homegroup
+$members = User::where('zone_id', $user->zone_id)
+            ->where('is_active', true)
+            ->where('role', 'member')
+            ->where(function ($query) use ($homegroup) {
+                $query->whereNull('home_group_id')
+                      ->orWhere('home_group_id', '!=', $homegroup->id);
+            }) // Not already in this homegroup
               ->whereNotIn('id', function ($query) use ($homegroup) {
                   $query->select('member_id')
                       ->from('homegroup_invitations')

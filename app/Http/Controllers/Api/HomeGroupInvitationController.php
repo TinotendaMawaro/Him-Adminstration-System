@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Log;
 class HomeGroupInvitationController extends Controller
 {
     /**
-     * Pastor Flow: Invite a member to a homegroup (Administrative)
-     * POST /api/homegroups/{id}/invite
-     */
+      * Pastor Flow: Invite a member to a homegroup (Administrative)
+      * POST /api/homegroups/{id}/invite
+      */
     public function invite(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
@@ -166,9 +166,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Member: List my homegroup invitations
-     * GET /api/homegroup-invitations
-     */
+      * Member: List my homegroup invitations
+      * GET /api/homegroup-invitations
+      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -185,9 +185,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Member: View single invitation
-     * GET /api/homegroup-invitations/{id}
-     */
+      * Member: View single invitation
+      * GET /api/homegroup-invitations/{id}
+      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -211,9 +211,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Member Flow: Request to join a home group (Self-Service)
-     * POST /api/homegroups/{id}/request
-     */
+      * Member Flow: Request to join a home group (Self-Service)
+      * POST /api/homegroups/{id}/request
+      */
     public function requestJoin(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -237,7 +237,7 @@ class HomeGroupInvitationController extends Controller
         }
 
         // Check if user is already a member of this home group
-        if ($user->homegroup_id === $homeGroup->id) {
+        if ($user->home_group_id === $homeGroup->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are already a member of this home group.',
@@ -336,9 +336,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Member: Accept invitation (Atomic operation)
-     * POST /api/homegroup-invitations/{id}/accept
-     */
+      * Member: Accept invitation (Atomic operation)
+      * POST /api/homegroup-invitations/{id}/accept
+      */
     public function accept(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -370,8 +370,8 @@ class HomeGroupInvitationController extends Controller
                     'responded_at' => now(),
                 ]);
 
-                // Add member to home group
-                $user->update(['homegroup_id' => $invitation->homegroup_id]);
+                // Add member to home group (FIXED: home_group_id not homegroup_id)
+                $user->update(['home_group_id' => $invitation->homegroup_id]);
 
                 // Notify requester (pastor or system)
                 if ($invitation->requester && $invitation->requester->id !== $user->id) {
@@ -419,9 +419,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Member: Decline invitation (Atomic operation)
-     * POST /api/homegroup-invitations/{id}/decline
-     */
+      * Member: Decline invitation (Atomic operation)
+      * POST /api/homegroup-invitations/{id}/decline
+      */
     public function decline(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -505,9 +505,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Pastor: Cancel pending invitation
-     * DELETE /api/homegroup-invitations/{id}
-     */
+      * Pastor: Cancel pending invitation
+      * DELETE /api/homegroup-invitations/{id}
+      */
     public function destroy(Request $request, int $id): JsonResponse
     {
         $pastor = $request->user();
@@ -545,9 +545,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Pastor: List invitations sent by me
-     * GET /api/pastors/homegroup-invitations
-     */
+      * Pastor: List invitations sent by me
+      * GET /api/pastors/homegroup-invitations
+      */
     public function pastorInvitations(Request $request): JsonResponse
     {
         $pastor = $request->user();
@@ -568,9 +568,9 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Pastor: Get pending invitations count for badge
-     * GET /api/pastors/homegroup-invitations/pending-count
-     */
+      * Pastor: Get pending invitations count for badge
+      * GET /api/pastors/homegroup-invitations/pending-count
+      */
     public function pendingCount(Request $request): JsonResponse
     {
         $pastor = $request->user();
@@ -594,8 +594,8 @@ class HomeGroupInvitationController extends Controller
     // ============================================================================
 
     /**
-     * Send notification to member about invitation
-     */
+      * Send notification to member about invitation
+      */
     private function notifyMemberOfInvitation(User $member, HomeGroup $homeGroup, User $pastor, HomeGroupInvitation $invitation): void
     {
         $member->notifications()->create([
@@ -607,8 +607,8 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Send notification to home group leader about join request
-     */
+      * Send notification to home group leader about join request
+      */
     private function notifyLeaderOfJoinRequest(User $leader, HomeGroup $homeGroup, User $member, HomeGroupInvitation $request): void
     {
         $leader->notifications()->create([
@@ -620,8 +620,8 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Send notification to requester about acceptance
-     */
+      * Send notification to requester about acceptance
+      */
     private function notifyRequesterOfAcceptance(User $requester, HomeGroup $homeGroup, User $member): void
     {
         $requester->notifications()->create([
@@ -633,8 +633,8 @@ class HomeGroupInvitationController extends Controller
     }
 
     /**
-     * Send notification to requester about decline
-     */
+      * Send notification to requester about decline
+      */
     private function notifyRequesterOfDecline(User $requester, HomeGroup $homeGroup, User $member, ?string $note): void
     {
         $message = "{$member->name} has declined the invitation to join {$homeGroup->name}.";

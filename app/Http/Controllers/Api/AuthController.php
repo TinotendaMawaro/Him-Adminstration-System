@@ -102,7 +102,7 @@ class AuthController extends Controller
         $user = $request->user()->load([
             'zone.region.country', 'zone.pastors', 'department', 'homeGroup', 'gender', 'demography',
             'contact.country', 'pastor.zone.region.country',
-            'member.zone.region.country', 'member.homeGroup', 'member.department',
+            'member.zone.pastors', 'member.zone.region.country', 'member.homeGroup', 'member.department',
             'partner',
         ]);
 

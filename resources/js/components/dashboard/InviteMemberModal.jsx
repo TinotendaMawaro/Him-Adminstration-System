@@ -34,7 +34,7 @@ const RippleButton = ({ children, onClick, className = "", variant = "primary", 
 
   const baseStyles = "relative overflow-hidden px-5 py-2.5 rounded-full font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
-    primary: "bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 text-white shadow-lg shadow-gold-500/25 hover:shadow-gold-500/40 hover:scale-105",
+    primary: "bg-gradient-to-r from-[#dfb15b] via-[#dfb15b] to-amber-500 text-white shadow-lg shadow-[#dfb15b]/25 hover:shadow-[#dfb15b]/40 hover:scale-105",
     secondary: "bg-white/80 backdrop-blur-md text-gray-700 border border-white/50 shadow-md hover:shadow-lg hover:bg-white/90",
     danger: "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:shadow-red-500/20",
     dangerGlow: "bg-gradient-to-r from-red-400 via-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:scale-105",
@@ -146,7 +146,7 @@ function InviteMemberDrawer({ isOpen, onClose, homegroupName, homegroupId, onSuc
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search members..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-[#dfb15b]/50 focus:border-[#dfb15b] transition-all"
           />
         </div>
 

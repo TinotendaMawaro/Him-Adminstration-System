@@ -42,9 +42,9 @@ class UserResource extends JsonResource
                         'name'         => $zone->name,
                         'address'      => $zone->address,
                         'phone'        => $zone->phone,
-                        'pastor_id'    => null,
-                        'pastor_name'  => null,
-                        'pastor_title' => null,
+                        'pastor_id'    => $pastorUser?->id,
+                        'pastor_name'  => $pastorUser?->name,
+                        'pastor_title' => $pastorUser?->pastor?->title ?? 'Pastor',
                         'region'       => $zone->relationLoaded('region') ? ($zone->region ? [
                             'id'   => $zone->region->id,
                             'name' => $zone->region->name,

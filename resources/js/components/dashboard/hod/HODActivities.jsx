@@ -82,7 +82,7 @@ const HODActivitiesPage = ({ departmentId }) => {
       time: start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
       location: ev.location || "TBC",
       category: ev.category,
-      color: ev.category === "International" ? "from-gold-400 to-amber-500" : "from-sky-400 to-sky-600",
+      color: ev.category === "International" ? "from-[#dfb15b] to-amber-500" : "from-sky-400 to-sky-600",
       description: "",
       status: "upcoming",
       type: "event",
@@ -124,7 +124,7 @@ const HODActivitiesPage = ({ departmentId }) => {
         <div
           key={day}
           className={`h-24 border rounded-xl p-2 transition-all hover:shadow-md ${
-            daysEvents.length > 0 ? "border-gold-200 bg-gold-50/30" : "border-gray-100 bg-white/50"
+            daysEvents.length > 0 ? "border-[#dfb15b]/20 bg-[#dfb15b]/10" : "border-gray-100 bg-white/50"
           }`}
         >
           <span className="text-sm font-medium text-gray-700">{day}</span>

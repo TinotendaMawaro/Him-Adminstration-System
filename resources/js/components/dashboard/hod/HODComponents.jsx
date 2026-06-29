@@ -13,24 +13,22 @@ import { HODIcons } from "./HODIcons";
 export const HODTheme = {
     // Colors - Premium Gold & Sky Blue
     colors: {
-        primary: "from-amber-300 via-yellow-400 to-amber-500",
-        primaryGlow: "shadow-amber-400/25",
+        primary: "from-[#dfb15b] via-[#dfb15b] to-amber-500",
+        primaryGlow: "shadow-[#dfb15b]/25",
         secondary: "from-sky-300 via-sky-400 to-sky-500",
         secondaryGlow: "shadow-sky-400/20",
         success: "from-emerald-300 to-emerald-500",
         danger: "from-red-300 to-red-500",
         warning: "from-amber-300 to-amber-500",
     },
-    
-    // Frosted Glass - Apple-inspired premium look
-    glass: "bg-white/40 backdrop-blur-2xl border-white/30 shadow-lg shadow-black/5",
-    glassHover: "hover:bg-white/60 hover:shadow-xl hover:shadow-black/10",
-    
-    // Subtle glass variant for nested elements
-    glassSubtle: "bg-white/20 backdrop-blur-xl border-white/20",
+     
+    glass: "bg-white/[0.12] backdrop-blur-2xl border-white/[0.18] shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.2)]",
+    glassHover: "hover:bg-white/20 hover:shadow-xl hover:shadow-black/10",
+     
+    glassSubtle: "bg-white/[0.08] backdrop-blur-xl border-white/[0.12]",
     
     // Transitions - Smooth Apple-like animations
-    transition: "transition-all duration-300 ease-out",
+    transition: "transition-all cubic-bezier(0.16, 1, 0.3, 1) duration-300",
     
     // Border radius - Rounded, friendly Apple aesthetic
     rounded: "rounded-2xl",
@@ -40,7 +38,7 @@ export const HODTheme = {
     scale: "hover:scale-[1.02]",
     
     // Glow effects for premium feel
-    glowGold: "shadow-[0_0_20px_rgba(251,191,36,0.3)]",
+    glowGold: "shadow-[0_0_20px_rgba(223,177,91,0.3)]",
     glowSky: "shadow-[0_0_20px_rgba(56,189,248,0.3)]",
 };
 
@@ -59,7 +57,7 @@ export const HODGoldButton = ({ children, icon: Icon, onClick, className = "", d
         <span className={`absolute inset-0 bg-gradient-to-r ${HODTheme.colors.primary} group-hover:animate-pulse`}></span>
         
         {/* Glow effect */}
-        <span className="absolute inset-0 bg-amber-400 opacity-0 group-hover:opacity-40 blur-xl transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(251,191,36,0.6)]"></span>
+        <span className="absolute inset-0 bg-[#dfb15b] opacity-0 group-hover:opacity-30 blur-xl transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(223,177,91,0.5)]"></span>
         
         {/* Content */}
         <span className="relative flex items-center gap-2">

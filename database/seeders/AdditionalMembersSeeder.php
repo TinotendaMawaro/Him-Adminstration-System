@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\Hash;
 class AdditionalMembersSeeder extends Seeder
 {
     private array $members = [
-        ['R0101', 'Tinotenda', 'Mawaro',   'Male',   'Young Adult', 'active', '+263 77 123 4567', 'tinotenda.mawaro@heartfelt.church'],
-        ['R0101', 'Alpha',     'Mutamb',   'Male',   'Adult',       'active', '+263 77 234 5678', 'alpha.mutamb@heartfelt.church'],
-        ['R0101', 'Robin',     'Mawaro',   'Male',   'Young Adult', 'active', '+263 77 345 6789', 'robin.mawaro@heartfelt.church'],
-        ['R0103', 'Meick',     'Melson',   'Male',   'Adult',       'active', '+263 77 456 7890', 'meick.melson@heartfelt.church'],
+        ['R0101', 'Robi',     'Mawaro', 'Male',   'Adult',       'active', '+263719999260', 'robin@heartfeltonline.org'],
+        ['R0101', 'Tinotenda', 'Mawaro', 'Male',   'Young Adult', 'active', '+263 77 123 4567', 'tinotenda.mawaro@heartfelt.church'],
+        ['R0101', 'Alpha',     'Mutamb', 'Male',   'Adult',       'active', '+263 77 234 5678', 'alpha.mutamb@heartfelt.church'],
+        ['R0101', 'Robin',     'Mawaro', 'Male',   'Young Adult', 'active', '+263 77 345 6789', 'robin.mawaro@heartfelt.church'],
+        ['R0103', 'Meick',     'Melson', 'Male',   'Adult',       'active', '+263 77 456 7890', 'meick.melson@heartfelt.church'],
     ];
 
     public function run(): void
@@ -23,7 +24,7 @@ class AdditionalMembersSeeder extends Seeder
 
         if (!$maleId) { $this->command->error('Male gender not found'); return; }
 
-        $counter = 2;
+        $counter = 1;
         foreach ($this->members as [$zoneCode, $name, $surname, $gender, $demography, $status, $phone, $email]) {
             $zone = DB::table('zones')->where('code', $zoneCode)->first();
             if (!$zone) {
@@ -38,6 +39,8 @@ class AdditionalMembersSeeder extends Seeder
                 $userId = $existingUser->id;
                 DB::table('users')->where('id', $userId)->update([
                     'phone'      => $phone,
+                    'zone_id'    => $zone->id,
+                    'home_group_id' => $homeGroup?->id,
                     'updated_at' => now(),
                 ]);
             } else {
@@ -50,12 +53,15 @@ class AdditionalMembersSeeder extends Seeder
                     'is_active'         => true,
                     'terms_accepted'    => true,
                     'completed_tour'    => true,
+                    'unique_code'       => $zoneCode . 'M-' . sprintf('%04d', $counter),
+                    'zone_id'           => $zone->id,
+                    'home_group_id'     => $homeGroup?->id,
                     'created_at'        => now(),
                     'updated_at'        => now(),
                 ]);
             }
 
-            $memberNumber = 'MEM-' . sprintf('%04d', $counter++);
+            $memberNumber = $zoneCode . 'M-' . sprintf('%04d', $counter++);
             DB::table('members')->updateOrInsert(
                 ['user_id' => $userId],
                 [

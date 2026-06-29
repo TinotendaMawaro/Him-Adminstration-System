@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Icons } from "./MembersPortal";
 
-const DepartmentRequest = ({ user, onClose }) => {
+const DepartmentRequest = ({ user, onClose, onLeave, onRequestLeave }) => {
     const [departments, setDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState(null);
     const [notes, setNotes] = useState("");
@@ -10,7 +10,6 @@ const DepartmentRequest = ({ user, onClose }) => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    // Fetch departments and my request status
     useEffect(() => {
         fetchDepartments();
         fetchMyRequest();
@@ -112,8 +111,16 @@ const DepartmentRequest = ({ user, onClose }) => {
         }
     };
 
+    const handleLeaveClick = () => {
+        if (onRequestLeave) {
+            onRequestLeave("department");
+        }
+    };
+
     // Already a member of a department
     if (myRequest && myRequest.type === "member") {
+        const isHod = myRequest.department?.hod?.id === user?.id;
+        
         return (
             <div className="space-y-6">
                 <div className="text-center py-4">
@@ -134,9 +141,21 @@ const DepartmentRequest = ({ user, onClose }) => {
                     </div>
                 </div>
 
-                <p className="text-sm text-gray-500 text-center">
-                    Contact your pastor if you want to change departments.
-                </p>
+                {!isHod && (
+                    <button
+                        onClick={handleLeaveClick}
+                        disabled={loading}
+                        className="w-full py-3 bg-red-100 text-red-700 font-semibold rounded-xl hover:bg-red-200 transition-all duration-300"
+                    >
+                        Leave Department
+                    </button>
+                )}
+                
+                {isHod && (
+                    <p className="text-sm text-gray-500 text-center">
+                        As HOD, please contact your pastor to transfer leadership before leaving.
+                    </p>
+                )}
             </div>
         );
     }

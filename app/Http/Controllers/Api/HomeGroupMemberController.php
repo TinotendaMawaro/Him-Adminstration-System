@@ -123,6 +123,9 @@ class HomeGroupMemberController extends Controller
 
         // Check if user is a leader - leaders cannot leave without pastor approval
         $homeGroup = HomeGroup::find($user->home_group_id);
+        
+        // Store leader reference before updating user
+        $leader = $homeGroup->leader;
 
         if ($homeGroup->leader_id === $user->id) {
             return response()->json([
@@ -131,9 +134,27 @@ class HomeGroupMemberController extends Controller
             ], 400);
         }
 
+        // Update user and member records
         $user->update([
             'home_group_id' => null,
         ]);
+        
+        // Also update the member record
+        if ($user->member) {
+            $user->member->update([
+                'home_group_id' => null,
+            ]);
+        }
+
+        // Notify home group leader
+        if ($leader && $leader->id !== $user->id) {
+            $leader->notifications()->create([
+                'title' => 'Member Left Home Group',
+                'message' => "{$user->name} left {$homeGroup->name}. Reason: {$validated['reason']}",
+                'type' => 'home_group',
+                'category' => 'member_left',
+            ]);
+        }
 
         // Notify pastors about the member leaving
         $pastors = User::where('role', 'pastor')
@@ -355,7 +376,7 @@ class HomeGroupMemberController extends Controller
         }
 
         // Check if there's already a pending request
-        $existingRequest = HomeGroupInvitation::where('user_id', $user->id)
+        $existingRequest = HomeGroupInvitation::where('member_id', $user->id)
             ->where('status', 'pending')
             ->first();
 
@@ -367,15 +388,15 @@ class HomeGroupMemberController extends Controller
         }
 
         // Check if there's a rejected invitation for this home group
-        $rejectedRequest = HomeGroupInvitation::where('user_id', $user->id)
-            ->where('home_group_id', $validated['home_group_id'])
-            ->where('status', 'rejected')
+        $rejectedRequest = HomeGroupInvitation::where('member_id', $user->id)
+            ->where('homegroup_id', $validated['home_group_id'])
+            ->where('status', 'declined')
             ->first();
 
         if ($rejectedRequest) {
             // Allow re-application after 30 days
-            if ($rejectedRequest->approved_at &&
-                $rejectedRequest->approved_at->diffInDays(now()) < 30) {
+            if ($rejectedRequest->responded_at &&
+                $rejectedRequest->responded_at->diffInDays(now()) < 30) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You cannot reapply to this home group within 30 days of rejection.',
@@ -395,11 +416,11 @@ class HomeGroupMemberController extends Controller
 
         // Create the request
         $homeGroupRequest = HomeGroupInvitation::create([
-            'user_id' => $user->id,
-            'home_group_id' => $validated['home_group_id'],
+            'member_id' => $user->id,
+            'homegroup_id' => $validated['home_group_id'],
             'requested_by' => $user->id,
             'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
+            'message' => $validated['notes'] ?? null,
         ]);
 
         // Notify the pastor and home group leader about the new request
@@ -430,7 +451,7 @@ class HomeGroupMemberController extends Controller
 
         Log::info('Home group join request created', [
             'user_id' => $user->id,
-            'home_group_id' => $validated['home_group_id'],
+            'homegroup_id' => $validated['home_group_id'],
             'request_id' => $homeGroupRequest->id,
         ]);
 
@@ -461,7 +482,7 @@ class HomeGroupMemberController extends Controller
         }
 
         // Get pending request
-        $pendingRequest = HomeGroupInvitation::where('user_id', $user->id)
+        $pendingRequest = HomeGroupInvitation::where('member_id', $user->id)
             ->where('status', 'pending')
             ->with('homeGroup')
             ->first();
@@ -474,8 +495,8 @@ class HomeGroupMemberController extends Controller
         }
 
         // Get rejected invitation
-        $rejectedRequest = HomeGroupInvitation::where('user_id', $user->id)
-            ->where('status', 'rejected')
+        $rejectedRequest = HomeGroupInvitation::where('member_id', $user->id)
+            ->where('status', 'declined')
             ->orderBy('updated_at', 'desc')
             ->with('homeGroup')
             ->first();
@@ -494,7 +515,7 @@ class HomeGroupMemberController extends Controller
     {
         $user = $request->user();
 
-        $pendingRequest = HomeGroupInvitation::where('user_id', $user->id)
+        $pendingRequest = HomeGroupInvitation::where('member_id', $user->id)
             ->where('status', 'pending')
             ->first();
 
@@ -531,12 +552,12 @@ class HomeGroupMemberController extends Controller
             ], 403);
         }
 
-        $query = HomeGroupInvitation::with(['user', 'homeGroup'])
+        $query = HomeGroupInvitation::with(['member', 'homeGroup'])
             ->where('status', 'pending');
 
         // For leaders, only show requests for their home group
         if ($isLeader && !$isPastor) {
-            $query->where('home_group_id', $user->home_group_id);
+            $query->where('homegroup_id', $user->home_group_id);
         }
 
         // For pastors, show requests from their zone's members
@@ -544,10 +565,10 @@ class HomeGroupMemberController extends Controller
             $zoneMemberIds = User::where('zone_id', $user->zone_id)
                 ->where('role', 'member')
                 ->pluck('id');
-            $query->whereIn('user_id', $zoneMemberIds);
+            $query->whereIn('member_id', $zoneMemberIds);
         }
 
-        $requests = $query->orderBy('requested_at', 'desc')->get();
+        $requests = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -593,15 +614,15 @@ class HomeGroupMemberController extends Controller
         }
 
         // Authorization check
-        if ($isLeader && !$isPastor && $user->home_group_id !== $homeGroupRequest->home_group_id) {
+        if ($isLeader && !$isPastor && $user->home_group_id !== $homeGroupRequest->homegroup_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'You can only approve invitations for your home group.',
             ], 403);
         }
 
-        if ($isPastor && $user->zone_id) {
-            $isZoneMember = User::where('id', $homeGroupRequest->user_id)
+        if ($isPastor) {
+            $isZoneMember = User::where('id', $homeGroupRequest->member_id)
                 ->where('zone_id', $user->zone_id)
                 ->exists();
 
@@ -617,7 +638,7 @@ class HomeGroupMemberController extends Controller
         $homeGroupRequest->approve($user, $validated['notes'] ?? null);
 
         // Notify the member about approval
-        $member = $homeGroupRequest->user;
+        $member = $homeGroupRequest->member;
         $homeGroup = $homeGroupRequest->homeGroup;
 
         $member->notifications()->create([
@@ -630,7 +651,7 @@ class HomeGroupMemberController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Home group request approved successfully.',
-            'request' => $homeGroupRequest->fresh(['user', 'homeGroup']),
+            'request' => $homeGroupRequest->fresh(['member', 'homeGroup']),
         ]);
     }
 
@@ -655,7 +676,7 @@ class HomeGroupMemberController extends Controller
             ], 403);
         }
 
-        $homeGroupRequest = HomeGroupInvitation::with(['user', 'homeGroup'])->find($id);
+        $homeGroupRequest = HomeGroupInvitation::with(['member', 'homeGroup'])->find($id);
 
         if (!$homeGroupRequest) {
             return response()->json([
@@ -672,7 +693,7 @@ class HomeGroupMemberController extends Controller
         }
 
         // Authorization check (same as approve)
-        if ($isLeader && !$isPastor && $user->home_group_id !== $homeGroupRequest->home_group_id) {
+        if ($isLeader && !$isPastor && $user->home_group_id !== $homeGroupRequest->homegroup_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'You can only reject invitations for your home group.',
@@ -683,7 +704,7 @@ class HomeGroupMemberController extends Controller
         $homeGroupRequest->reject($user, $validated['notes'] ?? null);
 
         // Notify the member about rejection
-        $member = $homeGroupRequest->user;
+        $member = $homeGroupRequest->member;
         $homeGroup = $homeGroupRequest->homeGroup;
 
         $notesMessage = $validated['notes'] ?? 'Please contact your pastor for more information.';
@@ -697,13 +718,13 @@ class HomeGroupMemberController extends Controller
         Log::info('Home group request rejected', [
             'request_id' => $id,
             'rejected_by' => $user->id,
-            'user_id' => $homeGroupRequest->user_id,
+            'member_id' => $homeGroupRequest->member_id,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Home group request rejected.',
-            'request' => $homeGroupRequest->fresh(['user', 'homeGroup']),
+            'request' => $homeGroupRequest->fresh(['member', 'homeGroup']),
         ]);
     }
 }

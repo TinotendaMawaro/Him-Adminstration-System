@@ -4,10 +4,10 @@ import api from "../../lib/api.js";
 import MemberDrawer from "./MemberDrawer.jsx";
 import Pagination from "../Pagination.jsx";
 
-const ROW_CLASS = "h-10";
-const TH_CLASS = "px-2 py-1 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-200";
+const ROW_CLASS = "h-11";
+const TH_CLASS = "px-2 py-1 text-left text-[11px] font-medium text-gray-500 uppercase tracking-widest bg-white/75 backdrop-blur-md border-b border-gray-100";
 const TD_CLASS = "px-2 py-1 text-xs text-gray-900 border-b border-gray-100 align-middle";
-const INPUT_CLASS = "h-8 rounded-lg border border-gray-200 bg-white/70 px-2 text-xs focus:ring-1 focus:ring-gold-400/60 focus:border-gold-400";
+const INPUT_CLASS = "h-9 rounded-lg border border-gray-200 bg-white/70 px-2 text-xs focus:ring-1 focus:ring-[#dfb15b]/60 focus:border-[#dfb15b]";
 
 export default function MembersTab() {
     const queryClient = useQueryClient();
@@ -169,7 +169,7 @@ export default function MembersTab() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">{filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}</span>
-            <button onClick={handleRefresh} disabled={membersFetching} className="h-8 px-3 bg-gold-500 text-white text-xs font-medium rounded-lg hover:bg-gold-600 disabled:opacity-50">
+            <button onClick={handleRefresh} disabled={membersFetching} className="h-8 px-3 bg-[#dfb15b] text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50">
               {membersFetching ? "..." : "Refresh"}
             </button>
           </div>
@@ -243,7 +243,8 @@ export default function MembersTab() {
                   <td className={`${TD_CLASS} truncate`} title={member.email || "N/A"}>{member.email || "N/A"}</td>
                   <td className={`${TD_CLASS}`}>{member.membership_date ? new Date(member.membership_date).toLocaleDateString() : "N/A"}</td>
                   <td className={`${TD_CLASS}`}>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${member.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium bg-white ${member.status === "active" ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${member.status === "active" ? "bg-emerald-500" : "bg-red-500"}`}></span>
                       {member.status === "active" ? "Active" : "Inactive"}
                     </span>
                   </td>
@@ -251,7 +252,7 @@ export default function MembersTab() {
                   <td className={`${TD_CLASS} truncate`} title={member.department?.name || "N/A"}>{member.department?.name || "N/A"}</td>
                   <td className={`${TD_CLASS}`}>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => handleViewMember(member)} className="text-gold-600 hover:text-gold-900">View</button>
+                      <button onClick={() => handleViewMember(member)} className="text-[#dfb15b] hover:text-amber-900">View</button>
                       <button onClick={() => handleStatusToggle(member)} className="text-emerald-600 hover:text-emerald-800">
                         {member.status === 'active' ? 'Deactivate' : 'Activate'}
                       </button>

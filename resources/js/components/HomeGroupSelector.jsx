@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Icons } from "./MembersPortal";
 
-const HomeGroupSelector = ({ user, onClose }) => {
+const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
     const [homeGroups, setHomeGroups] = useState([]);
     const [myHomeGroup, setMyHomeGroup] = useState(null);
     const [pendingRequest, setPendingRequest] = useState(null);
@@ -15,13 +15,13 @@ const HomeGroupSelector = ({ user, onClose }) => {
         fetchMyHomeGroup();
     }, []);
 
-     const fetchHomeGroups = async () => {
-         try {
-             const response = await fetch("/api/home-groups/available", {
-                 headers: {
-                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
-                 },
-             });
+    const fetchHomeGroups = async () => {
+        try {
+            const response = await fetch("/api/home-groups/available", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                },
+            });
             const data = await response.json();
             if (data.success) {
                 setHomeGroups(data.home_groups);
@@ -31,7 +31,7 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
-     const fetchMyHomeGroup = async () => {
+    const fetchMyHomeGroup = async () => {
         try {
             const response = await fetch("/api/home-group/my-request", {
                 headers: {
@@ -60,15 +60,15 @@ const HomeGroupSelector = ({ user, onClose }) => {
         setLoading(true);
         setError("");
 
-         try {
-             const response = await fetch("/api/home-group/request", {
-                 method: "POST",
-                 headers: {
-                     "Content-Type": "application/json",
-                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
-                 },
-                 body: JSON.stringify({ home_group_id: selectedGroup }),
-             });
+        try {
+            const response = await fetch("/api/home-group/request", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+                },
+                body: JSON.stringify({ home_group_id: selectedGroup }),
+            });
             const data = await response.json();
 
             if (data.success) {
@@ -84,26 +84,9 @@ const HomeGroupSelector = ({ user, onClose }) => {
         }
     };
 
-     const handleLeaveHomeGroup = async () => {
-         setLoading(true);
-         try {
-             const response = await fetch("/api/home-group/leave", {
-                 method: "DELETE",
-                 headers: {
-                     Authorization: `Bearer ${localStorage.getItem("him_token")}`,
-                 },
-             });
-            const data = await response.json();
-            if (data.success) {
-                setMyHomeGroup(null);
-                setSuccess("");
-            } else {
-                setError(data.message);
-            }
-        } catch (err) {
-            setError("Failed to leave home group.");
-        } finally {
-            setLoading(false);
+    const handleLeaveClick = () => {
+        if (onRequestLeave) {
+            onRequestLeave("homegroup");
         }
     };
 
@@ -212,7 +195,7 @@ const HomeGroupSelector = ({ user, onClose }) => {
 
                 {myHomeGroup.role !== "leader" && (
                     <button
-                        onClick={handleLeaveHomeGroup}
+                        onClick={handleLeaveClick}
                         disabled={loading}
                         className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300"
                     >
@@ -228,8 +211,6 @@ const HomeGroupSelector = ({ user, onClose }) => {
             </div>
         );
     }
-
-    // No home group - show selection form
     return (
         <div className="space-y-6">
             <div className="text-center">

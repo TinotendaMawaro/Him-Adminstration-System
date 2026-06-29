@@ -7,6 +7,7 @@ use App\Http\Resources\EventRegistrationResource;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -153,10 +154,10 @@ class EventController extends Controller
 
     // ─── Registration ─────────────────────────────────────────────────────────
 
-    /**
-     * POST /api/events/{id}/register
-     * Any portal user can register for an open event.
-     */
+/**
+      * POST /api/events/{id}/register
+      * Any portal user can register for an open event.
+      */
     public function register(Request $request, int $id): JsonResponse
     {
         $event = Event::findOrFail($id);
@@ -179,6 +180,22 @@ class EventController extends Controller
             'status'     => $event->requires_payment ? 'pending' : 'confirmed',
             'amount_due' => $event->requires_payment ? $event->registration_fee : 0,
         ]);
+
+        // Notify pastors in the event's zone about the registration
+        if ($event->zone_id) {
+            $pastors = User::where('role', 'pastor')
+                ->where('zone_id', $event->zone_id)
+                ->get();
+
+            foreach ($pastors as $pastor) {
+                $pastor->notifications()->create([
+                    'title' => 'New Event Registration',
+                    'message' => ($request->user()->name ?? 'A member') . " registered for {$event->title}.",
+                    'type' => 'event',
+                    'category' => 'event_registration',
+                ]);
+            }
+        }
 
         return response()->json([
             'success' => true,

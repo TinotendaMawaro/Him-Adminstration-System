@@ -65,4 +65,3 @@ class HomeGroupUpdate extends Model
         return $query->where('published_at', '>=', now()->subDays($days));
     }
 }
-}

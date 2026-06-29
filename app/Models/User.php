@@ -22,6 +22,7 @@ class User extends Authenticatable
         'is_active', 'terms_accepted', 'terms_accepted_at',
         'first_login_at', 'completed_tour', 'profile_photo',
         'zone_id', 'phone', 'address',
+        'home_group_id', 'department_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];

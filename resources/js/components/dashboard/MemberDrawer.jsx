@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import api from "../../lib/api.js";
 
 const ROW_CLASS = "h-9";
-const TH_CLASS = "px-2 py-1 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-200";
+const TH_CLASS = "px-2 py-1 text-left text-[11px] font-medium text-gray-500 uppercase tracking-widest bg-white/75 backdrop-blur-md border-b border-gray-100";
 const TD_CLASS = "px-2 py-1 text-xs text-gray-900 border-b border-gray-100 align-middle";
-const INPUT_CLASS = "h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs focus:ring-1 focus:ring-gold-400/60 focus:border-gold-400";
+const INPUT_CLASS = "h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs focus:ring-1 focus:ring-[#dfb15b]/60 focus:border-[#dfb15b]";
 
 export default function MemberDrawer({ member, onClose, onUpdated }) {
   const [editing, setEditing] = useState(false);
@@ -58,14 +58,14 @@ export default function MemberDrawer({ member, onClose, onUpdated }) {
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-gold-100 flex items-center justify-center">
-                <span className="text-sm font-semibold text-gold-700">{(member?.name || "?")?.charAt(0)?.toUpperCase()}</span>
+              <div className="h-10 w-10 rounded-full bg-[#dfb15b]/10 flex items-center justify-center">
+                <span className="text-sm font-semibold text-[#dfb15b]">{(member?.name || "?")?.charAt(0)?.toUpperCase()}</span>
               </div>
               <div>
                 <h2 className="text-base font-semibold text-gray-900 leading-tight">{fullName}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs font-mono text-gray-500">{memberCode}</span>
-                  <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${member?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                  <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full border bg-white ${member?.status === "active" ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"}`}>
                     {member?.status || "N/A"}
                   </span>
                 </div>
@@ -127,7 +127,7 @@ export default function MemberDrawer({ member, onClose, onUpdated }) {
             <div className="flex gap-2">
               {editing ? (
                 <>
-                  <button disabled={saving} onClick={handleSave} className="flex-1 h-8 bg-gold-500 text-white text-xs font-medium rounded-lg hover:bg-gold-600 disabled:opacity-50">
+                  <button disabled={saving} onClick={handleSave} className="flex-1 h-8 bg-[#dfb15b] text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50">
                     {saving ? "Saving..." : "Save"}
                   </button>
                   <button disabled={saving} onClick={() => setEditing(false)} className="flex-1 h-8 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-100 disabled:opacity-50">
@@ -135,7 +135,7 @@ export default function MemberDrawer({ member, onClose, onUpdated }) {
                   </button>
                 </>
               ) : (
-                <button onClick={() => setEditing(true)} className="flex-1 h-8 bg-gold-500 text-white text-xs font-medium rounded-lg hover:bg-gold-600">
+                <button onClick={() => setEditing(true)} className="flex-1 h-8 bg-[#dfb15b] text-white text-xs font-medium rounded-lg hover:bg-amber-600">
                   Edit Profile
                 </button>
               )}

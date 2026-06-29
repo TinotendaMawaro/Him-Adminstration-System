@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\DB;
 class HomeGroupSeeder extends Seeder
 {
     private array $homeGroups = [
-        // Region 01
-        ['R0101', 'IOC Home Group', '1 Sandy Lane, Ashdown Park, Harare', 'Sunday', '09:00:00'],
+        // Region 01 - IOC Zone
         ['R0102', 'Dzivarasekwa Home Group', 'Munyarari Building, Glenview 3 Shops, Harare', 'Sunday', '09:00:00'],
         ['R0103', 'AFDIS Home Group', 'To be assigned', 'Sunday', '09:00:00'],
 

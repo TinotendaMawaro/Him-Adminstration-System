@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MemberResource;
+use App\Models\DepartmentRequest;
 use App\Models\Event;
+use App\Models\EventRegistration;
 use App\Models\HomeGroup;
+use App\Models\HomeGroupInvitation;
 use App\Models\Member;
+use App\Models\Partner;
 use App\Models\Report;
 use App\Models\Zone;
 use App\Models\ZoneHistory;
@@ -14,6 +18,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class PastorController extends Controller
 {
@@ -463,15 +468,77 @@ class PastorController extends Controller
              ];
          }
 
-         // Sort all activities by date
-         usort($activities, fn($a, $b) =>
-             strtotime($b['created_at']) - strtotime($a['created_at'])
-         );
+         // Recent home group join requests (pending)
+         $recentHomeGroupRequests = HomeGroupInvitation::whereHas('member', function ($q) use ($zoneId) {
+                 $q->where('zone_id', $zoneId);
+             })
+             ->with(['member:id,name,email', 'homeGroup:id,name'])
+             ->where('status', 'pending')
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
 
-         return response()->json([
-             'success' => true,
-             'data' => array_slice($activities, 0, 20),
-         ]);
+         foreach ($recentHomeGroupRequests as $request) {
+             $activities[] = [
+                 'id' => $request->id,
+                 'type' => 'homegroup_request',
+                 'title' => 'Home Group Join Request',
+                 'description' => ($request->member ? $request->member->name : 'Unknown') . " requested to join " . ($request->homeGroup ? $request->homeGroup->name : 'Unknown'),
+                 'time' => $request->created_at->diffForHumans(),
+                 'created_at' => $request->created_at->toISOString(),
+             ];
+         }
+
+         // Recent department join requests (pending)
+         $recentDepartmentRequests = DepartmentRequest::whereHas('user', function ($q) use ($zoneId) {
+                 $q->where('zone_id', $zoneId);
+             })
+             ->with(['user:id,name,email', 'department:id,name'])
+             ->where('status', 'pending')
+             ->orderBy('requested_at', 'desc')
+             ->take(10)
+             ->get();
+
+         foreach ($recentDepartmentRequests as $request) {
+             $activities[] = [
+                 'id' => $request->id,
+                 'type' => 'department_request',
+                 'title' => 'Department Join Request',
+                 'description' => ($request->user ? $request->user->name : 'Unknown') . " requested to join " . ($request->department ? $request->department->name : 'Unknown'),
+                 'time' => $request->requested_at->diffForHumans(),
+                 'created_at' => $request->requested_at->toISOString(),
+             ];
+         }
+
+         // Recent event registrations
+         $recentRegistrations = EventRegistration::whereHas('user', function ($q) use ($zoneId) {
+                 $q->where('zone_id', $zoneId);
+             })
+             ->with(['user:id,name,email', 'event:id,title,starts_at'])
+             ->orderBy('created_at', 'desc')
+             ->take(10)
+             ->get();
+
+         foreach ($recentRegistrations as $registration) {
+             $activities[] = [
+                 'id' => $registration->id,
+                 'type' => 'event_registration',
+                 'title' => 'Event Registration',
+                 'description' => ($registration->user ? $registration->user->name : 'Unknown') . " registered for " . ($registration->event ? $registration->event->title : 'Unknown'),
+                 'time' => $registration->created_at->diffForHumans(),
+                 'created_at' => $registration->created_at->toISOString(),
+             ];
+         }
+
+         // Sort all activities by date
+        usort($activities, fn($a, $b) =>
+            strtotime($b['created_at']) - strtotime($a['created_at'])
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => array_slice($activities, 0, 20),
+        ]);
      }
 
       /** GET /api/pastors/zone-history — Zone history timeline data */
@@ -640,4 +707,4 @@ class PastorController extends Controller
               'data' => new MemberResource($member->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
           ]);
       }
- }
+}
