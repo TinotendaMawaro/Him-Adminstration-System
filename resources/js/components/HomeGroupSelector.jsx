@@ -1,19 +1,81 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Icons } from "./MembersPortal";
 
-const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
+// ============================================================================
+// LOADING SPINNER COMPONENT
+// ============================================================================
+
+const LoadingSpinner = ({ size = "md" }) => {
+    const sizeClasses = {
+        sm: "w-4 h-4",
+        md: "w-8 h-8",
+        lg: "w-12 h-12",
+    };
+
+    return (
+        <div className="relative">
+            <div className={`${sizeClasses[size]} border-4 border-gray-200 border-t-[#d4af37] rounded-full animate-spin`}></div>
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                .animate-spin {
+                    animation: spin 1s linear infinite;
+                }
+            `}</style>
+        </div>
+    );
+};
+
+// ============================================================================
+// HOME GROUP CARD SKELETON
+// ============================================================================
+
+const HomeGroupCardSkeleton = () => (
+    <div className="w-full p-4 rounded-xl border-2 border-gray-200 bg-white animate-pulse">
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gray-200"></div>
+            <div className="flex-1">
+                <div className="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded mb-1 w-1/2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+            </div>
+        </div>
+    </div>
+);
+
+const HomeGroupSelector = ({ user, onClose, onRequestLeave }) => {
     const [homeGroups, setHomeGroups] = useState([]);
     const [myHomeGroup, setMyHomeGroup] = useState(null);
     const [pendingRequest, setPendingRequest] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    useEffect(() => {
-        fetchHomeGroups();
-        fetchMyHomeGroup();
+    // Simulate minimum loading time for better UX (max 2 seconds)
+    const fetchWithMinLoading = useCallback(async (fetchFn) => {
+        const startTime = Date.now();
+        setInitialLoading(true);
+        
+        try {
+            await fetchFn();
+            const elapsed = Date.now() - startTime;
+            const remainingTime = Math.max(0, 2000 - elapsed);
+            
+            if (remainingTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
+        } finally {
+            setInitialLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchWithMinLoading(() => Promise.all([fetchHomeGroups(), fetchMyHomeGroup()]));
+    }, [fetchWithMinLoading]);
 
     const fetchHomeGroups = async () => {
         try {
@@ -24,7 +86,7 @@ const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
             });
             const data = await response.json();
             if (data.success) {
-                setHomeGroups(data.home_groups);
+                setHomeGroups(data.homegroups || []);
             }
         } catch (err) {
             console.error("Failed to fetch home groups:", err);
@@ -177,18 +239,29 @@ const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
                             </div>
                         </div>
                     )}
+                    {myHomeGroup.home_group && myHomeGroup.home_group.lead_pastor && (
+                        <div className="flex items-center gap-3">
+                            <Icons.User className="w-5 h-5 text-emerald-600" />
+                            <div>
+                                <p className="text-sm text-gray-500">Lead Pastor</p>
+                                <p className="font-semibold text-gray-900">
+                                    {myHomeGroup.home_group.lead_pastor.title} {myHomeGroup.home_group.lead_pastor.name}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <div className="flex items-center gap-3">
                         <Icons.MapPin className="w-5 h-5 text-emerald-600" />
                         <div>
                             <p className="text-sm text-gray-500">Location</p>
-                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group.location}</p>
+                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group?.location || "N/A"}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <Icons.Calendar className="w-5 h-5 text-emerald-600" />
                         <div>
                             <p className="text-sm text-gray-500">Meeting Time</p>
-                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group.meeting_time || "Contact leader"}</p>
+                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group?.meeting_time || "Contact leader"}</p>
                         </div>
                     </div>
                 </div>
@@ -211,6 +284,25 @@ const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
             </div>
         );
     }
+
+    // Show loading state during initial fetch
+    if (initialLoading) {
+        return (
+            <div className="space-y-6">
+                <div className="text-center py-4">
+                    <LoadingSpinner size="lg" />
+                    <h3 className="text-lg font-semibold text-gray-900 mt-4">Loading Home Groups</h3>
+                    <p className="text-sm text-gray-500">Fetching available groups in your zone...</p>
+                </div>
+                <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                        <HomeGroupCardSkeleton key={i} />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="text-center">
@@ -256,13 +348,19 @@ const HomeGroupSelector = ({ user, onClose, onLeave, onRequestLeave }) => {
                             {group.leader && (
                                 <p className="text-xs text-gold-600">Leader: {group.leader.name}</p>
                             )}
+                            {group.lead_pastor && (
+                                <p className="text-xs text-blue-600">
+                                    Lead Pastor: {group.lead_pastor.name}
+                                </p>
+                            )}
                         </div>
                     </button>
                 ))}
             </div>
 
-            {homeGroups.length === 0 && (
+            {homeGroups.length === 0 && !initialLoading && (
                 <div className="text-center py-4">
+                    <Icons.Home className="w-12 h-12 mx-auto text-gray-300 mb-2" />
                     <p className="text-gray-500">No home groups available in your zone.</p>
                     <p className="text-sm text-gray-400">Contact your pastor for assistance.</p>
                 </div>

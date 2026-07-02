@@ -77,7 +77,7 @@ class PartnerController extends Controller
         $partner = DB::transaction(function () use ($user, $zone, $validated, $package, $autoActivate) {
             $partner = Partner::create([
                 'user_id'           => $user->id,
-                'member_id'         => $user->member?->id,
+'member_id' => $user->member ? $user->member->id : null,
                 'name'              => $user->name,
                 'surname'           => '',
                 'partner_number'    => Partner::generatePartnerNumber($zone->code),

@@ -60,9 +60,11 @@ class HomeGroupInvitation extends Model
             'response_note' => $notes,
         ]);
 
-        $this->member()->update([
-            'home_group_id' => $this->homegroup_id,
-        ]);
+        if ($this->member) {
+            $this->member->update([
+                'home_group_id' => $this->homegroup_id,
+            ]);
+        }
     }
 
     public function reject(User $approver, ?string $notes = null): void

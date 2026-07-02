@@ -161,13 +161,15 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
       Route::get('/pastors/homegroup-invitations', [HomeGroupInvitationController::class, 'pastorInvitations']);
       Route::get('/pastors/homegroup-invitations/pending-count', [HomeGroupInvitationController::class, 'pendingCount']);
 
-    Route::get('/home-groups/available', [HomeGroupMemberController::class, 'availableHomeGroups']);
+    Route::get('/home-groups/available', [HomeGroupApiController::class, 'index']);
     Route::get('/home-group/my', [HomeGroupMemberController::class, 'myHomeGroup']);
     Route::post('/home-group/join', [HomeGroupMemberController::class, 'joinHomeGroup']);
     Route::delete('/home-group/leave', [HomeGroupMemberController::class, 'leaveHomeGroup']);
     Route::get('/home-group/{id}/members', [HomeGroupMemberController::class, 'homeGroupMembers']);
     Route::post('/home-group/{id}/assign-leader', [HomeGroupMemberController::class, 'assignLeader']);
     Route::delete('/home-group/{homeGroupId}/members/{memberId}', [HomeGroupMemberController::class, 'removeMember']);
+    Route::put('/home-group/{homeGroupId}/members/{memberId}/status', [HomeGroupMemberController::class, 'updateMemberStatus']);
+    Route::post('/home-group/{homeGroupId}/broadcast', [HomeGroupMemberController::class, 'sendBroadcast']);
 
     // Home group requests
     Route::post('/home-group/request', [HomeGroupMemberController::class, 'requestJoin']);

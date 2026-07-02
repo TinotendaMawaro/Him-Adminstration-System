@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser, useUser } from "../context/UserContext";
 import api from "../lib/api";
 import HomeGroupCommunity from "./HomeGroupCommunity";
@@ -310,7 +310,7 @@ const RegistrationConfirmation = ({ user }) => {
 // HOMEGROUP SECTION
 // ============================================================================
 
-const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave }) => {
+const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoading, onBrowseHomegroups }) => {
     const hg = user && user.home_group;
     if (hg && hg.name) {
         const isLeader = hg.leader_id === user?.id;
@@ -374,10 +374,18 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave }) => {
                     Join a homegroup to connect with fellow members.
                 </p>
                 <button
-                    onClick={onViewHomegroup}
-                    className="btn btn-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all"
+                    onClick={onBrowseHomegroups || onViewHomegroup}
+                    disabled={homegroupLoading}
+                    className="btn btn-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-70"
                 >
-                    Browse Homegroups
+                    {homegroupLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v2m0 12v2m4-16l1.29 1.29M7.71 17.71L9 16.41m8 0l1.29 1.29M7.71 7.71L9 9" />
+                            </svg>
+                            Loading...
+                        </span>
+                    ) : "Browse Homegroups"}
                 </button>
             </div>
         </div>
@@ -500,6 +508,7 @@ const CHURCH_EVENTS_2026 = [
 // ============================================================================
 
 export default function MembersPortal({ onLogout }) {
+    const queryClient = useQueryClient();
     const { user, updateUser } = useUser();
     
     const { data: invitationsData } = useQuery({
@@ -534,6 +543,7 @@ export default function MembersPortal({ onLogout }) {
     const [activeTab, setActiveTab] = useState("home");
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [showHomegroupSelector, setShowHomegroupSelector] = useState(false);
+    const [homegroupLoading, setHomegroupLoading] = useState(false);
     const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
     const [leaveModal, setLeaveModal] = useState({ show: false, type: null });
 
@@ -542,49 +552,78 @@ export default function MembersPortal({ onLogout }) {
         setNotificationsOpen(false);
     };
 
+    // Handle homegroup button click with loading state
+    const handleBrowseHomegroups = useCallback(() => {
+        setHomegroupLoading(true);
+        const timer = setTimeout(() => {
+            setShowHomegroupSelector(true);
+            setHomegroupLoading(false);
+        }, 2000);
+        
+        // Clear loading immediately if data loads faster
+        fetch("/api/home-groups/available", {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("him_token")}`,
+            },
+        }).then(() => {
+            clearTimeout(timer);
+            setHomegroupLoading(false);
+            setShowHomegroupSelector(true);
+        }).catch(() => {
+            clearTimeout(timer);
+            setHomegroupLoading(false);
+            setShowHomegroupSelector(true);
+        });
+    }, []);
+
+    const onRequestLeave = useCallback((type) => {
+        console.log('[DEBUG] onRequestLeave called with type:', type);
+        setLeaveModal({ show: true, type });
+    }, []);
+
     const handleNotificationToggle = () => {
         setNotificationsOpen((prev) => !prev);
     };
 
     const handleLeaveHomegroup = async (reason) => {
         try {
-            const response = await fetch("/api/home-group/leave", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
-                },
-                body: JSON.stringify({ reason }),
+            console.log('[DEBUG] Leaving homegroup with reason:', reason);
+            console.log('[DEBUG] Token exists:', !!localStorage.getItem("him_token"));
+
+            const response = await api.delete("/home-group/leave", {
+                data: { reason },
             });
-            const data = await response.json();
-            if (data.success) {
-                updateUser({ home_group: null });
+
+            console.log('[DEBUG] Response:', response.data);
+
+            if (response.data && response.data.success) {
+                // Update user state to clear home_group_id
+                updateUser({ home_group_id: null, home_group: null });
+                queryClient.invalidateQueries({ queryKey: ["homegroup-invitations"] });
             } else {
-                alert(data.message || "Failed to leave home group.");
+                alert(response.data?.message || "Failed to leave home group.");
             }
         } catch (err) {
-            alert("Failed to leave home group. Please try again.");
+            console.error('[DEBUG] Leave homegroup error:', err);
+            const msg = err.response?.data?.message || err.message || 'An error occurred';
+            alert(`Failed to leave home group: ${msg}`);
         }
     };
 
     const handleLeaveDepartment = async (reason) => {
         try {
-            const response = await fetch("/api/department/leave", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("him_token")}`,
-                },
-                body: JSON.stringify({ reason }),
+            const response = await api.delete("/department/leave", {
+                data: { reason },
             });
-            const data = await response.json();
-            if (data.success) {
-                updateUser({ department: null });
+
+            if (response.data && response.data.success) {
+                updateUser({ department_id: null, department: null });
             } else {
-                alert(data.message || "Failed to leave department.");
+                alert(response.data?.message || "Failed to leave department.");
             }
         } catch (err) {
-            alert("Failed to leave department. Please try again.");
+            const msg = err.response?.data?.message || err.message || 'An error occurred';
+            alert(`Failed to leave department: ${msg}`);
         }
     };
 
@@ -870,12 +909,14 @@ export default function MembersPortal({ onLogout }) {
                                 <HomegroupSection
                                     user={user}
                                     onViewHomegroup={() => handleAction("homegroups")}
-                                    onRequestLeave={setLeaveModal}
+                                    onRequestLeave={onRequestLeave}
+                                    homegroupLoading={homegroupLoading}
+                                    onBrowseHomegroups={handleBrowseHomegroups}
                                 />
                                 <DepartmentsSection
                                     user={user}
                                     onViewDepartments={() => handleAction("departments")}
-                                    onRequestLeave={setLeaveModal}
+                                    onRequestLeave={onRequestLeave}
                                 />
                             </div>
                             <div>
@@ -999,18 +1040,18 @@ export default function MembersPortal({ onLogout }) {
                                  </div>
                              </div>
                              
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                 <HomegroupSection
-                                     user={user}
-                                     onViewHomegroup={() => handleAction("homegroups")}
-                                     onRequestLeave={setLeaveModal}
-                                 />
-                                 <DepartmentsSection
-                                     user={user}
-                                     onViewDepartments={() => handleAction("departments")}
-                                     onRequestLeave={setLeaveModal}
-                                 />
-                             </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <HomegroupSection
+                                      user={user}
+                                      onViewHomegroup={() => handleAction("homegroups")}
+                                      onRequestLeave={onRequestLeave}
+                                  />
+                                  <DepartmentsSection
+                                      user={user}
+                                      onViewDepartments={() => handleAction("departments")}
+                                      onRequestLeave={onRequestLeave}
+                                  />
+                              </div>
                          </div>
                      )}
 
@@ -1216,20 +1257,21 @@ export default function MembersPortal({ onLogout }) {
              </div>
              
 {/* Homegroup Selector Drawer */}
-             {showHomegroupSelector && (
-                 <Drawer
-                     isOpen={showHomegroupSelector}
-                     onClose={() => setShowHomegroupSelector(false)}
-                     title="My Home Group"
-                     size="lg"
-                 >
-                     <HomeGroupSelector
-                         user={user}
-                         onClose={() => setShowHomegroupSelector(false)}
-                         onRequestLeave={setLeaveModal}
-                     />
-                 </Drawer>
-             )}
+              {showHomegroupSelector && (
+                  <Drawer
+                      isOpen={showHomegroupSelector}
+                      onClose={() => setShowHomegroupSelector(false)}
+                      title="My Home Group"
+                      size="lg"
+                  >
+                      <HomeGroupSelector
+                          user={user}
+                          onClose={() => setShowHomegroupSelector(false)}
+                          onLeave={() => handleAction("homegroups")}
+                          onRequestLeave={onRequestLeave}
+                      />
+                  </Drawer>
+              )}
              
              {/* Department Selector Drawer */}
              {showDepartmentSelector && (

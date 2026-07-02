@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class DepartmentRequestController extends Controller
 {
@@ -17,12 +18,23 @@ class DepartmentRequestController extends Controller
      */
     public function departments(): JsonResponse
     {
-        $departments = Department::orderBy('name')->get();
-        
-        return response()->json([
-            'success' => true,
-            'departments' => $departments,
-        ]);
+        try {
+            $departments = Department::orderBy('name')->get();
+            
+            return response()->json([
+                'success' => true,
+                'departments' => $departments,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch departments', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch departments. Please try again.',
+            ], 500);
+        }
     }
 
     /**
@@ -30,97 +42,110 @@ class DepartmentRequestController extends Controller
      */
     public function requestJoin(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'department_id' => 'required|exists:departments,id',
-            'notes' => 'nullable|string|max:500',
-        ]);
+        try {
+            $validated = $request->validate([
+                'department_id' => 'required|exists:departments,id',
+                'notes' => 'nullable|string|max:500',
+            ]);
 
-        $user = $request->user();
+            $user = $request->user();
 
-        // Check if user already belongs to a department
-        if ($user->department_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already belong to a department. Please contact your pastor to change departments.',
-            ], 400);
-        }
-
-        // Check if there's already a pending request
-        $existingRequest = DepartmentRequest::where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($existingRequest) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already have a pending department request.',
-            ], 400);
-        }
-
-        // Check if there's a rejected request for this department
-        $rejectedRequest = DepartmentRequest::where('user_id', $user->id)
-            ->where('department_id', $validated['department_id'])
-            ->where('status', 'rejected')
-            ->first();
-
-        if ($rejectedRequest) {
-            // Allow re-application after 30 days
-            if ($rejectedRequest->approved_at && 
-                $rejectedRequest->approved_at->diffInDays(now()) < 30) {
+            // Check if user already belongs to a department
+            if ($user->department_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You cannot reapply to this department within 30 days of rejection.',
+                    'message' => 'You already belong to a department. Please contact your pastor to change departments.',
                 ], 400);
             }
-        }
 
-        // Create the request
-        $departmentRequest = DepartmentRequest::create([
-            'user_id' => $user->id,
-            'department_id' => $validated['department_id'],
-            'requested_by' => $user->id,
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-        ]);
+            // Check if there's already a pending request
+            $existingRequest = DepartmentRequest::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->first();
 
-        // Notify the pastor and HOD about the new request
-        $department = Department::find($validated['department_id']);
-        $hod = $department ? $department->hodUser : null;
+            if ($existingRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You already have a pending department request.',
+                ], 400);
+            }
 
-        // Notify HOD if exists
-        if ($hod) {
-            $hod->notifications()->create([
-                'title' => 'New Department Join Request',
-                'message' => "{$user->name} has requested to join {$department->name}. Please review the request.",
-                'type' => 'department',
-                'category' => 'join_request',
+            // Check if there's a rejected request for this department
+            $rejectedRequest = DepartmentRequest::where('user_id', $user->id)
+                ->where('department_id', $validated['department_id'])
+                ->where('status', 'rejected')
+                ->first();
+
+            if ($rejectedRequest) {
+                // Allow re-application after 30 days
+                if ($rejectedRequest->approved_at && 
+                    $rejectedRequest->approved_at->diffInDays(now()) < 30) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You cannot reapply to this department within 30 days of rejection.',
+                    ], 400);
+                }
+            }
+
+            // Create the request
+            $departmentRequest = DepartmentRequest::create([
+                'user_id' => $user->id,
+                'department_id' => $validated['department_id'],
+                'requested_by' => $user->id,
+                'status' => 'pending',
+                'notes' => isset($validated['notes']) ? $validated['notes'] : null,
             ]);
-        }
 
-        // Also notify pastors in the zone
-        $pastors = User::where('role', 'pastor')
-            ->where('zone_id', $user->zone_id)
-            ->get();
-        foreach ($pastors as $pastor) {
-            $pastor->notifications()->create([
-                'title' => 'New Department Join Request',
-                'message' => "{$user->name} has requested to join {$department->name}.",
-                'type' => 'department',
-                'category' => 'join_request',
+            $department = Department::find($validated['department_id']);
+            $hod = $department ? $department->hodUser : null;
+            $departmentName = $department ? $department->name : 'Unknown Department';
+
+            // Notify HOD if exists
+            if ($hod) {
+                $hod->notifications()->create([
+                    'title' => 'New Department Join Request',
+                    'message' => "{$user->name} has requested to join {$departmentName}. Please review the request.",
+                    'type' => 'department',
+                    'category' => 'join_request',
+                ]);
+            }
+
+            // Also notify pastors in the zone
+            $pastors = User::where('role', 'pastor')
+                ->where('zone_id', $user->zone_id)
+                ->get();
+            foreach ($pastors as $pastor) {
+                $pastor->notifications()->create([
+                    'title' => 'New Department Join Request',
+                    'message' => "{$user->name} has requested to join {$departmentName}.",
+                    'type' => 'department',
+                    'category' => 'join_request',
+                ]);
+            }
+
+            Log::info('Department join request created', [
+                'user_id' => $user->id,
+                'department_id' => $validated['department_id'],
+                'request_id' => $departmentRequest->id,
             ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Department join request submitted successfully. Please wait for pastoral approval.',
+                'request' => $departmentRequest->load('department'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Department join request failed', [
+                'user_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit department join request. Please try again.',
+            ], 500);
         }
-
-        Log::info('Department join request created', [
-            'user_id' => $user->id,
-            'department_id' => $validated['department_id'],
-            'request_id' => $departmentRequest->id,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Department join request submitted successfully. Please wait for pastoral approval.',
-            'request' => $departmentRequest->load('department'),
-        ]);
     }
 
     /**
@@ -132,11 +157,12 @@ class DepartmentRequestController extends Controller
 
         // Get current department
         if ($user->department_id) {
+            $department = Department::find($user->department_id);
             return response()->json([
                 'success' => true,
                 'member' => [
-                    'department' => $user->department,
-                    'member_since' => $user->department ? $user->updated_at : null,
+                    'department' => $department,
+                    'member_since' => $department ? $user->updated_at : null,
                 ],
             ]);
         }
@@ -212,9 +238,16 @@ class DepartmentRequestController extends Controller
             ], 400);
         }
 
-        // Check if user is HOD - HODs cannot leave without pastor approval
         $department = Department::find($user->department_id);
 
+        if (!$department) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Department not found.',
+            ], 404);
+        }
+
+        // Check if user is HOD - HODs cannot leave without pastor approval
         if ($department->hod_id === $user->id) {
             return response()->json([
                 'success' => false,
@@ -236,11 +269,12 @@ class DepartmentRequestController extends Controller
             ->get();
 
         $hod = $department->hodUser;
+        $departmentName = $department->name;
 
         foreach ($pastors as $pastor) {
             $pastor->notifications()->create([
                 'title' => 'Member Left Department',
-                'message' => "{$user->name} left {$department->name}. Reason: {$validated['reason']}",
+                'message' => "{$user->name} left {$departmentName}. Reason: {$validated['reason']}",
                 'type' => 'department',
                 'category' => 'member_left',
             ]);
@@ -362,15 +396,16 @@ class DepartmentRequestController extends Controller
         }
 
         // Approve the request
-        $departmentRequest->approve($user, $validated['notes'] ?? null);
+        $departmentRequest->approve($user, isset($validated['notes']) ? $validated['notes'] : null);
 
         // Notify the member about approval
         $member = $departmentRequest->user;
         $department = $departmentRequest->department;
+        $departmentName = $department ? $department->name : 'Unknown Department';
 
         $member->notifications()->create([
             'title' => 'Department Request Approved',
-            'message' => "Congratulations! Your request to join {$department->name} has been approved.",
+            'message' => "Congratulations! Your request to join {$departmentName} has been approved.",
             'type' => 'department',
             'category' => 'join_approved',
         ]);
@@ -425,16 +460,17 @@ class DepartmentRequestController extends Controller
         }
 
         // Reject the request
-        $departmentRequest->reject($user, $validated['notes'] ?? null);
+        $departmentRequest->reject($user, isset($validated['notes']) ? $validated['notes'] : null);
 
         // Notify the member about rejection
         $member = $departmentRequest->user;
         $department = $departmentRequest->department;
+        $departmentName = $department ? $department->name : 'Unknown Department';
 
-        $notesMessage = $validated['notes'] ?? 'Please contact your pastor for more information.';
+        $notesMessage = isset($validated['notes']) ? $validated['notes'] : 'Please contact your pastor for more information.';
         $member->notifications()->create([
             'title' => 'Department Request Rejected',
-            'message' => "Your request to join {$department->name} has been rejected. {$notesMessage}",
+            'message' => "Your request to join {$departmentName} has been rejected. {$notesMessage}",
             'type' => 'department',
             'category' => 'join_rejected',
         ]);

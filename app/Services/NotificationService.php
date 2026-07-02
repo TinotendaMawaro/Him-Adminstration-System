@@ -10,14 +10,12 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
-    // Notification type constants
     const TYPE_REMINDER = 'reminder';
     const TYPE_ANNOUNCEMENT = 'announcement';
     const TYPE_SUCCESS = 'success';
     const TYPE_INFO = 'info';
     const TYPE_WARNING = 'warning';
 
-    // Notification category constants
     const CATEGORY_REPORT = 'report';
     const CATEGORY_FINANCE = 'finance';
     const CATEGORY_MEMBER = 'member';
@@ -35,12 +33,13 @@ class NotificationService
             'remote_service' => 'Remote/Online Service',
         ];
 
-        $label = $labels[$reportType] ?? 'Weekly Report';
+        $label = isset($labels[$reportType]) ? $labels[$reportType] : 'Weekly Report';
+        $msg = isset($message) ? $message : "Please submit your {$label} report for this week. Prompt submission ensures proper zonal records.";
 
         return Notification::create([
             'user_id' => $user->id,
             'title' => "📊 {$label} Report Due",
-            'message' => $message ?? "Please submit your {$label} report for this week. Prompt submission ensures proper zonal records.",
+            'message' => $msg,
             'type' => self::TYPE_REMINDER,
             'category' => self::CATEGORY_REPORT,
             'is_read' => false,
@@ -59,12 +58,13 @@ class NotificationService
             'project' => 'Project Fund',
         ];
 
-        $label = $labels[$financeType] ?? 'Finance';
+        $label = isset($labels[$financeType]) ? $labels[$financeType] : 'Finance';
+        $msg = isset($message) ? $message : "Please submit your {$label} report for this week. Thank you for your faithful stewardship.";
 
         return Notification::create([
             'user_id' => $user->id,
             'title' => "💰 {$label} Submission Reminder",
-            'message' => $message ?? "Please submit your {$label} report for this week. Thank you for your faithful stewardship.",
+            'message' => $msg,
             'type' => self::TYPE_REMINDER,
             'category' => self::CATEGORY_FINANCE,
             'is_read' => false,
@@ -76,8 +76,8 @@ class NotificationService
      */
     public static function createNewMemberNotification(User $pastor, HomeGroup $homeGroup, array $memberData): Notification
     {
-        $memberName = $memberData['name'] ?? 'A new member';
-        
+        $memberName = isset($memberData['name']) ? $memberData['name'] : 'A new member';
+
         return Notification::create([
             'user_id' => $pastor->id,
             'title' => "👤 New Member Registered",
@@ -100,12 +100,18 @@ class NotificationService
             'shepherd' => 'Shepherd',
         ];
 
-        $typeLabel = $typeLabels[$appointment->appointment_type] ?? 'Leadership Position';
+        $typeLabel = isset($typeLabels[$appointment->appointment_type]) ? $typeLabels[$appointment->appointment_type] : 'Leadership Position';
+
+        $deptName = $appointment->department ? $appointment->department->name : null;
+        $hgName = $appointment->homeGroup ? $appointment->homeGroup->name : null;
+        $targetName = $deptName !== null ? $deptName : ($hgName !== null ? $hgName : 'the ministry');
+
+        $startDate = $appointment->start_date ? $appointment->start_date->format('M d, Y') : 'Today';
 
         return Notification::create([
             'user_id' => $user->id,
             'title' => "🎖️ Appointment Confirmed",
-            'message' => "Congratulations! You have been appointed as {$typeLabel} for {$appointment->department?->name ?? $appointment->homeGroup?->name ?? 'the ministry'}. Start date: " . ($appointment->start_date?->format('M d, Y') ?? 'Today'),
+            'message' => "Congratulations! You have been appointed as {$typeLabel} for {$targetName}. Start date: {$startDate}",
             'type' => self::TYPE_SUCCESS,
             'category' => self::CATEGORY_APPOINTMENT,
             'is_read' => false,
@@ -133,7 +139,7 @@ class NotificationService
     public static function sendToUsers(array $userIds, string $title, string $message, string $type = self::TYPE_INFO, string $category = self::CATEGORY_SYSTEM): array
     {
         $notifications = [];
-        
+
         foreach ($userIds as $userId) {
             $notifications[] = Notification::create([
                 'user_id' => $userId,
@@ -144,77 +150,92 @@ class NotificationService
                 'is_read' => false,
             ]);
         }
-        
+
         return $notifications;
     }
 
-     /**
-      * Send notification to all pastors in a zone
-      */
-     public static function sendToZonePastors(int $zoneId, string $title, string $message, string $type = self::TYPE_INFO): array
-     {
-         $pastors = User::where('role', 'pastor')
-             ->where('zone_id', $zoneId)
-             ->get();
-         
-         return self::sendToUsers(
-             $pastors->pluck('id')->toArray(),
-             $title,
-             $message,
-             $type,
-             self::CATEGORY_SYSTEM
-         );
-     }
+    /**
+     * Create member left home group notification
+     */
+    public static function createMemberLeftNotification(User $recipient, HomeGroup $homeGroup, User $member, string $reason): Notification
+    {
+        return Notification::create([
+            'user_id' => $recipient->id,
+            'title' => "🚪 Member Left Home Group",
+            'message' => "{$member->name} has left {$homeGroup->name} Home Group. Reason: {$reason}",
+            'type' => self::TYPE_INFO,
+            'category' => 'homegroup_left',
+            'is_read' => false,
+        ]);
+    }
 
-     /**
-      * Create homegroup invitation notification (member invited)
-      */
-     public static function createHomeGroupInvitation(User $member, HomeGroup $homeGroup, User $pastor): Notification
-     {
-         return Notification::create([
-             'user_id' => $member->id,
-             'title' => "🏠 Home Group Invitation",
-             'message' => "Pastor {$pastor->name} has invited you to join {$homeGroup->name} Home Group. Please accept or decline in your member portal.",
-             'type' => self::TYPE_INFO,
-             'category' => 'homegroup_invitation',
-             'is_read' => false,
-         ]);
-     }
+    /**
+     * Send notification to all pastors in a zone
+     */
+    public static function sendToZonePastors(int $zoneId, string $title, string $message, string $type = self::TYPE_INFO): array
+    {
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $zoneId)
+            ->get();
 
-     /**
-      * Create invitation accepted notification (pastor notified)
-      */
-     public static function createInvitationAccepted(User $pastor, HomeGroup $homeGroup, User $member): Notification
-     {
-         return Notification::create([
-             'user_id' => $pastor->id,
-             'title' => "✅ Invitation Accepted",
-             'message' => "{$member->name} has accepted your invitation to join {$homeGroup->name} Home Group.",
-             'type' => self::TYPE_SUCCESS,
-             'category' => 'homegroup_invitation',
-             'is_read' => false,
-         ]);
-     }
+        return self::sendToUsers(
+            $pastors->pluck('id')->toArray(),
+            $title,
+            $message,
+            $type,
+            self::CATEGORY_SYSTEM
+        );
+    }
 
-     /**
-      * Create invitation declined notification (pastor notified)
-      */
-     public static function createInvitationDeclined(User $pastor, HomeGroup $homeGroup, User $member, $reason = null): Notification
-     {
-         $message = "{$member->name} has declined your invitation to join {$homeGroup->name} Home Group.";
-         if ($reason) {
-             $message .= " Reason: {$reason}";
-         }
-         
-         return Notification::create([
-             'user_id' => $pastor->id,
-             'title' => "❌ Invitation Declined",
-             'message' => $message,
-             'type' => self::TYPE_WARNING,
-             'category' => 'homegroup_invitation',
-             'is_read' => false,
-         ]);
-     }
+    /**
+     * Create homegroup invitation notification (member invited)
+     */
+    public static function createHomeGroupInvitation(User $member, HomeGroup $homeGroup, User $pastor): Notification
+    {
+        return Notification::create([
+            'user_id' => $member->id,
+            'title' => "🏠 Home Group Invitation",
+            'message' => "Pastor {$pastor->name} has invited you to join {$homeGroup->name} Home Group. Please accept or decline in your member portal.",
+            'type' => self::TYPE_INFO,
+            'category' => 'homegroup_invitation',
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Create invitation accepted notification (pastor notified)
+     */
+    public static function createInvitationAccepted(User $pastor, HomeGroup $homeGroup, User $member): Notification
+    {
+        return Notification::create([
+            'user_id' => $pastor->id,
+            'title' => "✅ Invitation Accepted",
+            'message' => "{$member->name} has accepted your invitation to join {$homeGroup->name} Home Group.",
+            'type' => self::TYPE_SUCCESS,
+            'category' => 'homegroup_invitation',
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Create invitation declined notification (pastor notified)
+     */
+    public static function createInvitationDeclined(User $pastor, HomeGroup $homeGroup, User $member, $reason = null): Notification
+    {
+        $message = "{$member->name} has declined your invitation to join {$homeGroup->name} Home Group.";
+        if ($reason) {
+            $message .= " Reason: {$reason}";
+        }
+
+        return Notification::create([
+            'user_id' => $pastor->id,
+            'title' => "❌ Invitation Declined",
+            'message' => $message,
+            'type' => self::TYPE_WARNING,
+            'category' => 'homegroup_invitation',
+            'is_read' => false,
+        ]);
+    }
 
     /**
      * Get notification icon based on category
@@ -244,4 +265,3 @@ class NotificationService
         };
     }
 }
-

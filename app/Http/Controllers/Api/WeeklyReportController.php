@@ -60,14 +60,17 @@ class WeeklyReportController extends Controller
         ]);
 
         $user = Auth::user();
-        $zoneId = $user->zone_id ?? $user->zone?->id;
+        $zoneId = $user->zone_id;
+        if ($zoneId === null && $user->relationLoaded('zone')) {
+            $zoneId = $user->zone ? $user->zone->id : null;
+        }
 
         // Calculate totals
         $totalIncome = 
-            ($validated['cash_collection'] ?? 0) +
-            ($validated['bank_deposit'] ?? 0) +
-            ($validated['online_transfer'] ?? 0) +
-            ($validated['other_income'] ?? 0);
+            (isset($validated['cash_collection']) ? $validated['cash_collection'] : 0) +
+            (isset($validated['bank_deposit']) ? $validated['bank_deposit'] : 0) +
+            (isset($validated['online_transfer']) ? $validated['online_transfer'] : 0) +
+            (isset($validated['other_income']) ? $validated['other_income'] : 0);
 
         // Check if report already exists for this week/service
         $existingReport = Report::where('zone_id', $zoneId)
@@ -191,7 +194,10 @@ class WeeklyReportController extends Controller
     public function history(Request $request)
     {
         $user = Auth::user();
-        $zoneId = $user->zone_id ?? $user->zone?->id;
+        $zoneId = $user->zone_id;
+        if ($zoneId === null && $user->relationLoaded('zone')) {
+            $zoneId = $user->zone ? $user->zone->id : null;
+        }
         $perPage = $request->get('per_page', 10);
 
         $reports = Report::where('zone_id', $zoneId)
@@ -235,7 +241,10 @@ class WeeklyReportController extends Controller
     public function pendingReminders()
     {
         $user = Auth::user();
-        $zoneId = $user->zone_id ?? $user->zone?->id;
+        $zoneId = $user->zone_id;
+        if ($zoneId === null && $user->relationLoaded('zone')) {
+            $zoneId = $user->zone ? $user->zone->id : null;
+        }
 
         // Get current week's date range
         $now = Carbon::now();
