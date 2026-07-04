@@ -23,6 +23,7 @@ import ReportsHistory from "./reports/ReportsHistory.jsx";
 import NotificationBell from "./notifications/NotificationBell.jsx";
 import ProfileSection from "./dashboard/sections/ProfileSection.jsx";
 import DashboardStats from "./dashboard/DashboardStats.jsx";
+import PastorMembershipCard from "./PastorMembershipCard.jsx";
 
 // ============================================================================
 // PREMIUM FLOATING PARTICLES BACKGROUND COMPONENT
@@ -1071,7 +1072,7 @@ const DashboardContent = ({ user, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Stats Grid */}
+{/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {loading ? (
                     <>
@@ -1131,45 +1132,29 @@ const DashboardContent = ({ user, onNavigate }) => {
                 )}
             </div>
 
-            {/* Quick Actions */}
-            <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-3 px-2">
-                    Quick Actions
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <QuickAction
-                        icon={Icons.Users}
-                        label="Members"
-                        description="Manage zone members"
-                        color="from-sky-400 to-sky-600"
-                        onClick={() => onNavigate("members")}
-                        delay={200}
-                    />
-                    <QuickAction
-                        icon={Icons.DocumentChart}
-                        label="Report"
-                        description="Weekly report"
-                        color="from-emerald-400 to-emerald-600"
-                        onClick={() => onNavigate("reports")}
-                        delay={250}
-                    />
-                    <QuickAction
-                        icon={Icons.BuildingOffice}
-                        label="Departments"
-                        description="Assign HOD"
-                        color="from-purple-400 to-purple-600"
-                        onClick={() => onNavigate("departments")}
-                        delay={300}
-                    />
-                    <QuickAction
-                        icon={Icons.HandCoins}
-                        label="Partnership"
-                        description="Tithes & seeds"
-                        color="from-gold-400 to-gold-600"
-                        onClick={() => onNavigate("partnership")}
-                        delay={350}
-                    />
-                </div>
+            {/* Quick Access Panel */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <QuickAction
+                    icon={Icons.Users}
+                    label="Members"
+                    description="View and manage zone members"
+                    color="from-gold-400 to-gold-600"
+                    onClick={() => onNavigate("members")}
+                />
+                <QuickAction
+                    icon={Icons.DocumentChart}
+                    label="Reports"
+                    description="Submit weekly reports"
+                    color="from-sky-400 to-sky-600"
+                    onClick={() => onNavigate("reports")}
+                />
+                <QuickAction
+                    icon={Icons.MapPin}
+                    label="My Zone"
+                    description="Zone overview and history"
+                    color="from-emerald-400 to-emerald-600"
+                    onClick={() => onNavigate("zone")}
+                />
             </div>
 
             {/* Activity Grid */}
@@ -2861,6 +2846,12 @@ const ZoneInfoPage = ({ user }) => (
                 </div>
             </div>
         </div>
+        
+        {/* Pastor Membership Card */}
+        <div>
+            <h3 className="text-xs font-bold text-gray-900 mb-2">Pastor ID Card</h3>
+            <PastorMembershipCard user={user} />
+        </div>
     </div>
 );
 
@@ -3201,6 +3192,11 @@ export default function PastorsPortal({ onLogout }) {
                 );
             case "zone":
                 return <ZoneTab user={user} />;
+            case "partners":
+                return <PartnersPage />;
+            case "more":
+                // Toggle the more menu - but this is handled in sidebar, so default to dashboard
+                return <DashboardContent user={user} onNavigate={setActiveItem} />;
             default:
                 return (
                     <DashboardContent user={user} onNavigate={setActiveItem} />
@@ -3219,6 +3215,7 @@ export default function PastorsPortal({ onLogout }) {
             partnership: "Partnership",
             reports: "Reports",
             zone: "My Zone",
+            partners: "Partners",
         })[activeItem] || "Dashboard";
 
     return (

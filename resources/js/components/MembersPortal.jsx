@@ -8,6 +8,7 @@ import DepartmentRequest from "./DepartmentRequest.jsx";
 import Drawer from "./Drawer.jsx";
 import EventsTab from "./dashboard/EventsTab.jsx";
 import LeaveReasonModal from "./LeaveReasonModal.jsx";
+import MembershipCard from "./MembershipCard.jsx";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND
@@ -305,6 +306,101 @@ const Icons = {
             />
         </svg>
     ),
+    ChatBubble: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9c-1.44 0-2.79-.38-3.96-1.04L2.25 21V12z"
+            />
+        </svg>
+    ),
+    HandRaised: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v7.5A2.25 2.25 0 008.25 13.5h2.25m0-9V3.75A2.25 2.25 0 0112 6v1.5m0-1.5h2.25A2.25 2.25 0 0117 7.5v7.5a2.25 2.25 0 002.25 2.25h2.25"
+            />
+        </svg>
+    ),
+    Star: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l.143.435a1.998 1.998 0 001.907 1.558h.474c.97 0 1.397 1.24.594 1.812l-.397.293a1.998 1.998 0 01-1.124.427h-.672c-.496 0-.682-.628-.327-.978l.225-.193a1.998 1.998 0 00.528-2.043l-.143-.435c-.3-.921-1.603-.921-1.902 0l-.143.435a1.998 1.998 0 001.907 1.558h.474c.97 0 1.397 1.24.594 1.812l-.397.293a1.998 1.998 0 01-1.124.427h-.672c-.496 0-.682-.628-.327-.978l.225-.193a1.998 1.998 0 00.528-2.043l-.143-.435z"
+            />
+        </svg>
+    ),
+    ChevronDown: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+            />
+        </svg>
+    ),
+    DocumentDownload: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M12 13l3-3m0 0l-3-3m3 3H3"
+            />
+        </svg>
+    ),
+    Share: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7.217 10.907a2.25 2.25 0 100-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 100 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z"
+            />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 13.5l3 3m0 0l-3 3m3-3H9"
+            />
+        </svg>
+    ),
 };
 
 export { Icons };
@@ -563,10 +659,12 @@ export default function MembersPortal({ onLogout }) {
     const [homegroupLoading, setHomegroupLoading] = useState(false);
     const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
     const [leaveModal, setLeaveModal] = useState({ show: false, type: null });
+    const [connectSubmenu, setConnectSubmenu] = useState(null); // 'messages' | 'prayer' | 'testimonies'
 
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
         setNotificationsOpen(false);
+        setConnectSubmenu(null);
     };
 
     // Handle homegroup button click with loading state
@@ -727,7 +825,7 @@ export default function MembersPortal({ onLogout }) {
                                     }
                                 >
                                     <Icons.Users className="nav-icon" />{" "}
-                                    <span>Groups</span>
+                                    <span>Connect</span>
                                 </button>
                                 <button
                                     onClick={() => handleTabChange("events")}
@@ -774,6 +872,30 @@ export default function MembersPortal({ onLogout }) {
                                         )}
                                     </span>
                                     <span>Alerts</span>
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange("partnership")}
+                                    className={
+                                        "nav-btn " +
+                                        (activeTab === "partnership"
+                                            ? "nav-active"
+                                            : "nav-inactive")
+                                    }
+                                >
+                                    <Icons.Heart className="nav-icon" />{" "}
+                                    <span>Partnership</span>
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange("profile")}
+                                    className={
+                                        "nav-btn " +
+                                        (activeTab === "profile"
+                                            ? "nav-active"
+                                            : "nav-inactive")
+                                    }
+                                >
+                                    <Icons.User className="nav-icon" />{" "}
+                                    <span>Profile</span>
                                 </button>
                             </div>
                             <div className="flex items-center gap-3">
@@ -824,12 +946,12 @@ export default function MembersPortal({ onLogout }) {
                                 id: "zone",
                                 icon: Icons.MapPin,
                                 label: "Zone",
-                                gradient: "from-[#dfb15b] to-amber-600",
+                                gradient: "from-[#d4af37] to-amber-600",
                             },
                             {
                                 id: "homegroup",
                                 icon: Icons.Users,
-                                label: "Groups",
+                                label: "Connect",
                                 gradient: "from-emerald-400 to-emerald-600",
                             },
                             {
@@ -850,6 +972,18 @@ export default function MembersPortal({ onLogout }) {
                                 label: "Alerts",
                                 gradient: "from-rose-400 to-rose-600",
                                 badge: pendingInvitationsCount,
+                            },
+                            {
+                                id: "partnership",
+                                icon: Icons.Heart,
+                                label: "Partner",
+                                gradient: "from-pink-400 to-pink-600",
+                            },
+                            {
+                                id: "profile",
+                                icon: Icons.User,
+                                label: "Profile",
+                                gradient: "from-indigo-400 to-indigo-600",
                             },
                         ].map((item) => {
                             const Icon = item.icon;
@@ -944,8 +1078,8 @@ export default function MembersPortal({ onLogout }) {
                             {/* 2. CORE CREDENTIALS GRID */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <div className="gradient-border p-3">
-                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Member Code</p>
-                                    <p className="text-sm font-bold text-white">{user?.unique_code || 'xxxxx'}</p>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Membership Code</p>
+                                    <p className="text-sm font-bold text-white font-mono">{user?.unique_code || user?.member?.member_code || 'xxxxx'}</p>
                                 </div>
                                 <div className="gradient-border p-3">
                                     <p className="text-[10px] text-gray-400 font-medium uppercase">Zone</p>
@@ -966,7 +1100,7 @@ export default function MembersPortal({ onLogout }) {
                                 {[
                                     { id: "home", icon: Icons.Home, label: "Home" },
                                     { id: "zone", icon: Icons.MapPin, label: "Zone" },
-                                    { id: "homegroup", icon: Icons.Users, label: "Connect" },
+                                    { id: "homegroup", icon: Icons.Users, label: "Connect", hasSubmenu: true },
                                     { id: "events", icon: Icons.Calendar, label: "Events" },
                                     { id: "reports", icon: Icons.DocumentText, label: "Reports" },
                                     { id: "notifications", icon: Icons.Bell, label: "Alerts", badge: pendingInvitationsCount + pendingDeptCount },
@@ -974,21 +1108,60 @@ export default function MembersPortal({ onLogout }) {
                                     { id: "profile", icon: Icons.User, label: "Profile" },
                                 ].map((item) => {
                                     const Icon = item.icon;
-                                    const isActive = activeTab === item.id;
+                                    const isActive = activeTab === item.id || (item.id === "homegroup" && connectSubmenu);
+                                    const isConnect = item.id === "homegroup";
                                     return (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => handleTabChange(item.id)}
-                                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all relative"
-                                        >
-                                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? 'bg-gradient-to-r from-[#d4af37] to-amber-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-                                                <Icon className="w-4 h-4" />
-                                            </div>
-                                            <span className={`text-[9px] font-medium ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
-                                            {item.badge > 0 && (
-                                                <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                        <div key={item.id} className="relative">
+                                            <button
+                                                onClick={() => {
+                                                    if (isConnect) {
+                                                        setConnectSubmenu(connectSubmenu ? null : "messages");
+                                                        if (!connectSubmenu) {
+                                                            setActiveTab("homegroup");
+                                                        }
+                                                    } else {
+                                                        handleTabChange(item.id);
+                                                    }
+                                                }}
+                                                className="w-full flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all relative"
+                                            >
+                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? 'bg-gradient-to-r from-[#d4af37] to-amber-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                                                    <Icon className="w-4 h-4" />
+                                                    {isConnect && <Icons.ChevronDown className={`w-3 h-3 ml-0.5 transition-transform ${connectSubmenu ? 'rotate-180' : ''}`} />}
+                                                </div>
+                                                <span className={`text-[9px] font-medium ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
+                                                {item.badge > 0 && (
+                                                    <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                                )}
+                                            </button>
+                                            
+                                            {/* Connect Submenu */}
+                                            {isConnect && connectSubmenu && (
+                                                <div className="absolute top-full mt-2 left-0 z-20 bg-[#0A192F]/95 backdrop-blur-xl border border-white/10 rounded-lg p-2 space-y-1 min-w-[140px]">
+                                                    <button
+                                                        onClick={() => handleAction("messages")}
+                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
+                                                    >
+                                                        <Icons.ChatBubble className="w-3 h-3" />
+                                                        Messages
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAction("prayer-requests")}
+                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
+                                                    >
+                                                        <Icons.HandRaised className="w-3 h-3" />
+                                                        Prayer Requests
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAction("testimonies")}
+                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
+                                                    >
+                                                        <Icons.Star className="w-3 h-3" />
+                                                        Testimonies
+                                                    </button>
+                                                </div>
                                             )}
-                                        </button>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -1032,6 +1205,50 @@ export default function MembersPortal({ onLogout }) {
                                         <p className="text-lg font-bold text-purple-400">Prospective</p>
                                         <p className="text-[9px] text-gray-400">Tier</p>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* QUICK ACTIONS */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <button className="gradient-border card-hover p-3 text-left">
+                                    <div className="w-8 h-8 rounded-md bg-emerald-500/20 flex items-center justify-center mb-2">
+                                        <Icons.Users className="w-4 h-4 text-emerald-300" />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-white">Members</p>
+                                    <p className="text-[9px] text-gray-400 mt-0.5">View and manage zone members</p>
+                                </button>
+                                <button className="gradient-border card-hover p-3 text-left">
+                                    <div className="w-8 h-8 rounded-md bg-orange-500/20 flex items-center justify-center mb-2">
+                                        <Icons.DocumentText className="w-4 h-4 text-orange-300" />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-white">Reports</p>
+                                    <p className="text-[9px] text-gray-400 mt-0.5">Submit weekly reports</p>
+                                </button>
+                                <button className="gradient-border card-hover p-3 text-left">
+                                    <div className="w-8 h-8 rounded-md bg-[#d4af37]/20 flex items-center justify-center mb-2">
+                                        <Icons.MapPin className="w-4 h-4 text-[#d4af37]" />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-white">My Zone</p>
+                                </button>
+                            </div>
+
+                            {/* RECENT ACTIVITY */}
+                            <div className="gradient-border p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
+                                        <Icons.Clock className="w-4 h-4 text-[#d4af37]" />
+                                        Recent Activity
+                                    </h3>
+                                    <button className="text-[10px] text-[#dfb15b] font-semibold hover:text-amber-400">
+                                        View All →
+                                    </button>
+                                </div>
+                                <div className="text-center py-4">
+                                    <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/5 flex items-center justify-center">
+                                        <Icons.Bell className="w-5 h-5 text-gray-500" />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-gray-400">No Recent Activity</p>
+                                    <p className="text-[9px] text-gray-500 mt-0.5">Activity will appear here</p>
                                 </div>
                             </div>
 
@@ -1093,63 +1310,72 @@ export default function MembersPortal({ onLogout }) {
                     )}
 
 {/* ZONE TAB */}
-                    {activeTab === "zone" && (
-                        <div className="tab-panel space-y-4">
-                            <div className="gradient-border card-hover p-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-sm">
-                                        <Icons.MapPin className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xs font-bold text-white">
-                                            My Zone
-                                        </h3>
-                                        <p className="text-[10px] text-gray-400">
-                                            {user && user.zone
-                                                ? user.zone.name
-                                                : "Not Assigned"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5 text-[10px] text-gray-300 mb-3">
-                                    <p>
-                                        <strong>Region:</strong>{" "}
-                                        {user && user.zone && user.zone.region
-                                            ? user.zone.region.name
-                                            : "—"}
-                                    </p>
-                                    <p>
-                                        <strong>Pastor:</strong>{" "}
-                                        {user && user.pastor
-                                            ? user.pastor.user.name
-                                            : user &&
-                                                  user.zone &&
-                                                  user.zone.pastor_name
-                                            ? user.zone.pastor_name
-                                            : "Not Assigned"}
-                                    </p>
-                                    <p>
-                                        <strong>Address:</strong>{" "}
-                                        {user && user.zone
-                                            ? user.zone.address || "—"
-                                            : "—"}
-                                    </p>
-                                    <p>
-                                        <strong>Phone:</strong>{" "}
-                                        {user && user.zone
-                                            ? user.zone.phone || "—"
-                                            : "—"}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => handleAction("view-zone")}
-                                    className="btn btn-lg bg-gradient-to-r from-[#dfb15b]/20 to-amber-500/20 text-[#d4af37] border border-[#dfb15b]/30 hover:from-[#dfb15b]/30 hover:to-amber-500/30 transition-all"
-                                >
-                                    View Zone Details
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                     {activeTab === "zone" && (
+                         <div className="tab-panel space-y-4">
+                             <div className="gradient-border card-hover p-4">
+                                 <div className="flex items-center gap-2 mb-3">
+                                     <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-sm">
+                                         <Icons.MapPin className="w-4 h-4 text-white" />
+                                     </div>
+                                     <div>
+                                         <h3 className="text-xs font-bold text-white">
+                                             My Zone
+                                         </h3>
+                                         <p className="text-[10px] text-gray-400">
+                                             {user && user.zone
+                                                 ? user.zone.name
+                                                 : "Not Assigned"}
+                                         </p>
+                                     </div>
+                                 </div>
+                                 <div className="space-y-1.5 text-[10px] text-gray-300 mb-3">
+                                     <p>
+                                         <strong>Region:</strong>{" "}
+                                         {user && user.zone && user.zone.region
+                                             ? user.zone.region.name
+                                             : "—"}
+                                     </p>
+                                     <p>
+                                         <strong>Pastor:</strong>{" "}
+                                         {user && user.pastor
+                                             ? user.pastor.user.name
+                                             : user &&
+                                                   user.zone &&
+                                                   user.zone.pastor_name
+                                             ? user.zone.pastor_name
+                                             : "Not Assigned"}
+                                     </p>
+                                     <p>
+                                         <strong>Address:</strong>{" "}
+                                         {user && user.zone
+                                             ? user.zone.address || "—"
+                                             : "—"}
+                                     </p>
+                                     <p>
+                                         <strong>Phone:</strong>{" "}
+                                         {user && user.zone
+                                             ? user.zone.phone || "—"
+                                             : "—"}
+                                     </p>
+                                 </div>
+                                 <button
+                                     onClick={() => handleAction("view-zone")}
+                                     className="btn btn-lg bg-gradient-to-r from-[#dfb15b]/20 to-amber-500/20 text-[#d4af37] border border-[#dfb15b]/30 hover:from-[#dfb15b]/30 hover:to-amber-500/30 transition-all"
+                                 >
+                                     View Zone Details
+                                 </button>
+                             </div>
+                             
+                             {/* Membership Card Section */}
+                             <div>
+                                 <h3 className="text-xs font-bold text-white mb-2 flex items-center gap-2">
+                                     <Icons.ShieldCheck className="w-4 h-4 text-[#d4af37]" />
+                                     Digital Membership Card
+                                 </h3>
+                                 <MembershipCard user={user} />
+                             </div>
+                         </div>
+                     )}
 
 {/* GROUPS TAB - Unified Homegroups & Departments */}
                      {activeTab === "homegroup" && (
@@ -1356,27 +1582,87 @@ export default function MembersPortal({ onLogout }) {
                                           </div>
                                       ))}
                               </div>
-                              {(invitationsData || []).filter(
-                                  (inv) => inv.status === "pending",
-                              ).length === 0 &&
-                              (deptRequestsData || []).filter(
-                                  (r) => r.status === "pending",
-                              ).length === 0 ? (
-                                  <div className="gradient-border card-hover p-6 text-center">
-                                      <div className="w-12 h-12 mx-auto mb-2 rounded-md bg-gray-500/20 flex items-center justify-center">
-                                          <Icons.Bell className="w-5 h-5 text-gray-400" />
-                                      </div>
-                                      <h3 className="text-xs font-bold text-white mb-0.5">
-                                          All Caught Up!
-                                      </h3>
-                                      <p className="text-[10px] text-gray-400">
-                                          No new notifications.
-                                      </p>
-                                  </div>
-                              ) : null}
+{(invitationsData || []).filter(
+                                   (inv) => inv.status === "pending",
+                               ).length === 0 &&
+                               (deptRequestsData || []).filter(
+                                   (r) => r.status === "pending",
+                               ).length === 0 ? (
+                                   <div className="gradient-border card-hover p-6 text-center">
+                                       <div className="w-12 h-12 mx-auto mb-2 rounded-md bg-gray-500/20 flex items-center justify-center">
+                                           <Icons.Bell className="w-5 h-5 text-gray-400" />
+                                       </div>
+                                       <h3 className="text-xs font-bold text-white mb-0.5">
+                                           All Caught Up!
+                                       </h3>
+                                       <p className="text-[10px] text-gray-400">
+                                           No new notifications.
+                                       </p>
+                                   </div>
+                               ) : null}
                           </div>
                       )}
-                     </div>
+
+                      {/* PARTNERSHIP TAB */}
+                      {activeTab === "partnership" && (
+                          <div className="tab-panel space-y-4">
+                              <div className="gradient-border card-hover p-4 text-center">
+                                  <div className="w-12 h-12 mx-auto mb-2.5 rounded-md bg-pink-500/20 flex items-center justify-center">
+                                      <Icons.Heart className="w-5 h-5 text-pink-300" />
+                                  </div>
+                                  <h3 className="text-xs font-bold text-white mb-0.5">
+                                      Partnership
+                                  </h3>
+                                  <p className="text-[10px] text-gray-400 mb-2.5">
+                                      Support the global vision of HIM
+                                  </p>
+                                  <button
+                                      onClick={() => handleAction("become-partner")}
+                                      className="btn btn-lg bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md hover:shadow-lg transition-all"
+                                  >
+                                      Activate Partnership
+                                  </button>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* PROFILE TAB */}
+                      {activeTab === "profile" && (
+                          <div className="tab-panel space-y-4">
+                              <div className="gradient-border card-hover p-4">
+                                  <div className="flex items-center gap-3 mb-4">
+                                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+                                          <Icons.User className="w-5 h-5 text-white" />
+                                      </div>
+                                      <div>
+                                          <h3 className="text-sm font-bold text-white">My Profile</h3>
+                                          <p className="text-[10px] text-gray-400">{user?.email}</p>
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2 text-[10px]">
+                                      <p className="flex justify-between py-1.5 border-b border-white/10">
+                                          <span className="text-gray-400">Name</span>
+                                          <span className="text-white font-medium">{user?.name || "—"}</span>
+                                      </p>
+                                      <p className="flex justify-between py-1.5 border-b border-white/10">
+                                          <span className="text-gray-400">Phone</span>
+                                          <span className="text-white font-medium">{user?.phone || "—"}</span>
+                                      </p>
+                                      <p className="flex justify-between py-1.5 border-b border-white/10">
+                                          <span className="text-gray-400">Member Since</span>
+                                          <span className="text-white font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
+                                      </p>
+                                  </div>
+                                  <button
+                                      onClick={() => handleAction("edit-profile")}
+                                      className="w-full mt-4 btn btn-lg bg-white/5 text-white hover:bg-white/10 transition-all"
+                                  >
+                                      Edit Profile
+                                  </button>
+                              </div>
+                          </div>
+                      )}
+              </div>
              </div>
              
 {/* Homegroup Selector Drawer */}

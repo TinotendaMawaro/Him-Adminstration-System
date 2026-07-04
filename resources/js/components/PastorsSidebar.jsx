@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 // ============================================================================
 // PREMIUM ICONS
@@ -155,13 +155,16 @@ const PastorsSidebar = ({
     onClose,
     isMobile = false,
 }) => {
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
     const handleItemClick = (itemId) => {
         onItemClick(itemId);
         if (onClose) onClose();
     };
 
-    // Mobile Bottom Tab Navigation
+// Mobile Bottom Tab Navigation
     if (isMobile) {
+        const remainingItems = menuItems.slice(5);
+
         return (
             <>
                 {/* Mobile Bottom Tab Bar */}
@@ -206,6 +209,52 @@ const PastorsSidebar = ({
                         </button>
                     </div>
                 </nav>
+
+                {/* More Menu Drawer */}
+                {showMoreMenu && (
+                    <div className="fixed inset-0 z-[60] lg:hidden">
+                        <div
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setShowMoreMenu(false)}
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl p-4 pb-20">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-gray-900">More Options</h3>
+                                <button
+                                    onClick={() => setShowMoreMenu(false)}
+                                    className="p-1 rounded-lg hover:bg-gray-100"
+                                >
+                                    <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                {remainingItems.map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = activeItem === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                handleItemClick(item.id);
+                                                setShowMoreMenu(false);
+                                            }}
+                                            className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                                                isActive 
+                                                    ? "text-gold-600 bg-gold-50" 
+                                                    : "text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <Icon className="w-5 h-5" />
+                                            <span className="text-[10px] font-medium">{item.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </>
         );
     }
