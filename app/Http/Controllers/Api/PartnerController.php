@@ -101,12 +101,12 @@ class PartnerController extends Controller
                 'points_earned'     => 0,
             ]);
 
-            $paymentNotes = $validated['payment_notes'];
+            $paymentNotes = isset($validated['payment_notes']) ? $validated['payment_notes'] : '';
             if ($request->hasFile('payment_proof')) {
                 $path = $request->file('payment_proof')->store('payment-proofs', 'public');
                 $partner->payment_proof_path = "/storage/{$path}";
                 $partner->save();
-                $paymentNotes = ($paymentNotes ?? '') . "\nProof: /storage/{$path}";
+                $paymentNotes = $paymentNotes . "\nProof: /storage/{$path}";
             }
 
             Payment::create([
@@ -252,7 +252,7 @@ class PartnerController extends Controller
             'user_id'     => $request->user()->id,
             'type'        => $request->type,
             'amount'      => $request->amount,
-            'currency'    => $request->currency ?? 'USD',
+            'currency'    => isset($request->currency) ? $request->currency : 'USD',
             'status'      => $status,
             'method'      => $request->method,
             'transaction_id' => $request->transaction_id,
@@ -262,7 +262,8 @@ class PartnerController extends Controller
 
         if ($request->hasFile('receipt')) {
             $path = $request->file('receipt')->store('receipts', 'public');
-            $data['notes'] = ($data['notes'] ?? '') . "\nReceipt: /storage/{$path}";
+            $notes = isset($data['notes']) ? $data['notes'] : '';
+            $data['notes'] = $notes . "\nReceipt: /storage/{$path}";
         }
 
         $payment = Payment::create($data);
@@ -344,7 +345,7 @@ class PartnerController extends Controller
                 DB::raw('COUNT(*) as count')
             )->first();
 
-        $total = (float) ($summary->total ?? 0);
+        $total = (float) ($summary->total !== null ? $summary->total : 0);
         $statementNumber = 'STM-' . strtoupper(Str::random(8));
 
         $statement = PartnerStatement::create([

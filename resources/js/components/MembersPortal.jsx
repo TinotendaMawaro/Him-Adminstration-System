@@ -245,66 +245,69 @@ const Icons = {
             />
         </svg>
     ),
+    Heart: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.385.848-4.5 2.153-1.292-1.513-2.877-2.337-4.718-2.337C3.6 3.75 1.5 5.765 1.5 8.25c0 4.242 3.71 7.5 8.25 11.25 4.5-3.75 8.25-7 8.25-11.25z"
+            />
+        </svg>
+    ),
+    ChartBar: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 13.5V3a1.5 1.5 0 013 0v9.75m6-2.25V9a1.5 1.5 0 013 0v4.5m6-2.25V5.25a1.5 1.5 0 013 0v7.5M3 21h18M5.25 21h.008v.008H5.25V21zm4.5 0h.008v.008H9.75V21zm4.5 0h.008v.008h-.008V21zm4.5 0h.008v.008H18.75V21z"
+            />
+        </svg>
+    ),
+    BookOpen: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.457 5 8 5c-2.21 0-4 1.343-4 3 0 1.861 1.528 3.407 3.378 3.833v1.357c0 .416-.247.77-.564.939C5.447 15.937 4.5 16.793 4.5 18c0 1.104.896 2 2 2h12c1.104 0 2-.896 2-2 0-1.207-.947-2.063-1.936-2.339-.317-.169-.564-.523-.564-.939v-1.357C16.472 11.761 18 10.215 18 9c0-1.657-1.79-C18-4 4-4s4 .903 4 3 0 3-1.79 3 4 4c0-1.657-1.794-3-4-3z"
+            />
+        </svg>
+    ),
+    ShieldCheck: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12.75l1.5 1.5.75-.75 2.25-1.5.75.75 1.5 1.5M4.5 12a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0z"
+            />
+        </svg>
+    ),
 };
 
 export { Icons };
-
-// ============================================================================
-// REGISTRATION CONFIRMATION
-// ============================================================================
-
-const RegistrationConfirmation = ({ user }) => {
-    if (!user || !user.is_first_time) return null;
-    const zone = user.zone;
-    const member = user.member;
-    const pastorName = zone?.pastor_name || "Not Assigned";
-
-    return (
-        <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100 shadow-sm">
-            <p className="text-xs text-emerald-800 font-medium">
-                Good evening, {user.name?.split(" ")[0] || "Member"}!
-            </p>
-            <p className="text-[10px] text-emerald-600 mt-0.5">
-                Your membership has been registered successfully. You are now
-                part of <strong>{zone?.name || "your zone"}</strong>.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                <div className="bg-white/60 rounded-md p-2 border border-emerald-100">
-                    <p className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">
-                        Membership Code
-                    </p>
-                    <p className="text-xs font-semibold text-gray-900 font-mono">
-                        {member?.member_code || "—"}
-                    </p>
-                </div>
-                <div className="bg-white/60 rounded-md p-2 border border-emerald-100">
-                    <p className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">
-                        Zone
-                    </p>
-                    <p className="text-xs font-semibold text-gray-900">
-                        {zone?.name || "—"}
-                    </p>
-                </div>
-                <div className="bg-white/60 rounded-md p-2 border border-emerald-100">
-                    <p className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">
-                        Region
-                    </p>
-                    <p className="text-xs font-semibold text-gray-900">
-                        {zone?.region?.name || "—"}
-                    </p>
-                </div>
-                <div className="bg-white/60 rounded-md p-2 border border-emerald-100">
-                    <p className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">
-                        Pastor
-                    </p>
-                    <p className="text-xs font-semibold text-gray-900 truncate">
-                        {pastorName}
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // ============================================================================
 // HOMEGROUP SECTION
@@ -322,13 +325,13 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
                             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
                                 <Icons.Users className="w-3.5 h-3.5 text-white" />
                             </div>
-                            <h3 className="text-xs font-bold text-gray-900">
+                            <h3 className="text-xs font-bold text-white">
                                 My Homegroup
                             </h3>
                         </div>
                         <button
                             onClick={onViewHomegroup}
-                            className="text-[#dfb15b] hover:text-amber-700 text-[10px] font-semibold flex items-center gap-0.5"
+                            className="text-[#dfb15b] hover:text-amber-400 text-[10px] font-semibold flex items-center gap-0.5"
                         >
                             View All <span>→</span>
                         </button>
@@ -338,7 +341,7 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
                             <Icons.Users className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <p className="font-bold text-gray-900 text-xs">
+                            <p className="font-bold text-white text-xs">
                                 {hg.name}
                             </p>
                             <p className="text-[10px] text-gray-400">Active</p>
@@ -347,13 +350,13 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
                     {!isLeader && (
                         <button
                             onClick={() => onRequestLeave("homegroup")}
-                            className="btn btn-sm bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all"
+                            className="btn btn-sm bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all"
                         >
                             Leave Group
                         </button>
                     )}
                     {isLeader && (
-                        <p className="text-[10px] text-gray-500 text-center">
+                        <p className="text-[10px] text-gray-400 text-center">
                             As leader, contact pastor to transfer leadership before leaving.
                         </p>
                     )}
@@ -364,24 +367,29 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
     return (
         <div className="gradient-border card-hover">
             <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <Icons.Users className="w-6 h-6 text-emerald-500" />
+                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <Icons.Users className="w-6 h-6 text-emerald-300" />
                 </div>
-                <h3 className="text-xs font-bold text-gray-900 mb-0.5">
+                <h3 className="text-xs font-bold text-white mb-0.5">
                     No Homegroup Yet
                 </h3>
-                <p className="text-[10px] text-gray-500 mb-3">
-                    Join a homegroup to connect with fellow members.
+                <p className="text-[10px] text-gray-400 mb-2">
+                    Join a homegroup to connect with fellow members and grow spiritually.
                 </p>
+                <div className="bg-emerald-500/10 rounded-lg p-2 mb-3">
+                    <p className="text-[10px] font-bold text-emerald-300 mb-1">💡 Recommended For You</p>
+                    <p className="text-xs font-bold text-white">IOC Central</p>
+                    <p className="text-[9px] text-gray-500">Wednesdays | 3 km away | Perfect for new members!</p>
+                </div>
                 <button
                     onClick={onBrowseHomegroups || onViewHomegroup}
                     disabled={homegroupLoading}
-                    className="btn btn-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-70"
+                    className="btn btn-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all disabled:opacity-70"
                 >
                     {homegroupLoading ? (
                         <span className="flex items-center justify-center gap-2">
                             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v2m0 12v2m4-16l1.29 1.29M7.71 17.71L9 16.41m8 0l1.29 1.29M7.71 7.71L9 9" />
+                                <circle cx="12" cy="12" r="10" strokeWidth="2" strokeDasharray="32" strokeLinecap="round" />
                             </svg>
                             Loading...
                         </span>
@@ -404,13 +412,13 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
                             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-sm">
                                 <Icons.BuildingOffice className="w-3.5 h-3.5 text-white" />
                             </div>
-                            <h3 className="text-xs font-bold text-gray-900">
+                            <h3 className="text-xs font-bold text-white">
                                 My Department
                             </h3>
                         </div>
                         <button
                             onClick={onViewDepartments}
-                            className="text-[#dfb15b] hover:text-amber-700 text-[10px] font-semibold flex items-center gap-0.5"
+                            className="text-[#dfb15b] hover:text-amber-400 text-[10px] font-semibold flex items-center gap-0.5"
                         >
                             View All <span>→</span>
                         </button>
@@ -420,7 +428,7 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
                             <Icons.BuildingOffice className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <p className="font-bold text-gray-900 text-xs">
+                            <p className="font-bold text-white text-xs">
                                 {dept.name}
                             </p>
                             <p className="text-[10px] text-gray-400">Active</p>
@@ -429,13 +437,13 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
                     {!isHod && (
                         <button
                             onClick={() => onRequestLeave("department")}
-                            className="btn btn-sm bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all"
+                            className="btn btn-sm bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all"
                         >
                             Leave Department
                         </button>
                     )}
                     {isHod && (
-                        <p className="text-[10px] text-gray-500 text-center">
+                        <p className="text-[10px] text-gray-400 text-center">
                             As HOD, contact pastor to transfer leadership before leaving.
                         </p>
                     )}
@@ -446,18 +454,23 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
     return (
         <div className="gradient-border card-hover">
             <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-purple-50 flex items-center justify-center">
-                    <Icons.BuildingOffice className="w-6 h-6 text-purple-500" />
+                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <Icons.BuildingOffice className="w-6 h-6 text-purple-300" />
                 </div>
-                <h3 className="text-xs font-bold text-gray-900 mb-0.5">
+                <h3 className="text-xs font-bold text-white mb-0.5">
                     No Department Yet
                 </h3>
-                <p className="text-[10px] text-gray-500 mb-3">
-                    Join a department to serve alongside other members.
+                <p className="text-[10px] text-gray-400 mb-2">
+                    Join a department to serve alongside other members and discover your gifts.
                 </p>
+                <div className="bg-purple-500/10 rounded-lg p-2 mb-3">
+                    <p className="text-[10px] font-bold text-purple-300 mb-1">💡 Suggested Ministry</p>
+                    <p className="text-xs font-bold text-white">Media & ICT</p>
+                    <p className="text-[9px] text-gray-500">4 Open Positions | Training Available</p>
+                </div>
                 <button
                     onClick={onViewDepartments}
-                    className="py-1.5 px-3 bg-purple-500 text-white rounded-lg text-[10px] font-bold hover:bg-purple-600 transition-all"
+                    className="btn btn-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all"
                 >
                     Browse Departments
                 </button>
@@ -538,6 +551,10 @@ export default function MembersPortal({ onLogout }) {
     ).length;
     const pendingDeptCount = (deptRequestsData || []).filter(
         (r) => r.status === "pending",
+    ).length;
+
+    const upcomingEventsCount = CHURCH_EVENTS_2026.filter(
+        (e) => new Date(e.startDate) >= new Date(new Date().toDateString())
     ).length;
 
     const [activeTab, setActiveTab] = useState("home");
@@ -634,52 +651,45 @@ export default function MembersPortal({ onLogout }) {
     };
 
     return (
-        <div className="min-h-screen relative bg-gray-50/50">
+        <div className="min-h-screen relative bg-[#0A192F]">
             <FloatingParticles />
 
             <style>{`
-                .gradient-border { position: relative; background: white; border-radius: 14px; }
+                .gradient-border { position: relative; background: rgba(255,255,255,0.05); border-radius: 14px; backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); }
                 .gradient-border::before { content: ''; position: absolute; inset: -1px; border-radius: 15px; background: linear-gradient(135deg, #dfb15b, #0ea5e9, #dfb15b); background-size: 200% 200%; animation: gradient-shift 4s ease infinite; z-index: -1; opacity: 0; transition: opacity 0.4s ease; }
-                .gradient-border:hover::before { opacity: 1; }
+                .gradient-border:hover::before { opacity: 0.3; }
                 .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(212, 175, 55, 0.15); }
+                .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.2); }
                 .badge-pulse { animation: pulse-glow 2s ease-in-out infinite; }
                 .tab-panel { animation: tabFadeIn 0.3s ease-out; }
                 @keyframes tabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-                .nav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; transition: all 0.2s; border: none; background: none; cursor: pointer; }
-                .nav-btn.nav-active { background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.03)); color: #1a1a1a; }
-                .nav-btn.nav-inactive { color: #6b7280; }
-                .nav-btn.nav-inactive:hover { background: #f9fafb; color: #374151; }
+                .nav-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; transition: all 0.2s; border: none; background: rgba(255,255,255,0.05); cursor: pointer; color: #e5e7eb; }
+                .nav-btn.nav-active { background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1)); color: #ffffff; }
+                .nav-btn.nav-inactive { color: #9ca3af; }
+                .nav-btn.nav-inactive:hover { background: rgba(255,255,255,0.1); color: #e5e7eb; }
                 .nav-icon { width: 14px; height: 14px; }
                 .nav-icon-wrap { position: relative; display: inline-flex; }
                 .nav-badge { position: absolute; top: -3px; right: -3px; min-width: 14px; height: 14px; padding: 0 3px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ef4444, #e11d48); color: white; font-size: 8px; font-weight: 700; border-radius: 999px; }
                 .nav-avatar { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, #dfb15b, #f59e0b); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; }
-                .nav-avatar-dot { position: absolute; bottom: 0; right: 0; width: 7px; height: 7px; background: #22c55e; border-radius: 50%; border: 1px solid white; }
-                .nav-logout { padding: 5px; border-radius: 7px; color: #9ca3af; transition: all 0.2s; border: none; background: none; cursor: pointer; }
-                .nav-logout:hover { color: #ef4444; background: #fef2f2; }
+                .nav-avatar-dot { position: absolute; bottom: 0; right: 0; width: 7px; height: 7px; background: #22c55e; border-radius: 50%; border: 1px solid #0A192F; }
+                .nav-logout { padding: 5px; border-radius: 7px; color: #9ca3af; transition: all 0.2s; border: none; background: rgba(255,255,255,0.05); cursor: pointer; }
+                .nav-logout:hover { color: #ef4444; background: rgba(239, 68, 68, 0.15); }
                 .mobile-tab { position: relative; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; flex: 1; height: 100%; }
                 .mobile-tab-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
                 .mobile-tab-label { font-size: 9px; font-weight: 500; transition: color 0.2s; }
                 .mobile-tab-dot { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: #dfb15b; }
-                .page-heading { font-size: 1.125rem; font-weight: 600; color: #111827; margin: 0; letter-spacing: -0.01em; }
+                .page-heading { font-size: 1.125rem; font-weight: 600; color: #ffffff; margin: 0; letter-spacing: -0.01em; }
                 .btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 7px; font-size: 10px; font-weight: 600; transition: all 0.2s; cursor: pointer; border: none; }
                 .btn-sm { padding: 3px 8px; font-size: 9px; border-radius: 6px; }
                 .btn-lg { padding: 5px 12px; font-size: 11px; border-radius: 8px; }
                 .mobile-badge { position: absolute; top: -1px; right: -1px; min-width: 14px; height: 14px; padding: 0 3px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ef4444, #e11d48); color: white; font-size: 8px; font-weight: 700; border-radius: 999px; }
+                .text-gradient-gold { background: linear-gradient(135deg, #dfb15b, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+                @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+                @keyframes floatUp { 0% { transform: translateY(100vh); } 100% { transform: translateY(-100vh); } }
             `}</style>
 
             <div className="relative z-10 pb-20">
-                {/* Registration Confirmation */}
-                <div className="max-w-7xl mx-auto px-4 pt-3">
-                    <RegistrationConfirmation user={user} />
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 mt-4 mb-2">
-                    <h1 className="page-heading">Member Portal</h1>
-                </div>
-
-                {/* Desktop Top Nav */}
-                <nav className="hidden md:block bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm sticky top-0 z-40">
+                <nav className="hidden md:block bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-40">
                     <div className="max-w-7xl mx-auto px-4">
                         <div className="flex items-center justify-between h-14">
                             <div className="flex items-center gap-1">
@@ -717,7 +727,7 @@ export default function MembersPortal({ onLogout }) {
                                     }
                                 >
                                     <Icons.Users className="nav-icon" />{" "}
-                                    <span>Group</span>
+                                    <span>Groups</span>
                                 </button>
                                 <button
                                     onClick={() => handleTabChange("events")}
@@ -797,7 +807,7 @@ export default function MembersPortal({ onLogout }) {
 
                 {/* Mobile Bottom Nav */}
                 <nav
-                    className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/90 backdrop-blur-2xl border-t border-gray-200/80"
+                    className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/5 backdrop-blur-2xl border-t border-white/10"
                     style={{
                         paddingBottom: "env(safe-area-inset-bottom, 0px)",
                     }}
@@ -885,7 +895,7 @@ export default function MembersPortal({ onLogout }) {
                                         className={
                                             "mobile-tab-label " +
                                             (isActive
-                                                ? "text-gray-900"
+                                                ? "text-white"
                                                 : "text-gray-400")
                                         }
                                     >
@@ -902,9 +912,88 @@ export default function MembersPortal({ onLogout }) {
 
                 {/* ===== TAB CONTENT ===== */}
                 <div className="max-w-7xl mx-auto px-4 py-4 pb-24 md:pb-8">
-                    {/* HOME TAB */}
+                    {/* HOME TAB - Enhanced Dashboard */}
                     {activeTab === "home" && (
                         <div className="tab-panel space-y-4">
+                            {/* 1. IDENTITY & AUTHORITY HEADER */}
+                            <div className="gradient-border card-hover p-5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">
+                                            Good Evening{user?.name ? `, ${user.name.split(' ')[0]}` : ''}{" "}
+                                            <span className="text-[#d4af37]">👋</span>
+                                        </h2>
+                                        <p className="text-sm text-gray-300 mt-1">
+                                            Welcome to Heartfelt International Ministries
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold">
+                                            ACTIVE MEMBER <Icons.ShieldCheck className="w-3 h-3" />
+                                        </span>
+                                        <span className="block text-xs text-gray-400 mt-1">VERIFIED</span>
+                                        {user?.zone?.name && (
+                                            <p className="text-xs text-gray-400 mt-2">
+                                                Your membership has been registered successfully. You are now officially part of the {user.zone.name} zone.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 2. CORE CREDENTIALS GRID */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="gradient-border p-3">
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Member Code</p>
+                                    <p className="text-sm font-bold text-white">{user?.unique_code || 'xxxxx'}</p>
+                                </div>
+                                <div className="gradient-border p-3">
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Zone</p>
+                                    <p className="text-sm font-bold text-white">{user?.zone?.name || 'xxx'}</p>
+                                </div>
+                                <div className="gradient-border p-3">
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Region</p>
+                                    <p className="text-sm font-bold text-white">{user?.zone?.region?.name || 'xxx'}</p>
+                                </div>
+                                <div className="gradient-border p-3">
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase">Pastor</p>
+                                    <p className="text-sm font-bold text-white truncate">{user?.pastor?.user?.name || user?.zone?.pastor_name || 'xxx'}</p>
+                                </div>
+                            </div>
+
+                            {/* 3. SMART NAVIGATION MATRIX */}
+                            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                                {[
+                                    { id: "home", icon: Icons.Home, label: "Home" },
+                                    { id: "zone", icon: Icons.MapPin, label: "Zone" },
+                                    { id: "homegroup", icon: Icons.Users, label: "Connect" },
+                                    { id: "events", icon: Icons.Calendar, label: "Events" },
+                                    { id: "reports", icon: Icons.DocumentText, label: "Reports" },
+                                    { id: "notifications", icon: Icons.Bell, label: "Alerts", badge: pendingInvitationsCount + pendingDeptCount },
+                                    { id: "partnership", icon: Icons.Heart, label: "Partnership" },
+                                    { id: "profile", icon: Icons.User, label: "Profile" },
+                                ].map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = activeTab === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleTabChange(item.id)}
+                                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all relative"
+                                        >
+                                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? 'bg-gradient-to-r from-[#d4af37] to-amber-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                                                <Icon className="w-4 h-4" />
+                                            </div>
+                                            <span className={`text-[9px] font-medium ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
+                                            {item.badge > 0 && (
+                                                <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* 4. DYNAMIC ONBOARDING & NEXT STEPS */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <HomegroupSection
                                     user={user}
@@ -919,57 +1008,91 @@ export default function MembersPortal({ onLogout }) {
                                     onRequestLeave={onRequestLeave}
                                 />
                             </div>
+
+                            {/* 5. SPIRITUAL PROGRESS DASHBOARD */}
+                            <div className="gradient-border p-4">
+                                <h3 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
+                                    <Icons.ChartBar className="w-4 h-4 text-[#d4af37]" />
+                                    Spiritual Progress
+                                </h3>
+                                <div className="grid grid-cols-4 gap-3">
+                                    <div className="text-center">
+                                        <p className="text-lg font-bold text-white">{upcomingEventsCount}</p>
+                                        <p className="text-[9px] text-gray-400">Upcoming Events</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-lg font-bold text-white">{user?.home_group ? '1' : '0'} <span className="text-[10px]">/1</span></p>
+                                        <p className="text-[9px] text-gray-400">Homegroups Joined</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-lg font-bold text-white">{user?.department ? '1' : '0'} <span className="text-[10px]">/1</span></p>
+                                        <p className="text-[9px] text-gray-400">Departments Joined</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-lg font-bold text-purple-400">Prospective</p>
+                                        <p className="text-[9px] text-gray-400">Tier</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 6. ENHANCED SPIRITUAL CALENDAR */}
                             <div>
                                 <div className="flex items-center justify-between mb-2.5">
-                                    <h3 className="text-xs font-bold text-gray-900">
+                                    <h3 className="text-xs font-bold text-white">
                                         Upcoming Events
                                     </h3>
                                     <button
-                                        onClick={() =>
-                                            handleTabChange("events")
-                                        }
-                                        className="text-[10px] text-[#dfb15b] font-semibold hover:text-amber-700"
+                                        onClick={() => handleTabChange("events")}
+                                        className="text-[10px] text-[#dfb15b] font-semibold hover:text-amber-400"
                                     >
                                         View All
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                                    {CHURCH_EVENTS_2026.slice(0, 4).map(
-                                        (event) => (
-                                            <div
-                                                key={event.id}
-                                                className="gradient-border card-hover p-2.5 cursor-pointer"
-                                                onClick={() =>
-                                                    handleTabChange("events")
-                                                }
-                                            >
-                                                <div
-                                                    className={
-                                                        "w-7 h-7 rounded-md bg-gradient-to-br " +
-                                                        (event.category ===
-                                                        "International"
-                                                            ? "from-[#dfb15b] to-amber-500"
-                                                            : "from-sky-400 to-sky-600") +
-                                                        " flex items-center justify-center shadow-sm mb-1.5"
-                                                    }
-                                                >
-                                                    <Icons.Calendar className="w-3 h-3 text-white" />
+                                <div className="space-y-2">
+                                    {CHURCH_EVENTS_2026.slice(0, 4).map((event) => (
+                                        <div key={event.id} className="gradient-border card-hover p-3 cursor-pointer" onClick={() => handleTabChange("events")}>
+                                            <div className="flex items-start gap-3">
+                                                <span className={`text-[10px] px-2 py-0.5 rounded ${event.category === "International" ? "bg-[#d4af37]/10 text-[#d4af37]" : "bg-sky-500/20 text-sky-300"}`}>
+                                                    {event.category === "International" ? "🔥 FEATURED" : "📅"}
+                                                </span>
+                                                <div className="flex-1">
+                                                    <p className="text-xs font-bold text-white">{event.title}</p>
+                                                    <p className="text-[10px] text-gray-400">{event.startDate} • {event.location || "Open to All"}</p>
                                                 </div>
-                                                <h4 className="text-[10px] font-bold text-gray-900 truncate">
-                                                    {event.title}
-                                                </h4>
-                                                <p className="text-[9px] text-gray-400 mt-0.5 font-medium">
-                                                    {event.startDate}
-                                                </p>
                                             </div>
-                                        ),
-                                    )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 7. FOUNDATION & GROWTH CHECKLIST */}
+                            <div className="gradient-border p-4">
+                                <h3 className="text-xs font-bold text-white mb-2 flex items-center gap-2">
+                                    <Icons.BookOpen className="w-4 h-4 text-[#d4af37]" />
+                                    Daily Scripture
+                                </h3>
+                                <p className="text-xs text-gray-300 italic mb-3">
+                                    "Those who are planted in the house of the Lord shall flourish in the courts of our God." — Psalm 92:13
+                                </p>
+                                <h4 className="text-[10px] font-bold text-white mb-2">Action Items</h4>
+                                <div className="space-y-1.5">
+                                    {[
+                                        {id:1, text:'Complete your digital profile to unlock all portal features'},
+                                        {id:2, text:'Connect with a local Homegroup'},
+                                        {id:3, text:'Sign up for Department orientation'},
+                                        {id:4, text:'Activate your Partnership package to support the global vision'}
+                                    ].map((item) => (
+                                        <label key={item.id} className="flex items-center gap-2 text-[10px]">
+                                            <input type="checkbox" className="w-3 h-3 rounded border-gray-600 bg-white/10" />
+                                            <span className="text-gray-300">{item.text}</span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* ZONE TAB */}
+{/* ZONE TAB */}
                     {activeTab === "zone" && (
                         <div className="tab-panel space-y-4">
                             <div className="gradient-border card-hover p-4">
@@ -978,17 +1101,17 @@ export default function MembersPortal({ onLogout }) {
                                         <Icons.MapPin className="w-4 h-4 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xs font-bold text-gray-900">
+                                        <h3 className="text-xs font-bold text-white">
                                             My Zone
                                         </h3>
-                                        <p className="text-[10px] text-gray-500">
+                                        <p className="text-[10px] text-gray-400">
                                             {user && user.zone
                                                 ? user.zone.name
                                                 : "Not Assigned"}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="space-y-1.5 text-[10px] text-gray-600 mb-3">
+                                <div className="space-y-1.5 text-[10px] text-gray-300 mb-3">
                                     <p>
                                         <strong>Region:</strong>{" "}
                                         {user && user.zone && user.zone.region
@@ -1000,10 +1123,10 @@ export default function MembersPortal({ onLogout }) {
                                         {user && user.pastor
                                             ? user.pastor.user.name
                                             : user &&
-                                                user.zone &&
-                                                user.zone.pastor_name
-                                              ? user.zone.pastor_name
-                                              : "Not Assigned"}
+                                                  user.zone &&
+                                                  user.zone.pastor_name
+                                            ? user.zone.pastor_name
+                                            : "Not Assigned"}
                                     </p>
                                     <p>
                                         <strong>Address:</strong>{" "}
@@ -1020,7 +1143,7 @@ export default function MembersPortal({ onLogout }) {
                                 </div>
                                 <button
                                     onClick={() => handleAction("view-zone")}
-                                    className="btn btn-lg bg-gradient-to-r from-[#dfb15b]/10 to-amber-50 text-[#8b6914] border border-[#dfb15b]/20 hover:from-[#dfb15b]/20 hover:to-amber-100 transition-all"
+                                    className="btn btn-lg bg-gradient-to-r from-[#dfb15b]/20 to-amber-500/20 text-[#d4af37] border border-[#dfb15b]/30 hover:from-[#dfb15b]/30 hover:to-amber-500/30 transition-all"
                                 >
                                     View Zone Details
                                 </button>
@@ -1036,7 +1159,7 @@ export default function MembersPortal({ onLogout }) {
                                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
                                          <Icons.Users className="w-4 h-4 text-white" />
                                      </div>
-                                     <h3 className="text-sm font-bold text-gray-900">My Groups</h3>
+                                     <h3 className="text-sm font-bold text-white">My Groups</h3>
                                  </div>
                              </div>
                              
@@ -1059,7 +1182,7 @@ export default function MembersPortal({ onLogout }) {
                     {activeTab === "events" && (
                         <div className="tab-panel space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-gray-900">
+                                <h3 className="text-xs font-bold text-white">
                                     All Upcoming Events
                                 </h3>
                             </div>
@@ -1084,7 +1207,7 @@ export default function MembersPortal({ onLogout }) {
                                                         "w-9 h-9 rounded-md bg-gradient-to-br " +
                                                         (event.category ===
                                                         "International"
-                                                            ? "from-[#dfb15b] to-amber-500"
+                                                            ? "from-[#d4af37] to-amber-500"
                                                             : "from-sky-400 to-sky-600") +
                                                         " flex items-center justify-center shadow-sm flex-shrink-0"
                                                     }
@@ -1092,10 +1215,10 @@ export default function MembersPortal({ onLogout }) {
                                                     <Icons.Calendar className="w-4 h-4 text-white" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-gray-900 truncate">
+                                                    <h4 className="text-xs font-bold text-white truncate">
                                                         {event.title}
                                                     </h4>
-                                                    <p className="text-[10px] text-gray-500 mt-0.5">
+                                                    <p className="text-[10px] text-gray-400 mt-0.5">
                                                         {event.startDate}
                                                         {event.endDate !==
                                                         event.startDate
@@ -1104,7 +1227,7 @@ export default function MembersPortal({ onLogout }) {
                                                             : ""}
                                                     </p>
                                                     {event.location && (
-                                                        <p className="text-[9px] text-gray-400 mt-0.5">
+                                                        <p className="text-[9px] text-gray-500 mt-0.5">
                                                             📍 {event.location}
                                                         </p>
                                                     )}
@@ -1114,8 +1237,8 @@ export default function MembersPortal({ onLogout }) {
                                                         "px-1.5 py-0.5 rounded-md text-[9px] font-bold " +
                                                         (event.category ===
                                                         "International"
-                                                            ? "bg-[#dfb15b]/10 text-[#8b6914]"
-                                                            : "bg-sky-50 text-sky-700")
+                                                            ? "bg-[#d4af37]/10 text-[#d4af37]"
+                                                            : "bg-sky-500/20 text-sky-300")
                                                     }
                                                 >
                                                     {event.category}
@@ -1131,13 +1254,13 @@ export default function MembersPortal({ onLogout }) {
                     {activeTab === "reports" && (
                         <div className="tab-panel space-y-4">
                             <div className="gradient-border card-hover p-4 text-center">
-                                <div className="w-12 h-12 mx-auto mb-2.5 rounded-md bg-orange-50 flex items-center justify-center">
-                                    <Icons.DocumentText className="w-5 h-5 text-orange-500" />
+                                <div className="w-12 h-12 mx-auto mb-2.5 rounded-md bg-orange-500/20 flex items-center justify-center">
+                                    <Icons.DocumentText className="w-5 h-5 text-orange-300" />
                                 </div>
-                                <h3 className="text-xs font-bold text-gray-900 mb-0.5">
+                                <h3 className="text-xs font-bold text-white mb-0.5">
                                     Submit a Report
                                 </h3>
-                                <p className="text-[10px] text-gray-500 mb-2.5">
+                                <p className="text-[10px] text-gray-400 mb-2.5">
                                     Share prayer requests, report absences, or
                                     give feedback.
                                 </p>
@@ -1154,105 +1277,105 @@ export default function MembersPortal({ onLogout }) {
                     )}
 
 {/* ALERTS TAB */}
-                     {activeTab === "notifications" && (
-                         <div className="tab-panel space-y-4">
-                             <div className="flex items-center justify-between">
-                                 <h3 className="text-xs font-bold text-gray-900">
-                                     Notifications
-                                 </h3>
-                                 <span className="text-[10px] text-gray-500">
-                                     {pendingInvitationsCount + pendingDeptCount}{" "}
-                                     pending
-                                 </span>
-                             </div>
-                             <div className="space-y-2.5">
-                                 {(invitationsData || [])
-                                     .filter((inv) => inv.status === "pending")
-                                     .map((inv) => (
-                                         <div
-                                             key={inv.id}
-                                             className="gradient-border card-hover p-3"
-                                         >
-                                             <div className="flex items-center gap-2">
-                                                 <div className="w-8 h-8 rounded-md bg-rose-50 flex items-center justify-center flex-shrink-0">
-                                                     <Icons.Users className="w-4 h-4 text-rose-500" />
-                                                 </div>
-                                                 <div className="flex-1 min-w-0">
-                                                     <p className="text-[10px] font-bold text-gray-900">
-                                                         {inv.home_group
-                                                             ? inv.home_group
-                                                                 .name
-                                                             : "Homegroup Invitation"}
-                                                     </p>
-                                                     <p className="text-[9px] text-gray-500 mt-0.5">
-                                                         You have been invited to
-                                                         join this homegroup
-                                                     </p>
-                                                     <p className="text-[9px] text-gray-400 mt-0.5">
-                                                         {inv.created_at
-                                                             ? new Date(
-                                                                   inv.created_at,
-                                                               ).toLocaleDateString()
-                                                             : ""}
-                                                     </p>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     ))}
-                                 {(deptRequestsData || [])
-                                     .filter((r) => r.status === "pending")
-                                     .map((req) => (
-                                         <div
-                                             key={req.id}
-                                             className="gradient-border card-hover p-3"
-                                         >
-                                             <div className="flex items-center gap-2">
-                                                 <div className="w-8 h-8 rounded-md bg-purple-50 flex items-center justify-center flex-shrink-0">
-                                                     <Icons.BuildingOffice className="w-4 h-4 text-purple-500" />
-                                                 </div>
-                                                 <div className="flex-1 min-w-0">
-                                                     <p className="text-[10px] font-bold text-gray-900">
-                                                         {req.department
-                                                             ? req.department
-                                                                   .name
-                                                             : "Department Request"}
-                                                     </p>
-                                                     <p className="text-[9px] text-gray-500 mt-0.5">
-                                                         Your request is pending
-                                                         approval
-                                                     </p>
-                                                     <p className="text-[9px] text-gray-400 mt-0.5">
-                                                         {req.created_at
-                                                             ? new Date(
-                                                                   req.created_at,
-                                                               ).toLocaleDateString()
-                                                             : ""}
-                                                     </p>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     ))}
-                             </div>
-                             {(invitationsData || []).filter(
-                                 (inv) => inv.status === "pending",
-                             ).length === 0 &&
-                             (deptRequestsData || []).filter(
-                                 (r) => r.status === "pending",
-                             ).length === 0 ? (
-                                 <div className="gradient-border card-hover p-6 text-center">
-                                     <div className="w-12 h-12 mx-auto mb-2 rounded-md bg-gray-50 flex items-center justify-center">
-                                         <Icons.Bell className="w-5 h-5 text-gray-400" />
-                                     </div>
-                                     <h3 className="text-xs font-bold text-gray-900 mb-0.5">
-                                         All Caught Up!
-                                     </h3>
-                                     <p className="text-[10px] text-gray-500">
-                                         No new notifications.
-                                     </p>
-                                 </div>
-                             ) : null}
-                         </div>
-                     )}
+                      {activeTab === "notifications" && (
+                          <div className="tab-panel space-y-4">
+                              <div className="flex items-center justify-between">
+                                  <h3 className="text-xs font-bold text-white">
+                                      Notifications
+                                  </h3>
+                                  <span className="text-[10px] text-gray-400">
+                                      {pendingInvitationsCount + pendingDeptCount}{" "}
+                                      pending
+                                  </span>
+                              </div>
+                              <div className="space-y-2.5">
+                                  {(invitationsData || [])
+                                      .filter((inv) => inv.status === "pending")
+                                      .map((inv) => (
+                                          <div
+                                              key={inv.id}
+                                              className="gradient-border card-hover p-3"
+                                          >
+                                              <div className="flex items-center gap-2">
+                                                  <div className="w-8 h-8 rounded-md bg-rose-500/20 flex items-center justify-center flex-shrink-0">
+                                                      <Icons.Users className="w-4 h-4 text-rose-300" />
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                      <p className="text-[10px] font-bold text-white">
+                                                          {inv.home_group
+                                                              ? inv.home_group
+                                                                  .name
+                                                              : "Homegroup Invitation"}
+                                                      </p>
+                                                      <p className="text-[9px] text-gray-400 mt-0.5">
+                                                          You have been invited to
+                                                          join this homegroup
+                                                      </p>
+                                                      <p className="text-[9px] text-gray-500 mt-0.5">
+                                                          {inv.created_at
+                                                              ? new Date(
+                                                                    inv.created_at,
+                                                                ).toLocaleDateString()
+                                                              : ""}
+                                                      </p>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      ))}
+                                  {(deptRequestsData || [])
+                                      .filter((r) => r.status === "pending")
+                                      .map((req) => (
+                                          <div
+                                              key={req.id}
+                                              className="gradient-border card-hover p-3"
+                                          >
+                                              <div className="flex items-center gap-2">
+                                                  <div className="w-8 h-8 rounded-md bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                                                      <Icons.BuildingOffice className="w-4 h-4 text-purple-300" />
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                      <p className="text-[10px] font-bold text-white">
+                                                          {req.department
+                                                              ? req.department
+                                                                    .name
+                                                              : "Department Request"}
+                                                      </p>
+                                                      <p className="text-[9px] text-gray-400 mt-0.5">
+                                                          Your request is pending
+                                                          approval
+                                                      </p>
+                                                      <p className="text-[9px] text-gray-500 mt-0.5">
+                                                          {req.created_at
+                                                              ? new Date(
+                                                                    req.created_at,
+                                                                ).toLocaleDateString()
+                                                              : ""}
+                                                      </p>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      ))}
+                              </div>
+                              {(invitationsData || []).filter(
+                                  (inv) => inv.status === "pending",
+                              ).length === 0 &&
+                              (deptRequestsData || []).filter(
+                                  (r) => r.status === "pending",
+                              ).length === 0 ? (
+                                  <div className="gradient-border card-hover p-6 text-center">
+                                      <div className="w-12 h-12 mx-auto mb-2 rounded-md bg-gray-500/20 flex items-center justify-center">
+                                          <Icons.Bell className="w-5 h-5 text-gray-400" />
+                                      </div>
+                                      <h3 className="text-xs font-bold text-white mb-0.5">
+                                          All Caught Up!
+                                      </h3>
+                                      <p className="text-[10px] text-gray-400">
+                                          No new notifications.
+                                      </p>
+                                  </div>
+                              ) : null}
+                          </div>
+                      )}
                      </div>
              </div>
              

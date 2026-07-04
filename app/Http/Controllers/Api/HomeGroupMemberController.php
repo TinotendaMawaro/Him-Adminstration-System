@@ -609,85 +609,6 @@ class HomeGroupMemberController extends Controller
         }
     }
 
-        $existingRequest = HomeGroupInvitation::where('member_id', $user->id)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($existingRequest) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You already have a pending home group invitation.',
-            ], 400);
-        }
-
-        $rejectedRequest = HomeGroupInvitation::where('member_id', $user->id)
-            ->where('homegroup_id', $validated['home_group_id'])
-            ->where('status', 'declined')
-            ->first();
-
-        if ($rejectedRequest && $rejectedRequest->responded_at) {
-            if ($rejectedRequest->responded_at->diffInDays(now()) < 30) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You cannot reapply to this home group within 30 days of rejection.',
-                ], 400);
-            }
-        }
-
-        $homeGroup = HomeGroup::find($validated['home_group_id']);
-
-        if ($homeGroup->zone_id !== $user->zone_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You can only join home groups in your zone.',
-            ], 403);
-        }
-
-        $homeGroupRequest = HomeGroupInvitation::create([
-            'member_id' => $user->id,
-            'homegroup_id' => $validated['home_group_id'],
-            'requested_by' => $user->id,
-            'status' => 'pending',
-            'message' => isset($validated['notes']) ? $validated['notes'] : null,
-        ]);
-
-        $leader = $homeGroup->leader;
-
-        if ($leader) {
-            $leader->notifications()->create([
-                'title' => 'New Home Group Join Request',
-                'message' => "{$user->name} has requested to join {$homeGroup->name}. Please review the request.",
-                'type' => 'home_group',
-                'category' => 'join_request',
-            ]);
-        }
-
-        $pastors = User::where('role', 'pastor')
-            ->where('zone_id', $user->zone_id)
-            ->get();
-
-        foreach ($pastors as $pastor) {
-            $pastor->notifications()->create([
-                'title' => 'New Home Group Join Request',
-                'message' => "{$user->name} has requested to join {$homeGroup->name}.",
-                'type' => 'home_group',
-                'category' => 'join_request',
-            ]);
-        }
-
-        Log::info('Home group join request created', [
-            'user_id' => $user->id,
-            'homegroup_id' => $validated['home_group_id'],
-            'request_id' => $homeGroupRequest->id,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Home group join request submitted successfully. Please wait for approval.',
-            'request' => $homeGroupRequest->load('homeGroup'),
-        ]);
-    }
-
     /**
      * Get user's home group request status
      */
@@ -874,10 +795,11 @@ class HomeGroupMemberController extends Controller
 
         $member = $homeGroupRequest->member;
         $homeGroup = $homeGroupRequest->homeGroup;
+        $homeGroupName = $homeGroup ? $homeGroup->name : 'Unknown Home Group';
 
         $member->notifications()->create([
             'title' => 'Home Group Request Approved',
-            'message' => "Congratulations! Your request to join {$homeGroup->name} has been approved.",
+            'message' => "Congratulations! Your request to join {$homeGroupName} has been approved.",
             'type' => 'home_group',
             'category' => 'join_approved',
         ]);
@@ -937,11 +859,12 @@ class HomeGroupMemberController extends Controller
 
         $member = $homeGroupRequest->member;
         $homeGroup = $homeGroupRequest->homeGroup;
+        $homeGroupName = $homeGroup ? $homeGroup->name : 'Unknown Home Group';
 
         $notesMessage = isset($validated['notes']) ? $validated['notes'] : 'Please contact your pastor for more information.';
         $member->notifications()->create([
             'title' => 'Home Group Request Rejected',
-            'message' => "Your request to join {$homeGroup->name} has been rejected. {$notesMessage}",
+            'message' => "Your request to join {$homeGroupName} has been rejected. {$notesMessage}",
             'type' => 'home_group',
             'category' => 'join_rejected',
         ]);
