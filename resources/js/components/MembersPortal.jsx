@@ -1164,11 +1164,11 @@ export default function MembersPortal({ onLogout }) {
                                         </div>
                                     );
                                 })}
-                            </div>
+</div>
 
-                            {/* 4. DYNAMIC ONBOARDING & NEXT STEPS */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <HomegroupSection
+                             {/* 4. DYNAMIC ONBOARDING & NEXT STEPS */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                 <HomegroupSection
                                     user={user}
                                     onViewHomegroup={() => handleAction("homegroups")}
                                     onRequestLeave={onRequestLeave}
@@ -1207,52 +1207,7 @@ export default function MembersPortal({ onLogout }) {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* QUICK ACTIONS */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <button className="gradient-border card-hover p-3 text-left">
-                                    <div className="w-8 h-8 rounded-md bg-emerald-500/20 flex items-center justify-center mb-2">
-                                        <Icons.Users className="w-4 h-4 text-emerald-300" />
-                                    </div>
-                                    <p className="text-[10px] font-bold text-white">Members</p>
-                                    <p className="text-[9px] text-gray-400 mt-0.5">View and manage zone members</p>
-                                </button>
-                                <button className="gradient-border card-hover p-3 text-left">
-                                    <div className="w-8 h-8 rounded-md bg-orange-500/20 flex items-center justify-center mb-2">
-                                        <Icons.DocumentText className="w-4 h-4 text-orange-300" />
-                                    </div>
-                                    <p className="text-[10px] font-bold text-white">Reports</p>
-                                    <p className="text-[9px] text-gray-400 mt-0.5">Submit weekly reports</p>
-                                </button>
-                                <button className="gradient-border card-hover p-3 text-left">
-                                    <div className="w-8 h-8 rounded-md bg-[#d4af37]/20 flex items-center justify-center mb-2">
-                                        <Icons.MapPin className="w-4 h-4 text-[#d4af37]" />
-                                    </div>
-                                    <p className="text-[10px] font-bold text-white">My Zone</p>
-                                </button>
-                            </div>
-
-                            {/* RECENT ACTIVITY */}
-                            <div className="gradient-border p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-xs font-bold text-white flex items-center gap-2">
-                                        <Icons.Clock className="w-4 h-4 text-[#d4af37]" />
-                                        Recent Activity
-                                    </h3>
-                                    <button className="text-[10px] text-[#dfb15b] font-semibold hover:text-amber-400">
-                                        View All →
-                                    </button>
-                                </div>
-                                <div className="text-center py-4">
-                                    <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/5 flex items-center justify-center">
-                                        <Icons.Bell className="w-5 h-5 text-gray-500" />
-                                    </div>
-                                    <p className="text-[10px] font-bold text-gray-400">No Recent Activity</p>
-                                    <p className="text-[9px] text-gray-500 mt-0.5">Activity will appear here</p>
-                                </div>
-                            </div>
-
-                            {/* 6. ENHANCED SPIRITUAL CALENDAR */}
+                             {/* 6. ENHANCED SPIRITUAL CALENDAR */}
                             <div>
                                 <div className="flex items-center justify-between mb-2.5">
                                     <h3 className="text-xs font-bold text-white">
@@ -1388,19 +1343,17 @@ export default function MembersPortal({ onLogout }) {
                                      <h3 className="text-sm font-bold text-white">My Groups</h3>
                                  </div>
                              </div>
-                             
-<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <HomegroupSection
-                                      user={user}
-                                      onViewHomegroup={() => handleAction("homegroups")}
-                                      onRequestLeave={onRequestLeave}
-                                  />
-                                  <DepartmentsSection
-                                      user={user}
-                                      onViewDepartments={() => handleAction("departments")}
-                                      onRequestLeave={onRequestLeave}
-                                  />
-                              </div>
+
+                             <HomegroupSection
+                                 user={user}
+                                 onViewHomegroup={() => handleAction("homegroups")}
+                                 onRequestLeave={onRequestLeave}
+                             />
+                             <DepartmentsSection
+                                 user={user}
+                                 onViewDepartments={() => handleAction("departments")}
+                                 onRequestLeave={onRequestLeave}
+                             />
                          </div>
                      )}
 
@@ -1745,3 +1698,4 @@ if (typeof window !== "undefined") {
     style.textContent = keyframesStyle;
     document.head.appendChild(style);
 }
+
