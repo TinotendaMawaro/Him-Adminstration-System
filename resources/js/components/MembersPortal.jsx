@@ -1095,80 +1095,9 @@ export default function MembersPortal({ onLogout }) {
                                 </div>
                             </div>
 
-                            {/* 3. SMART NAVIGATION MATRIX */}
-                            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                                {[
-                                    { id: "home", icon: Icons.Home, label: "Home" },
-                                    { id: "zone", icon: Icons.MapPin, label: "Zone" },
-                                    { id: "homegroup", icon: Icons.Users, label: "Connect", hasSubmenu: true },
-                                    { id: "events", icon: Icons.Calendar, label: "Events" },
-                                    { id: "reports", icon: Icons.DocumentText, label: "Reports" },
-                                    { id: "notifications", icon: Icons.Bell, label: "Alerts", badge: pendingInvitationsCount + pendingDeptCount },
-                                    { id: "partnership", icon: Icons.Heart, label: "Partnership" },
-                                    { id: "profile", icon: Icons.User, label: "Profile" },
-                                ].map((item) => {
-                                    const Icon = item.icon;
-                                    const isActive = activeTab === item.id || (item.id === "homegroup" && connectSubmenu);
-                                    const isConnect = item.id === "homegroup";
-                                    return (
-                                        <div key={item.id} className="relative">
-                                            <button
-                                                onClick={() => {
-                                                    if (isConnect) {
-                                                        setConnectSubmenu(connectSubmenu ? null : "messages");
-                                                        if (!connectSubmenu) {
-                                                            setActiveTab("homegroup");
-                                                        }
-                                                    } else {
-                                                        handleTabChange(item.id);
-                                                    }
-                                                }}
-                                                className="w-full flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-all relative"
-                                            >
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? 'bg-gradient-to-r from-[#d4af37] to-amber-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-                                                    <Icon className="w-4 h-4" />
-                                                    {isConnect && <Icons.ChevronDown className={`w-3 h-3 ml-0.5 transition-transform ${connectSubmenu ? 'rotate-180' : ''}`} />}
-                                                </div>
-                                                <span className={`text-[9px] font-medium ${isActive ? 'text-white' : 'text-gray-400'}`}>{item.label}</span>
-                                                {item.badge > 0 && (
-                                                    <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                                                )}
-                                            </button>
-                                            
-                                            {/* Connect Submenu */}
-                                            {isConnect && connectSubmenu && (
-                                                <div className="absolute top-full mt-2 left-0 z-20 bg-[#0A192F]/95 backdrop-blur-xl border border-white/10 rounded-lg p-2 space-y-1 min-w-[140px]">
-                                                    <button
-                                                        onClick={() => handleAction("messages")}
-                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
-                                                    >
-                                                        <Icons.ChatBubble className="w-3 h-3" />
-                                                        Messages
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAction("prayer-requests")}
-                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
-                                                    >
-                                                        <Icons.HandRaised className="w-3 h-3" />
-                                                        Prayer Requests
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAction("testimonies")}
-                                                        className="w-full text-left px-2 py-1.5 text-[10px] text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"
-                                                    >
-                                                        <Icons.Star className="w-3 h-3" />
-                                                        Testimonies
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-</div>
-
-                             {/* 4. DYNAMIC ONBOARDING & NEXT STEPS */}
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                 <HomegroupSection
+                            {/* 3. DYNAMIC ONBOARDING & NEXT STEPS */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <HomegroupSection
                                     user={user}
                                     onViewHomegroup={() => handleAction("homegroups")}
                                     onRequestLeave={onRequestLeave}
@@ -1182,7 +1111,7 @@ export default function MembersPortal({ onLogout }) {
                                 />
                             </div>
 
-                            {/* 5. SPIRITUAL PROGRESS DASHBOARD */}
+                            {/* 4. SPIRITUAL PROGRESS DASHBOARD */}
                             <div className="gradient-border p-4">
                                 <h3 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
                                     <Icons.ChartBar className="w-4 h-4 text-[#d4af37]" />
@@ -1207,7 +1136,7 @@ export default function MembersPortal({ onLogout }) {
                                     </div>
                                 </div>
                             </div>
-                             {/* 6. ENHANCED SPIRITUAL CALENDAR */}
+                             {/* 4. ENHANCED SPIRITUAL CALENDAR */}
                             <div>
                                 <div className="flex items-center justify-between mb-2.5">
                                     <h3 className="text-xs font-bold text-white">
@@ -1237,7 +1166,7 @@ export default function MembersPortal({ onLogout }) {
                                 </div>
                             </div>
 
-                            {/* 7. FOUNDATION & GROWTH CHECKLIST */}
+                            {/* 5. FOUNDATION & GROWTH CHECKLIST */}
                             <div className="gradient-border p-4">
                                 <h3 className="text-xs font-bold text-white mb-2 flex items-center gap-2">
                                     <Icons.BookOpen className="w-4 h-4 text-[#d4af37]" />
