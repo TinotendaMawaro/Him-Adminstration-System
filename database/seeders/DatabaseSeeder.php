@@ -19,6 +19,7 @@ use Database\Seeders\AdditionalMembersSeeder;
 use Database\Seeders\PartnershipPackageSeeder;
 use Database\Seeders\PartnerRewardSeeder;
 use Database\Seeders\PartnerBenefitCatalogSeeder;
+use Database\Seeders\PrayerCenterCategorySeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -207,6 +208,7 @@ class DatabaseSeeder extends Seeder
             PartnershipPackageSeeder::class,
             PartnerRewardSeeder::class,
             PartnerBenefitCatalogSeeder::class,
+            PrayerCenterCategorySeeder::class,
         ]);
     }
 }

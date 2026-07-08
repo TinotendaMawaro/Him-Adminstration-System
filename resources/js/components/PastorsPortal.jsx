@@ -24,6 +24,7 @@ import NotificationBell from "./notifications/NotificationBell.jsx";
 import ProfileSection from "./dashboard/sections/ProfileSection.jsx";
 import DashboardStats from "./dashboard/DashboardStats.jsx";
 import PastorMembershipCard from "./PastorMembershipCard.jsx";
+import PrayerCenter from "./prayer-center/PrayerCenter.jsx";
 
 // ============================================================================
 // PREMIUM FLOATING PARTICLES BACKGROUND COMPONENT
@@ -811,7 +812,7 @@ const Header = ({ title, user, onLogout, onOpenProfile, onNavigate }) => {
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <NotificationBell userId={user?.id} />
+                <NotificationBell userId={user?.id} onNavigate={onNavigate} />
                 <div className="relative">
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -3177,6 +3178,8 @@ export default function PastorsPortal({ onLogout }) {
                 return <MembersTab />;
             case "homegroups":
                 return <HomeGroupsTab />;
+            case "prayer-center":
+                return <PrayerCenter />;
             case "departments":
                 return <DepartmentsTab />;
             case "events":
@@ -3195,7 +3198,6 @@ export default function PastorsPortal({ onLogout }) {
             case "partners":
                 return <PartnersPage />;
             case "more":
-                // Toggle the more menu - but this is handled in sidebar, so default to dashboard
                 return <DashboardContent user={user} onNavigate={setActiveItem} />;
             default:
                 return (
@@ -3210,6 +3212,7 @@ export default function PastorsPortal({ onLogout }) {
             profile: "My Profile",
             members: "Members",
             homegroups: "Home Groups",
+            "prayer-center": "Prayer Center",
             departments: "Departments",
             events: "Events",
             partnership: "Partnership",

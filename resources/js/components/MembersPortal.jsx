@@ -9,6 +9,7 @@ import Drawer from "./Drawer.jsx";
 import EventsTab from "./dashboard/EventsTab.jsx";
 import LeaveReasonModal from "./LeaveReasonModal.jsx";
 import MembershipCard from "./MembershipCard.jsx";
+import PrayerCenter from "./prayer-center/PrayerCenter.jsx";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND
@@ -287,7 +288,7 @@ const Icons = {
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.457 5 8 5c-2.21 0-4 1.343-4 3 0 1.861 1.528 3.407 3.378 3.833v1.357c0 .416-.247.77-.564.939C5.447 15.937 4.5 16.793 4.5 18c0 1.104.896 2 2 2h12c1.104 0 2-.896 2-2 0-1.207-.947-2.063-1.936-2.339-.317-.169-.564-.523-.564-.939v-1.357C16.472 11.761 18 10.215 18 9c0-1.657-1.79-C18-4 4-4s4 .903 4 3 0 3-1.79 3 4 4c0-1.657-1.794-3-4-3z"
+                d="M12 6.253v13m0-13C10.832 5.477 9.457 5 8 5c-2.21 0-4 1.343-4 3 0 1.861 1.528 3.407 3.378 3.833v1.357c0 .416-.247.77-.564.939C5.447 15.937 4.5 16.793 4.5 18c0 1.104.896 2 2 2h12c1.104 0 2-.896 2-2 0-1.207-.947-2.063-1.936-2.339-.317-.169-.564-.523-.564-.939v-1.357C16.472 11.761 18 10.215 18 9c0-1.657-1.79-3-4-3s4 .903 4 3 0 3-1.79 3 4 4c0-1.657-1.794-3-4-3z"
             />
         </svg>
     ),
@@ -333,6 +334,21 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v7.5A2.25 2.25 0 008.25 13.5h2.25m0-9V3.75A2.25 2.25 0 0112 6v1.5m0-1.5h2.25A2.25 2.25 0 0117 7.5v7.5a2.25 2.25 0 002.25 2.25h2.25"
+            />
+        </svg>
+    ),
+    HandsPraying: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 18.5v-9m0 0l-3.5 3.5m3.5-3.5l3.5 3.5M6.5 13.5l-2 2m14-2l2 2M6.5 10.5l-2-2m14 2l2-2M4.5 9.75v9.75A2.25 2.25 0 006.75 21.75h10.5a2.25 2.25 0 002.25-2.25V9.75"
             />
         </svg>
     ),
@@ -828,6 +844,18 @@ export default function MembersPortal({ onLogout }) {
                                     <span>Connect</span>
                                 </button>
                                 <button
+                                    onClick={() => handleTabChange("prayer-center")}
+                                    className={
+                                        "nav-btn " +
+                                        (activeTab === "prayer-center"
+                                            ? "nav-active"
+                                            : "nav-inactive")
+                                    }
+                                >
+                                    <Icons.HandsPraying className="nav-icon" />{" "}
+                                    <span>Prayer</span>
+                                </button>
+                                <button
                                     onClick={() => handleTabChange("events")}
                                     className={
                                         "nav-btn " +
@@ -948,18 +976,24 @@ export default function MembersPortal({ onLogout }) {
                                 label: "Zone",
                                 gradient: "from-[#d4af37] to-amber-600",
                             },
-                            {
-                                id: "homegroup",
-                                icon: Icons.Users,
-                                label: "Connect",
-                                gradient: "from-emerald-400 to-emerald-600",
-                            },
-                            {
-                                id: "events",
-                                icon: Icons.Calendar,
-                                label: "Events",
-                                gradient: "from-violet-400 to-violet-600",
-                            },
+                                {
+                                    id: "homegroup",
+                                    icon: Icons.Users,
+                                    label: "Connect",
+                                    gradient: "from-emerald-400 to-emerald-600",
+                                },
+                                {
+                                    id: "prayer-center",
+                                    icon: Icons.HandsPraying,
+                                    label: "Prayer",
+                                    gradient: "from-[#D4AF37] to-amber-600",
+                                },
+                                {
+                                    id: "events",
+                                    icon: Icons.Calendar,
+                                    label: "Events",
+                                    gradient: "from-violet-400 to-violet-600",
+                                },
                             {
                                 id: "reports",
                                 icon: Icons.DocumentText,
@@ -1508,43 +1542,48 @@ export default function MembersPortal({ onLogout }) {
                           </div>
                       )}
 
-                      {/* PROFILE TAB */}
-                      {activeTab === "profile" && (
-                          <div className="tab-panel space-y-4">
-                              <div className="gradient-border card-hover p-4">
-                                  <div className="flex items-center gap-3 mb-4">
-                                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                                          <Icons.User className="w-5 h-5 text-white" />
-                                      </div>
-                                      <div>
-                                          <h3 className="text-sm font-bold text-white">My Profile</h3>
-                                          <p className="text-[10px] text-gray-400">{user?.email}</p>
-                                      </div>
-                                  </div>
-                                  <div className="space-y-2 text-[10px]">
-                                      <p className="flex justify-between py-1.5 border-b border-white/10">
-                                          <span className="text-gray-400">Name</span>
-                                          <span className="text-white font-medium">{user?.name || "—"}</span>
-                                      </p>
-                                      <p className="flex justify-between py-1.5 border-b border-white/10">
-                                          <span className="text-gray-400">Phone</span>
-                                          <span className="text-white font-medium">{user?.phone || "—"}</span>
-                                      </p>
-                                      <p className="flex justify-between py-1.5 border-b border-white/10">
-                                          <span className="text-gray-400">Member Since</span>
-                                          <span className="text-white font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
-                                      </p>
-                                  </div>
-                                  <button
-                                      onClick={() => handleAction("edit-profile")}
-                                      className="w-full mt-4 btn btn-lg bg-white/5 text-white hover:bg-white/10 transition-all"
-                                  >
-                                      Edit Profile
-                                  </button>
-                              </div>
-                          </div>
-                      )}
-              </div>
+                       {/* PROFILE TAB */}
+                       {activeTab === "profile" && (
+                           <div className="tab-panel space-y-4">
+                               <div className="gradient-border card-hover p-4">
+                                   <div className="flex items-center gap-3 mb-4">
+                                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+                                           <Icons.User className="w-5 h-5 text-white" />
+                                       </div>
+                                       <div>
+                                           <h3 className="text-sm font-bold text-white">My Profile</h3>
+                                           <p className="text-[10px] text-gray-400">{user?.email}</p>
+                                       </div>
+                                   </div>
+                                   <div className="space-y-2 text-[10px]">
+                                       <p className="flex justify-between py-1.5 border-b border-white/10">
+                                           <span className="text-gray-400">Name</span>
+                                           <span className="text-white font-medium">{user?.name || "—"}</span>
+                                       </p>
+                                       <p className="flex justify-between py-1.5 border-b border-white/10">
+                                           <span className="text-gray-400">Phone</span>
+                                           <span className="text-white font-medium">{user?.phone || "—"}</span>
+                                       </p>
+                                       <p className="flex justify-between py-1.5 border-b border-white/10">
+                                           <span className="text-gray-400">Member Since</span>
+                                           <span className="text-white font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
+                                       </p>
+                                   </div>
+                                   <button
+                                       onClick={() => handleAction("edit-profile")}
+                                       className="w-full mt-4 btn btn-lg bg-white/5 text-white hover:bg-white/10 transition-all"
+                                   >
+                                       Edit Profile
+                                   </button>
+                               </div>
+                           </div>
+                       )}
+
+                       {/* PRAYER CENTER TAB */}
+                       {activeTab === "prayer-center" && (
+                           <PrayerCenter />
+                       )}
+               </div>
              </div>
              
 {/* Homegroup Selector Drawer */}

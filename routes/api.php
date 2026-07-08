@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\PartnerController;
 use App\Http\Controllers\Api\PartnershipPackageController;
 use App\Http\Controllers\Api\PastorController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PrayerCenterController;
 use App\Http\Controllers\Api\RegisterController;
 use App\Http\Controllers\Api\WeeklyReportController;
 use App\Http\Controllers\ProfilePictureController;
@@ -218,6 +219,22 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/messages/{id}', [MessageController::class, 'show']);
     Route::post('/messages', [MessageController::class, 'store']);
     Route::delete('/messages/{id}', [MessageController::class, 'destroy']);
+
+    // ── Prayer Center ──────────────────────────────────────────────────────────
+    Route::prefix('prayer-center')->group(function () {
+        Route::get('/categories', [PrayerCenterController::class, 'categories']);
+        Route::get('/messages', [PrayerCenterController::class, 'index']);
+        Route::post('/messages', [PrayerCenterController::class, 'store']);
+        Route::get('/messages/{id}', [PrayerCenterController::class, 'show']);
+        Route::post('/messages/{id}/reply', [PrayerCenterController::class, 'reply']);
+        Route::post('/messages/{id}/status', [PrayerCenterController::class, 'updateStatus']);
+        Route::get('/notifications', [PrayerCenterController::class, 'notifications']);
+
+        Route::middleware('role:pastor')->group(function () {
+            Route::get('/messages/flagged', [PrayerCenterController::class, 'flagged']);
+            Route::get('/stats', [PrayerCenterController::class, 'stats']);
+        });
+    });
 
     // ── Department Requests ────────────────────────────────────────────────────
     Route::get('/department-request/my', [DepartmentRequestController::class, 'myRequest']);

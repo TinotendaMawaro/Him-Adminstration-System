@@ -130,12 +130,28 @@ const Icons = {
             />
         </svg>
     ),
+    HandsPraying: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 18.5v-9m0 0l-3.5 3.5m3.5-3.5l3.5 3.5M6.5 13.5l-2 2m14-2l2 2M6.5 10.5l-2-2m14 2l2-2M4.5 9.75v9.75A2.25 2.25 0 006.75 21.75h10.5a2.25 2.25 0 002.25-2.25V9.75"
+            />
+        </svg>
+    ),
 };
 
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Icons.Dashboard },
     { id: "members", label: "Members", icon: Icons.Users },
     { id: "homegroups", label: "Home Groups", icon: Icons.HomeGroup },
+    { id: "prayer-center", label: "Prayer Center", icon: Icons.HandsPraying },
     { id: "departments", label: "Departments", icon: Icons.BuildingOffice },
     { id: "partnership", label: "Partnership", icon: Icons.HandCoins },
     { id: "reports", label: "Reports", icon: Icons.DocumentChart },

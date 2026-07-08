@@ -41,7 +41,7 @@ const formatTime = (dateString) => {
 // NOTIFICATION DROPDOWN - Glass Panel
 // ============================================================================
 
-const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onClose, onOpenDrawer }) => {
+const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onClose, onOpenDrawer, onNavigate }) => {
     const dropdownRef = useRef(null);
     
     useEffect(() => {
@@ -58,6 +58,16 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onCl
     const readNotifications = notifications.filter(n => n.is_read);
     
     const displayNotifications = unreadNotifications.length > 0 ? unreadNotifications : readNotifications.slice(0, 5);
+
+    const handleNotificationClick = (notification) => {
+        if (!notification.is_read) {
+            onMarkAsRead(notification.id);
+        }
+        if (notification.category === 'prayer_center' && onNavigate) {
+            onClose();
+            onNavigate('prayer-center');
+        }
+    };
 
     return (
         <>
@@ -111,7 +121,7 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onCl
                             return (
                                 <div
                                     key={notification.id}
-                                    onClick={() => !notification.is_read && onMarkAsRead(notification.id)}
+                                    onClick={() => handleNotificationClick(notification)}
                                     className={`group flex items-start gap-3 px-5 py-4 border-b border-gray-50/50 hover:bg-gray-50/50 cursor-pointer transition-all duration-200 ${
                                         !notification.is_read ? 'bg-sky-50/30' : ''
                                     }`}
@@ -175,7 +185,7 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onCl
 // NOTIFICATION DRAWER - Slide-in Panel
 // ============================================================================
 
-const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClose }) => {
+const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClose, onNavigate }) => {
     const drawerRef = useRef(null);
     
     useEffect(() => {
@@ -208,6 +218,16 @@ const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClos
     }, {});
 
     const unreadCount = notifications.filter(n => !n.is_read).length;
+
+    const handleNotificationClick = (notification) => {
+        if (!notification.is_read) {
+            onMarkAsRead(notification.id);
+        }
+        if (notification.category === 'prayer_center' && onNavigate) {
+            onClose();
+            onNavigate('prayer-center');
+        }
+    };
 
     return (
         <>
@@ -278,7 +298,7 @@ const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClos
                                         return (
                                             <div
                                                 key={notification.id}
-                                                onClick={() => !notification.is_read && onMarkAsRead(notification.id)}
+                                                onClick={() => handleNotificationClick(notification)}
                                                 className={`group flex items-start gap-4 px-6 py-4 cursor-pointer transition-all duration-200 hover:bg-white/60 ${
                                                     !notification.is_read ? 'bg-sky-50/30' : ''
                                                 }`}
@@ -338,7 +358,7 @@ const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClos
 // NOTIFICATION BELL - Main Component with API Integration
 // ============================================================================
 
-export default function NotificationBell({ userId }) {
+export default function NotificationBell({ userId, onNavigate }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
@@ -474,6 +494,7 @@ export default function NotificationBell({ userId }) {
                             setIsOpen(false);
                             setIsDrawerOpen(true);
                         }}
+                        onNavigate={onNavigate}
                     />
                 )}
             </div>
@@ -485,6 +506,7 @@ export default function NotificationBell({ userId }) {
                     onMarkAsRead={handleMarkAsRead}
                     onMarkAllRead={handleMarkAllRead}
                     onClose={() => setIsDrawerOpen(false)}
+                    onNavigate={onNavigate}
                 />
             )}
             
