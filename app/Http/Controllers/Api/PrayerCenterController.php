@@ -297,23 +297,51 @@ class PrayerCenterController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $user   = $request->user();
-        $zoneId = $user->zone_id;
+        try {
+            $user   = $request->user();
+            $zoneId = $user->zone_id;
 
-        $stats = [
-            'total_messages' => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-            'pending'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Pending)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-            'flagged'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Flagged)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-            'in_progress'    => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::InProgress)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-            'resolved'       => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Resolved)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-            'by_category'    => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
-                ->selectRaw('category_id, count(*) as count')
-                ->groupBy('category_id')
-                ->with('category:id,name,label,color')
-                ->get(),
-        ];
+            if (empty($zoneId)) {
+                return response()->json([
+                    'success' => true,
+                    'data'    => [
+                        'total_messages' => 0,
+                        'pending'        => 0,
+                        'flagged'        => 0,
+                        'in_progress'    => 0,
+                        'resolved'       => 0,
+                        'by_category'    => [],
+                    ],
+                ]);
+            }
 
-        return response()->json(['success' => true, 'data' => $stats]);
+            $stats = [
+                'total_messages' => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
+                'pending'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Pending)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
+                'flagged'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Flagged)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
+                'in_progress'    => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::InProgress)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
+                'resolved'       => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Resolved)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
+                'by_category'    => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
+                    ->selectRaw('category_id, count(*) as count')
+                    ->groupBy('category_id')
+                    ->with('category:id,name,label,color')
+                    ->get(),
+            ];
+
+            return response()->json(['success' => true, 'data' => $stats]);
+        } catch (\Throwable $e) {
+            \Log::error('PrayerCenter stats error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $request->user()?->id,
+                'zone_id' => $request->user()?->zone_id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load prayer center stats.',
+                'debug'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     private function notifyPastors(PrayerCenterMessage $message, User $submitter): void

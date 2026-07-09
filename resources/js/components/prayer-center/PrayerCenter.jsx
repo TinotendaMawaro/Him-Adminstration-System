@@ -54,12 +54,12 @@ export { Icons };
 export default function PrayerCenter() {
     const { user } = useUser();
     const queryClient = useQueryClient();
-    const [activeView, setActiveView] = useState("list");
-    const [showForm, setShowForm] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterCategory, setFilterCategory] = useState("all");
+    const [successMessage, setSuccessMessage] = useState("");
     const isPastor = user?.role === "pastor";
+    const [memberTab, setMemberTab] = useState("my-messages");
 
     const { data: categoriesData } = useQuery({
         queryKey: ["prayer-center-categories"],
@@ -102,15 +102,13 @@ export default function PrayerCenter() {
         enabled: isPastor,
     });
 
-    const messages = messagesData?.data || [];
+    const messages = messagesData || [];
     const categories = categoriesData || [];
     const unreadCount = messages.filter((m) => m.unread_replies > 0).length;
-    const [successMessage, setSuccessMessage] = useState("");
 
     const handleMessageSubmit = () => {
-        setShowForm(false);
         refetch();
-        setActiveView("list");
+        setMemberTab("my-messages");
         setSuccessMessage("Your message has been submitted successfully. Your pastor will respond within 24-48 hours.");
         setTimeout(() => setSuccessMessage(""), 5000);
     };
@@ -169,9 +167,17 @@ export default function PrayerCenter() {
                             {isPastor ? "Manage prayer requests, counseling, and testimonies" : "Share your prayer requests, seek counsel, or share testimonies"}
                         </p>
                     </div>
-                    {!isPastor && (
+                    {!isPastor && memberTab === "new-message" && (
                         <button
-                            onClick={() => setShowForm(true)}
+                            onClick={() => setMemberTab("my-messages")}
+                            className="prayer-btn prayer-btn-ghost"
+                        >
+                            Back to My Messages
+                        </button>
+                    )}
+                    {!isPastor && memberTab === "my-messages" && (
+                        <button
+                            onClick={() => setMemberTab("new-message")}
                             className="prayer-btn prayer-btn-gold"
                         >
                             <Icons.Plus className="w-4 h-4" />
@@ -190,122 +196,173 @@ export default function PrayerCenter() {
                     )}
                 </div>
 
-                {/* PASTOR STATS */}
-                {isPastor && statsData && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                        {[
-                            { label: "Total", value: statsData.total_messages, color: "bg-sky-500" },
-                            { label: "Pending", value: statsData.pending, color: "bg-amber-500" },
-                            { label: "Flagged", value: statsData.flagged, color: "bg-red-500" },
-                            { label: "In Progress", value: statsData.in_progress, color: "bg-blue-500" },
-                            { label: "Resolved", value: statsData.resolved, color: "bg-emerald-500" },
-                        ].map((stat) => (
-                            <div key={stat.label} className="prayer-card p-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className={`w-2 h-2 rounded-full ${stat.color}`} />
-                                    <span className="text-xs text-gray-400 font-medium">{stat.label}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-white">{stat.value}</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* ERROR BANNERS */}
-                {messagesError && (
-                    <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                        <p className="text-red-400 text-sm">
-                            Failed to load messages: {messagesError.message || 'Unknown error'}
-                        </p>
+                {/* MEMBER SUB-TABS */}
+                {!isPastor && (
+                    <div className="flex items-center gap-1 mb-6 bg-white/5 p-1 rounded-xl w-fit">
                         <button
-                            onClick={() => refetch()}
-                            className="mt-2 text-xs text-red-300 hover:text-red-200 underline"
+                            onClick={() => setMemberTab("my-messages")}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                memberTab === "my-messages"
+                                    ? "bg-[#D4AF37] text-white shadow-lg"
+                                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                            }`}
                         >
-                            Retry
+                            My Messages
+                        </button>
+                        <button
+                            onClick={() => setMemberTab("new-message")}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                memberTab === "new-message"
+                                    ? "bg-[#D4AF37] text-white shadow-lg"
+                                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                            }`}
+                        >
+                            New Message
                         </button>
                     </div>
                 )}
-                {statsError && (
-                    <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                        <p className="text-amber-300 text-sm">
-                            Failed to load stats: {statsError.message || 'Unknown error'}
-                        </p>
-                    </div>
-                )}
-                {notificationsError && (
-                    <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                        <p className="text-amber-300 text-sm">
-                            Failed to load notifications: {notificationsError.message || 'Unknown error'}
-                        </p>
-                    </div>
-                )}
 
-                {/* FILTERS */}
-                <div className="flex flex-wrap items-center gap-3 mb-6">
-                    <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-400 font-medium">Status:</label>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="prayer-input text-sm py-1.5 w-auto"
-                        >
-                            <option value="all">All</option>
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="flagged">Flagged</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="testimony_approved">Approved for Sharing</option>
-                        </select>
-                    </div>
-                    {isPastor && (
-                        <div className="flex items-center gap-2">
-                            <label className="text-xs text-gray-400 font-medium">Category:</label>
-                            <select
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                                className="prayer-input text-sm py-1.5 w-auto"
-                            >
-                                <option value="all">All Categories</option>
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                                ))}
-                            </select>
+                {/* MEMBER: NEW MESSAGE FORM */}
+                {!isPastor && memberTab === "new-message" && (
+                    <div className="tab-fade">
+                        <div className="bg-[#0A192F] border border-white/10 rounded-2xl shadow-2xl p-6">
+                            <h2 className="text-xl font-bold text-white mb-6">New Message</h2>
+                            <SubmitMessageForm
+                                categories={categories}
+                                onSuccess={handleMessageSubmit}
+                                onCancel={() => setMemberTab("my-messages")}
+                            />
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                {/* MESSAGES LIST */}
-                <MessageHistory
-                    messages={messages}
-                    categories={categories}
-                    isPastor={isPastor}
-                    onSelectMessage={setSelectedMessage}
-                    onStatusUpdate={handleStatusUpdate}
-                />
-
-                {/* SUBMIT FORM MODAL */}
-                {showForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="bg-[#0A192F] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold text-white">New Message</h2>
-                                    <button
-                                        onClick={() => setShowForm(false)}
-                                        className="p-1 rounded-lg hover:bg-white/10 text-gray-400"
-                                    >
-                                        <Icons.XMark className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                <SubmitMessageForm
-                                    categories={categories}
-                                    onSuccess={handleMessageSubmit}
-                                    onCancel={() => setShowForm(false)}
-                                />
+                {/* MEMBER: MY MESSAGES */}
+                {!isPastor && memberTab === "my-messages" && (
+                    <div className="tab-fade">
+                        {/* FILTERS */}
+                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-400 font-medium">Status:</label>
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="prayer-input text-sm py-1.5 w-auto"
+                                >
+                                    <option value="all">All</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="testimony_approved">Approved for Sharing</option>
+                                </select>
                             </div>
                         </div>
+
+                        <MessageHistory
+                            messages={messages}
+                            categories={categories}
+                            isPastor={isPastor}
+                            onSelectMessage={setSelectedMessage}
+                            onStatusUpdate={handleStatusUpdate}
+                        />
                     </div>
+                )}
+
+                {/* PASTOR VIEW */}
+                {isPastor && (
+                    <>
+                        {/* PASTOR STATS */}
+                        {statsData && (
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                                {[
+                                    { label: "Total", value: statsData.total_messages, color: "bg-sky-500" },
+                                    { label: "Pending", value: statsData.pending, color: "bg-amber-500" },
+                                    { label: "Flagged", value: statsData.flagged, color: "bg-red-500" },
+                                    { label: "In Progress", value: statsData.in_progress, color: "bg-blue-500" },
+                                    { label: "Resolved", value: statsData.resolved, color: "bg-emerald-500" },
+                                ].map((stat) => (
+                                    <div key={stat.label} className="prayer-card p-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className={`w-2 h-2 rounded-full ${stat.color}`} />
+                                            <span className="text-xs text-gray-400 font-medium">{stat.label}</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-white">{stat.value}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ERROR BANNERS */}
+                        {messagesError && (
+                            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                                <p className="text-red-400 text-sm">
+                                    Failed to load messages: {messagesError.message || 'Unknown error'}
+                                </p>
+                                <button
+                                    onClick={() => refetch()}
+                                    className="mt-2 text-xs text-red-300 hover:text-red-200 underline"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+                        {statsError && (
+                            <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                                <p className="text-amber-300 text-sm">
+                                    Failed to load stats: {statsError.message || 'Unknown error'}
+                                </p>
+                            </div>
+                        )}
+                        {notificationsError && (
+                            <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                                <p className="text-amber-300 text-sm">
+                                    Failed to load notifications: {notificationsError.message || 'Unknown error'}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* FILTERS */}
+                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-400 font-medium">Status:</label>
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="prayer-input text-sm py-1.5 w-auto"
+                                >
+                                    <option value="all">All</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="flagged">Flagged</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="testimony_approved">Approved for Sharing</option>
+                                </select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-400 font-medium">Category:</label>
+                                <select
+                                    value={filterCategory}
+                                    onChange={(e) => setFilterCategory(e.target.value)}
+                                    className="prayer-input text-sm py-1.5 w-auto"
+                                >
+                                    <option value="all">All Categories</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* MESSAGES LIST */}
+                        <MessageHistory
+                            messages={messages}
+                            categories={categories}
+                            isPastor={isPastor}
+                            onSelectMessage={setSelectedMessage}
+                            onStatusUpdate={handleStatusUpdate}
+                        />
+                    </>
                 )}
 
                 {/* MESSAGE DETAIL MODAL */}

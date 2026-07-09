@@ -108,18 +108,31 @@ class DatabaseSeeder extends Seeder
         );
 
         // ── Pastor (code login) ───────────────────────────────────────────────
-//        $pastorUser = User::updateOrCreate(
-//            ['email' => 'pastor@heartfelt.church'],
-//            [
-//                'name'           => 'Pastor Cee',
-//                'password'       => Hash::make('password'),
-//                'role'           => 'pastor',
-//                'unique_code'    => 'R0101P01',
-//                'is_active'      => true,
-//                'terms_accepted' => true,
-//                'completed_tour' => true,
-//            ]
-//        );
+        $pastorUser = User::updateOrCreate(
+            ['unique_code' => 'R0101P01'],
+            [
+                'email'           => 'pastor@heartfelt.church',
+                'name'           => 'Pastor Cee',
+                'password'       => Hash::make('password'),
+                'role'           => 'pastor',
+                'zone_id'        => DB::table('zones')->where('code', 'R0101')->first()?->id,
+                'is_active'      => true,
+                'terms_accepted' => true,
+                'completed_tour' => true,
+            ]
+        );
+
+        \App\Models\Pastor::updateOrCreate(
+            ['user_id' => $pastorUser->id],
+            [
+                'name'             => 'Cee',
+                'surname'          => 'Vutabwashe',
+                'code'             => 'R0101P01',
+                'title'            => 'Pastor',
+                'is_zone_pastor'   => true,
+                'is_regional_leader' => true,
+            ]
+        );
 //
 //        \App\Models\Pastor::updateOrCreate(
 //            ['user_id' => $pastorUser->id],

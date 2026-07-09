@@ -48,7 +48,7 @@ class AdditionalMembersSeeder extends Seeder
                     'name'              => "$name $surname",
                     'email'             => $email,
                     'phone'             => $phone,
-                    'password'          => Hash::make('password'),
+                    'password'          => Hash::make($email === 'robin@heartfeltonline.org' ? 'money1' : 'password'),
                     'role'              => 'member',
                     'is_active'         => true,
                     'terms_accepted'    => true,

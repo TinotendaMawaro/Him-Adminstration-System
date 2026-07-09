@@ -145,11 +145,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
 
         try {
             if (mode === "code") {
-                const formData = new URLSearchParams();
-                formData.append('unique_code', code.trim());
-                const { data } = await api.post("/login/code", formData, {
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
+                const { data } = await api.post("/login/code", { unique_code: code.trim() });
                 if (data.success) {
                     handleLoginResponse(data);
                 } else {
@@ -157,11 +153,9 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                 }
 
             } else if (mode === "email") {
-                const formData = new URLSearchParams();
-                formData.append('email', emailLogin.email);
-                formData.append('password', emailLogin.password);
-                const { data } = await api.post("/login", formData, {
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                const { data } = await api.post("/login", { 
+                    email: emailLogin.email, 
+                    password: emailLogin.password 
                 });
                 if (data.success) {
                     handleLoginResponse(data);
@@ -170,16 +164,14 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                 }
 
             } else if (mode === "register") {
-                const payload = new URLSearchParams();
-                payload.append('name', `${formData.firstName} ${formData.lastName}`);
-                payload.append('email', formData.email);
-                payload.append('password', formData.password);
-                payload.append('password_confirmation', formData.confirmPassword);
-                payload.append('phone', formData.phoneNumber);
-                payload.append('address', formData.physicalAddress);
-                payload.append('zone_code', formData.zoneCode);
-                const { data } = await api.post("/register", payload, {
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                const { data } = await api.post("/register", {
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    email: formData.email,
+                    password: formData.password,
+                    password_confirmation: formData.confirmPassword,
+                    phone: formData.phoneNumber,
+                    address: formData.physicalAddress,
+                    zone_code: formData.zoneCode,
                 });
 
                 if (data.success) {
