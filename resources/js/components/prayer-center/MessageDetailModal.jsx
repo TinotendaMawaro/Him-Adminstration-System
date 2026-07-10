@@ -94,44 +94,50 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
     const replies = localMessage?.replies || [];
 
     const statusColors = {
-        pending: "bg-amber-500/20 text-amber-300",
-        approved: "bg-emerald-500/20 text-emerald-300",
-        flagged: "bg-red-500/20 text-red-300",
-        in_progress: "bg-sky-500/20 text-sky-300",
-        resolved: "bg-emerald-500/20 text-emerald-300",
-        testimony_approved: "bg-purple-500/20 text-purple-300",
+        pending: "bg-amber-100 text-amber-800 border border-amber-200",
+        approved: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+        flagged: "bg-red-100 text-red-800 border border-red-200",
+        in_progress: "bg-sky-100 text-sky-800 border border-sky-200",
+        resolved: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+        testimony_approved: "bg-purple-100 text-purple-800 border border-purple-200",
+    };
+
+    const replyBgClass = (reply) => {
+        if (reply.is_internal) return "bg-amber-50 border border-amber-200";
+        if (reply.user_id === message.user_id) return "bg-sky-50 border border-sky-200";
+        return "bg-white border border-gray-200";
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-[#0A192F] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                 {/* HEADER */}
-                <div className="p-6 border-b border-white/10">
+                <div className="p-6 border-b border-gray-200">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h2 className="text-lg font-bold text-white truncate">{localMessage?.subject}</h2>
-                                <span className={`status-badge ${statusColors[localMessage?.status] || "bg-gray-500/20 text-gray-300"}`}>
+                                <h2 className="text-lg font-bold text-gray-900 truncate">{localMessage?.subject}</h2>
+                                <span className={`status-badge ${statusColors[localMessage?.status] || "bg-gray-100 text-gray-800 border border-gray-200"}`}>
                                     {localMessage?.status_label}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                            <div className="flex items-center gap-3 text-xs text-gray-600 flex-wrap">
                                 <span className="flex items-center gap-1">
                                     <Icons.User className="w-3 h-3" />
                                     {localMessage?.user?.name}
                                 </span>
-                                <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                <span className="w-1 h-1 rounded-full bg-gray-300" />
                                 <span className="flex items-center gap-1">
                                     <Icons.Clock className="w-3 h-3" />
                                     {localMessage?.created_at}
                                 </span>
-                                <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                <span className="w-1 h-1 rounded-full bg-gray-300" />
                                 <span>{cat?.label}</span>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 flex-shrink-0"
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 flex-shrink-0"
                         >
                             <Icons.XMark className="w-5 h-5" />
                         </button>
@@ -139,8 +145,8 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
 
                     {/* PASTOR CONTROLS */}
                     {isPastor && (
-                        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-white/5">
-                            <label className="text-xs text-gray-400">Status:</label>
+                        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <label className="text-xs text-gray-700">Status:</label>
                             <select
                                 value={localMessage?.status || "pending"}
                                 onChange={(e) => {
@@ -157,8 +163,8 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                                 <option value="testimony_approved">Approved for Sharing</option>
                             </select>
                             {localMessage?.moderation_notes && (
-                                <div className="ml-auto p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                                    <p className="text-[10px] text-amber-300 font-mono">{localMessage.moderation_notes}</p>
+                                <div className="ml-auto p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <p className="text-[10px] text-amber-800 font-mono">{localMessage.moderation_notes}</p>
                                 </div>
                             )}
                         </div>
@@ -167,27 +173,21 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
 
                 {/* MESSAGE CONTENT */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <div className="prayer-glass rounded-xl p-5 mb-6">
-                        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{localMessage?.message}</p>
+                    <div className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200">
+                        <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">{localMessage?.message}</p>
                     </div>
 
                     {/* REPLIES */}
                     {replies.length > 0 && (
                         <div className="space-y-3">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                 <Icons.ChatBubble className="w-4 h-4 text-[#D4AF37]" />
                                 Replies ({replies.length})
                             </h3>
                             {replies.map((reply) => (
                                 <div
                                     key={reply.id}
-                                    className={`p-4 rounded-xl ${
-                                        reply.is_internal
-                                            ? "bg-amber-500/5 border border-amber-500/20 ml-8"
-                                            : reply.user_id === message.user_id
-                                            ? "bg-sky-500/5 border border-sky-500/20 mr-8"
-                                            : "bg-white/5 border border-white/10 ml-8"
-                                    }`}
+                                    className={`p-4 rounded-xl ${replyBgClass(reply)}`}
                                 >
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#D4AF37] to-amber-600 flex items-center justify-center">
@@ -195,17 +195,17 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                                                 {(reply.user?.name || "U").charAt(0)}
                                             </span>
                                         </div>
-                                        <span className="text-xs font-semibold text-white">{reply.user?.name}</span>
+                                        <span className="text-xs font-semibold text-gray-900">{reply.user?.name}</span>
                                         <span className="text-[10px] text-gray-500">
                                             {reply.type_label} • {reply.created_at}
                                         </span>
                                         {reply.is_internal && (
-                                            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                            <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                                                 Internal
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-sm text-gray-300 leading-relaxed">{reply.reply}</p>
+                                    <p className="text-sm text-gray-700 leading-relaxed">{reply.reply}</p>
                                 </div>
                             ))}
                         </div>
@@ -213,7 +213,7 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                 </div>
 
                 {/* REPLY FORM */}
-                <div className="p-6 border-t border-white/10">
+                <div className="p-6 border-t border-gray-200">
                     {isPastor && (
                         <div className="flex gap-2 mb-3">
                             {["pastor_reply", "member_followup", "system_note"].map((type) => (
@@ -224,9 +224,9 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                                     className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all border ${
                                         replyType === type
                                             ? type === "system_note"
-                                                ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
-                                                : "bg-[#D4AF37]/20 border-[#D4AF37]/50 text-[#D4AF37]"
-                                            : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20"
+                                                ? "bg-amber-100 border-amber-300 text-amber-800"
+                                                : "bg-amber-50 border-[#D4AF37] text-amber-900"
+                                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                                     }`}
                                 >
                                     {type === "pastor_reply" ? "Reply to Member" :
@@ -241,7 +241,7 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder={isPastor ? "Type your reply..." : "Add a follow-up message..."}
                             rows={2}
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all resize-none"
+                            className="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all resize-none"
                         />
                         <button
                             type="submit"
@@ -258,7 +258,7 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
                         </button>
                     </form>
                     {replyMutation.isError && (
-                        <p className="text-red-400 text-xs mt-2">{replyMutation.error?.message || "Failed to send reply."}</p>
+                        <p className="text-red-600 text-xs mt-2">{replyMutation.error?.message || "Failed to send reply."}</p>
                     )}
                 </div>
             </div>

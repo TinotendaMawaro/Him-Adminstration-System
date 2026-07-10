@@ -315,17 +315,25 @@ class PrayerCenterController extends Controller
                 ]);
             }
 
+            $byCategory = PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
+                ->selectRaw('category_id, count(*) as count')
+                ->groupBy('category_id')
+                ->get()
+                ->map(fn ($item) => [
+                    'category_id' => $item->category_id,
+                    'count'       => $item->count,
+                    'category'    => \App\Models\PrayerCenterCategory::find($item->category_id)?->only(['id', 'name', 'label', 'color']),
+                ])
+                ->filter(fn ($item) => $item['category'] !== null)
+                ->values();
+
             $stats = [
                 'total_messages' => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
                 'pending'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Pending)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
                 'flagged'        => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Flagged)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
                 'in_progress'    => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::InProgress)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
                 'resolved'       => PrayerCenterMessage::where('status', \App\Enums\PrayerMessageStatus::Resolved)->whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))->count(),
-                'by_category'    => PrayerCenterMessage::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
-                    ->selectRaw('category_id, count(*) as count')
-                    ->groupBy('category_id')
-                    ->with('category:id,name,label,color')
-                    ->get(),
+                'by_category'    => $byCategory,
             ];
 
             return response()->json(['success' => true, 'data' => $stats]);

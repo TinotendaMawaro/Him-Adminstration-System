@@ -100,15 +100,15 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
         return (
             <div className="flex items-center justify-center py-12">
                 <Icons.Loader className="w-6 h-6 text-[#D4AF37] animate-spin" />
-                <span className="ml-3 text-sm text-gray-400">Loading message types...</span>
+                <span className="ml-3 text-sm text-gray-600">Loading message types...</span>
             </div>
         );
     }
 
     if (categoriesError) {
         return (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                <p className="text-red-400 text-sm text-center">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-red-700 text-sm text-center">
                     Failed to load message types. Please refresh and try again.
                 </p>
                 <button
@@ -124,8 +124,8 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
 
     if (!categories.length) {
         return (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                <p className="text-amber-300 text-sm text-center">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="text-amber-800 text-sm text-center">
                     No message types available right now. Please contact your pastor.
                 </p>
             </div>
@@ -136,7 +136,7 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
         <form onSubmit={handleSubmit} className="space-y-5">
             {/* CATEGORY SELECTOR */}
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">What would you like to share?</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">What would you like to share?</label>
                 <div className="grid grid-cols-3 gap-3">
                     {categories.map((cat) => {
                         const Icon = getCategoryIcon(cat.name);
@@ -148,8 +148,8 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
                                 onClick={() => setCategoryId(cat.id)}
                                 className={`p-4 rounded-xl border-2 transition-all text-center ${
                                     isSelected
-                                        ? "border-[#D4AF37] bg-[#D4AF37]/10 shadow-lg"
-                                        : "border-white/10 bg-white/5 hover:border-white/20"
+                                        ? "border-[#D4AF37] bg-amber-50 shadow-md"
+                                        : "border-gray-200 bg-white hover:border-gray-300"
                                 }`}
                             >
                                 <div
@@ -158,31 +158,31 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
                                 >
                                     <Icon className="w-5 h-5" style={{ color: cat.color || "#D4AF37" }} />
                                 </div>
-                                <p className="text-xs font-bold text-white">{cat.label}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{cat.description}</p>
+                                <p className="text-xs font-bold text-gray-900">{cat.label}</p>
+                                <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{cat.description}</p>
                             </button>
                         );
                     })}
                 </div>
-                {errors.category_id && <p className="text-red-400 text-xs mt-1.5">{errors.category_id}</p>}
+                {errors.category_id && <p className="text-red-600 text-xs mt-1.5">{errors.category_id}</p>}
             </div>
 
             {/* SUBJECT */}
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Subject</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
                 <input
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Brief summary of your request..."
-                    className={`w-full bg-white/5 border ${errors.subject ? "border-red-500" : "border-white/10"} rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all`}
+                    className={`w-full bg-white border ${errors.subject ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all`}
                 />
-                {errors.subject && <p className="text-red-400 text-xs mt-1">{errors.subject}</p>}
+                {errors.subject && <p className="text-red-600 text-xs mt-1">{errors.subject}</p>}
             </div>
 
             {/* MESSAGE */}
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {selectedCategory?.name === "counseling_request" ? "Tell us what you need counsel with..." :
                      selectedCategory?.name === "testimony" ? "Share your story..." :
                      "Your message"}
@@ -197,17 +197,17 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
                         "Write your message here..."
                     }
                     rows={6}
-                    className={`w-full bg-white/5 border ${errors.message ? "border-red-500" : "border-white/10"} rounded-xl px-4 py-3 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all resize-none`}
+                    className={`w-full bg-white border ${errors.message ? "border-red-500" : "border-gray-300"} rounded-xl px-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all resize-none`}
                 />
                 <div className="flex justify-between mt-1">
-                    {errors.message && <p className="text-red-400 text-xs">{errors.message}</p>}
+                    {errors.message && <p className="text-red-600 text-xs">{errors.message}</p>}
                     <p className="text-xs text-gray-500 ml-auto">{message.length}/5000</p>
                 </div>
             </div>
 
             {/* PRIORITY */}
             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Priority</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
                 <div className="flex gap-2">
                     {["low", "normal", "high", "urgent"].map((p) => (
                         <button
@@ -217,13 +217,13 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
                             className={`flex-1 py-2 rounded-lg text-xs font-semibold capitalize transition-all border ${
                                 priority === p
                                     ? p === "urgent"
-                                        ? "bg-red-500/20 border-red-500/50 text-red-300"
+                                        ? "bg-red-50 border-red-300 text-red-800"
                                         : p === "high"
-                                        ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                                        ? "bg-amber-50 border-amber-300 text-amber-800"
                                         : p === "normal"
-                                        ? "bg-sky-500/20 border-sky-500/50 text-sky-300"
-                                        : "bg-gray-500/20 border-gray-500/50 text-gray-300"
-                                    : "bg-white/5 border-white/10 text-gray-400 hover:border-white/20"
+                                        ? "bg-sky-50 border-sky-300 text-sky-800"
+                                        : "bg-gray-50 border-gray-300 text-gray-800"
+                                    : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                             }`}
                         >
                             {p === "urgent" && <Icons.AlertTriangle className="w-3 h-3 inline mr-1" />}
@@ -262,8 +262,8 @@ export default function SubmitMessageForm({ onSuccess, onCancel }) {
             </div>
 
             {submitMutation.isError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
-                    <p className="text-red-400 text-sm text-center">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-red-700 text-sm text-center">
                         {submitMutation.error?.message || "Failed to submit. Please try again."}
                     </p>
                 </div>

@@ -37,10 +37,11 @@ class CheckRole
         $allowedRoles = is_array($roles) ? $roles : explode(',', $roles);
         $allowedRoles = array_map('trim', $allowedRoles);
 
-        // Check user role
+        // Check user role - handle both enum and string
         $userRole = $user->role ?? $user->getRole();
+        $userRoleValue = $userRole instanceof \App\Enums\UserRole ? $userRole->value : $userRole;
 
-        $hasRole = in_array($userRole, $allowedRoles, true);
+        $hasRole = in_array($userRoleValue, $allowedRoles, true);
 
         // Also allow super-admin
         if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
