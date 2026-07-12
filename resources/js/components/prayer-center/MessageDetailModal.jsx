@@ -35,7 +35,7 @@ const Icons = {
     ),
 };
 
-export default function MessageDetailModal({ message, isPastor, onClose, onReply, onStatusUpdate }) {
+export default function MessageDetailModal({ message, isPastor, onClose, onReply, onStatusUpdate, onView }) {
     const queryClient = useQueryClient();
     const [replyText, setReplyText] = useState("");
     const [replyType, setReplyType] = useState("pastor_reply");
@@ -52,8 +52,11 @@ export default function MessageDetailModal({ message, isPastor, onClose, onReply
     });
 
     useEffect(() => {
-        if (fullMessage) setLocalMessage(fullMessage);
-    }, [fullMessage]);
+        if (fullMessage) {
+            setLocalMessage(fullMessage);
+            onView?.();
+        }
+    }, [fullMessage, onView]);
 
     const replyMutation = useMutation({
         mutationFn: async (data) => {

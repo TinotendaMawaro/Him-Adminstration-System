@@ -60,7 +60,7 @@ function formatTimeAgo(dateString) {
     return date.toLocaleDateString();
 }
 
-export default function MessageHistory({ messages, categories, isPastor, onSelectMessage, onStatusUpdate }) {
+export default function MessageHistory({ messages, categories, isPastor, currentUserId, onSelectMessage, onStatusUpdate }) {
     if (!messages.length) {
         return (
             <div className="text-center py-16">
@@ -83,12 +83,14 @@ export default function MessageHistory({ messages, categories, isPastor, onSelec
                 const status = statusConfig[msg.status] || statusConfig.pending;
                 const priority = priorityConfig[msg.priority] || priorityConfig.normal;
                 const hasUnread = msg.unread_replies > 0;
+                const isUnreadByOwner = currentUserId && msg.user_id === currentUserId && !msg.read_at;
+                const isUnopened = hasUnread || isUnreadByOwner;
 
                 return (
                     <div
                         key={msg.id}
                         onClick={() => onSelectMessage(msg)}
-                        className="message-card cursor-pointer"
+                        className={`message-card cursor-pointer ${isUnopened ? 'message-card-unread' : ''}`}
                     >
                         {/* Mobile Layout */}
                         <div className="md:hidden">

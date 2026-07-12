@@ -262,6 +262,15 @@ export default function PrayerCenter() {
                     transition: all 0.2s ease; 
                     border: 1px solid transparent;
                 }
+                .message-card-unread {
+                    border-left: 4px solid #D4AF37;
+                    background: #FFFBEB;
+                }
+                .message-card-unread:hover {
+                    background: #FEF3C7;
+                    border-color: #FDE68A;
+                    border-left-color: #D4AF37;
+                }
                 .message-row:hover { 
                     background: #FFFBEB;
                     border-color: #FDE68A;
@@ -394,6 +403,7 @@ export default function PrayerCenter() {
                             messages={messages}
                             categories={categories}
                             isPastor={isPastor}
+                            currentUserId={user?.id}
                             onSelectMessage={setSelectedMessage}
                             onStatusUpdate={handleStatusUpdate}
                         />
@@ -499,6 +509,7 @@ export default function PrayerCenter() {
                             messages={messages}
                             categories={categories}
                             isPastor={isPastor}
+                            currentUserId={user?.id}
                             onSelectMessage={setSelectedMessage}
                             onStatusUpdate={handleStatusUpdate}
                         />
@@ -513,6 +524,7 @@ export default function PrayerCenter() {
                         onClose={() => setSelectedMessage(null)}
                         onReply={() => { refetch(); setSelectedMessage(null); handleReplySent(); }}
                         onStatusUpdate={handleStatusUpdate}
+                        onView={refetch}
                     />
                 )}
             </div>

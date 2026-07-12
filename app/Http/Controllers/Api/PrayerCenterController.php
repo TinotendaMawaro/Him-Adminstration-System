@@ -161,6 +161,12 @@ class PrayerCenterController extends Controller
             $message->update(['read_at' => now()]);
         }
 
+        // Mark replies from other users as read when viewing the message
+        $message->replies()
+            ->where('user_id', '!=', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         return response()->json([
             'success' => true,
             'data'    => new PrayerCenterMessageResource($message),
