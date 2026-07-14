@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\PartnerController;
 use App\Http\Controllers\Api\PartnershipPackageController;
 use App\Http\Controllers\Api\PastorController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\PrayerCenterController;
 use App\Http\Controllers\Api\RegisterController;
 use App\Http\Controllers\Api\WeeklyReportController;
@@ -214,6 +215,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/home-groups/{homeGroupId}/reports/{reportId}/submit', [HomeGroupReportController::class, 'submit']);
     Route::post('/home-groups/{homeGroupId}/reports/{reportId}/review', [HomeGroupReportController::class, 'review']);
     Route::delete('/home-groups/{homeGroupId}/reports/{reportId}', [HomeGroupReportController::class, 'destroy']);
+
+    // ── Recommendations ───────────────────────────────────────────────────────
+    Route::get('/recommendations/sermons', [RecommendationController::class, 'sermons']);
+    Route::get('/recommendations/events', [RecommendationController::class, 'events']);
+    Route::get('/recommendations/home-groups', [RecommendationController::class, 'homeGroups']);
+    Route::get('/recommendations/nearby-home-groups', [RecommendationController::class, 'nearbyHomeGroups']);
 
     // ── Reports ────────────────────────────────────────────────────────────────
     Route::get('/reports/history', [WeeklyReportController::class, 'history']);

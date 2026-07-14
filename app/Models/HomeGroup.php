@@ -18,6 +18,7 @@ class HomeGroup extends Model
         'name',
         'zone_id',
         'location',
+        'province',
         'meeting_day',
         'meeting_time',
         'leader_id'

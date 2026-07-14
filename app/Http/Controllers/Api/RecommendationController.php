@@ -45,4 +45,14 @@ class RecommendationController extends Controller
             'data'    => $recommendation,
         ]);
     }
+
+    public function nearbyHomeGroups(Request $request): JsonResponse
+    {
+        $recommendation = $this->homeGroupService->suggestForUser($request->user());
+
+        return response()->json([
+            'success' => true,
+            'data'    => $recommendation,
+        ]);
+    }
 }

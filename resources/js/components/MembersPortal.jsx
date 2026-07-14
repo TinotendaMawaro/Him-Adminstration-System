@@ -14,6 +14,7 @@ import ProfileCompletenessNudge from "./dashboard/sections/ProfileCompletenessNu
 import SpiritualJourney from "./dashboard/sections/SpiritualJourney.jsx";
 import RecommendationsWidget from "./dashboard/RecommendationsWidget.jsx";
 import RecommendedHomeGroupCard from "./dashboard/RecommendedHomeGroupCard.jsx";
+import NearbyHomeGroups from "./dashboard/NearbyHomeGroups.jsx";
 import Member360View from "./pastors/Member360View.jsx";
 import LocationEntry from "./onboarding/LocationEntry.jsx";
 import ProfileFormManager from "../utils/ProfileFormManager.js";
@@ -496,15 +497,16 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
                     <h3 className="text-lg font-semibold text-white mb-2 font-serif tracking-tight">
                         Find your people
                     </h3>
-                    <p className="text-[13px] text-gray-400 mb-6 max-w-xs mx-auto leading-relaxed">
-                        Join a homegroup to connect with fellow members, grow
-                        spiritually, and belong to a community that cares.
-                    </p>
-                    <button
-                        onClick={onBrowseHomegroups || onViewHomegroup}
-                        disabled={homegroupLoading}
-                        className="lux-btn mt-auto w-full py-3 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-70"
-                    >
+                <p className="text-[13px] text-gray-400 mb-5 max-w-xs mx-auto leading-relaxed">
+                    Join a homegroup to connect with fellow members, grow
+                    spiritually, and belong to a community that cares.
+                </p>
+                <NearbyHomeGroups onJoin={onBrowseHomegroups || onViewHomegroup} />
+                <button
+                    onClick={onBrowseHomegroups || onViewHomegroup}
+                    disabled={homegroupLoading}
+                    className="lux-btn mt-auto w-full py-3 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-70"
+                >
                     {homegroupLoading ? (
                         <span className="flex items-center justify-center gap-2">
                             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">

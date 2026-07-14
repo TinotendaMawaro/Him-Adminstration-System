@@ -45,16 +45,6 @@ class PersonalizationEngine
         }
     }
 
-        $watchedIds = SermonView::where('user_id', $user->id)->pluck('sermon_id');
-
-        // Assumes sermons are stored in the assets table with a category field
-        return \App\Models\Asset::whereIn('category', $interests->pluck('interest_value'))
-            ->whereNotIn('id', $watchedIds)
-            ->orderByDesc('created_at')
-            ->limit($limit)
-            ->get();
-    }
-
     public function getEventRecommendations(User $user, int $limit = 5): Collection
     {
         $query = Event::published()->upcoming()->open();
