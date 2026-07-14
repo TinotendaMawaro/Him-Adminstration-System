@@ -93,7 +93,7 @@ export default function ZoneTab({ user }) {
     name: zone?.name || user?.zoneName || "IOC",
     description: "A vibrant community of believers committed to spiritual growth and fellowship.",
     location: (zone?.region?.country?.name || '') + ' - ' + (zone?.region?.name || ''),
-    established: zone?.created_at ? new Date(zone.created_at).getFullYear().toString() : "2020",
+    established: zone?.year_established || "2020",
     membersCount: summaryData?.total_members?.toString() || "0",
     homeGroupsCount: summaryData?.total_home_groups?.toString() || "0",
     departmentsCount: summaryData?.total_departments?.toString() || "0",

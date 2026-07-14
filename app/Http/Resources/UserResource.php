@@ -37,20 +37,23 @@ class UserResource extends JsonResource
                     $pastorUser = $pastors->first(fn ($user) => str_ends_with($user->unique_code ?? '', 'P01'));
 
                     return [
-                        'id'           => $zone->id,
-                        'code'         => $zone->code,
-                        'name'         => $zone->name,
-                        'address'      => $zone->address,
-                        'phone'        => $zone->phone,
-                        'pastor_id'    => $pastorUser?->id,
-                        'pastor_name'  => $pastorUser?->name,
-                        'pastor_title' => $pastorUser?->pastor?->title ?? 'Pastor',
-                        'region'       => $zone->relationLoaded('region') ? ($zone->region ? [
+                        'id'              => $zone->id,
+                        'code'            => $zone->code,
+                        'name'            => $zone->name,
+                        'address'         => $zone->address,
+                        'phone'           => $zone->phone,
+                        'description'     => $zone->description,
+                        'location'        => $zone->location,
+                        'year_established'=> $zone->year_established,
+                        'pastor_id'       => $pastorUser?->id,
+                        'pastor_name'     => $pastorUser?->name,
+                        'pastor_title'    => $pastorUser?->pastor?->title ?? 'Pastor',
+                        'region'          => $zone->relationLoaded('region') ? ($zone->region ? [
                             'id'   => $zone->region->id,
                             'name' => $zone->region->name,
                             'code' => $zone->region->code,
                         ] : null) : null,
-                        'created_at' => $zone->created_at?->format('Y-m-d'),
+                        'created_at'      => $zone->created_at?->format('Y-m-d'),
                     ];
                 };
 

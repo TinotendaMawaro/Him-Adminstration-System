@@ -10,6 +10,13 @@ import EventsTab from "./dashboard/EventsTab.jsx";
 import LeaveReasonModal from "./LeaveReasonModal.jsx";
 import MembershipCard from "./MembershipCard.jsx";
 import PrayerCenter from "./prayer-center/PrayerCenter.jsx";
+import ProfileCompletenessNudge from "./dashboard/sections/ProfileCompletenessNudge.jsx";
+import SpiritualJourney from "./dashboard/sections/SpiritualJourney.jsx";
+import RecommendationsWidget from "./dashboard/RecommendationsWidget.jsx";
+import RecommendedHomeGroupCard from "./dashboard/RecommendedHomeGroupCard.jsx";
+import Member360View from "./pastors/Member360View.jsx";
+import LocationEntry from "./onboarding/LocationEntry.jsx";
+import ProfileFormManager from "../utils/ProfileFormManager.js";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND
@@ -288,7 +295,7 @@ const Icons = {
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.457 5 8 5c-2.21 0-4 1.343-4 3 0 1.861 1.528 3.407 3.378 3.833v1.357c0 .416-.247.77-.564.939C5.447 15.937 4.5 16.793 4.5 18c0 1.104.896 2 2 2h12c1.104 0 2-.896 2-2 0-1.207-.947-2.063-1.936-2.339-.317-.169-.564-.523-.564-.939v-1.357C16.472 11.761 18 10.215 18 9c0-1.657-1.79-3-4-3s4 .903 4 3 0 3-1.79 3 4 4c0-1.657-1.794-3-4-3z"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
             />
         </svg>
     ),
@@ -430,46 +437,49 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
     if (hg && hg.name) {
         const isLeader = hg.leader_id === user?.id;
         return (
-            <div className="gradient-border card-hover">
-                <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
-                                <Icons.Users className="w-3.5 h-3.5 text-white" />
+            <div className="lux-card lux-rise" style={{ animationDelay: "60ms" }}>
+                <div className="p-5 sm:p-6 flex flex-1 flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2.5">
+                            <div className="lux-monogram w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-300">
+                                <Icons.Users className="w-4 h-4" />
                             </div>
-                            <h3 className="text-xs font-bold text-white">
-                                My Homegroup
-                            </h3>
+                            <span className="lux-eyebrow">Homegroup</span>
                         </div>
                         <button
                             onClick={onViewHomegroup}
-                            className="text-[#dfb15b] hover:text-amber-400 text-[10px] font-semibold flex items-center gap-0.5"
+                            className="lux-link"
                         >
-                            View All <span>→</span>
+                            View all <span aria-hidden="true">→</span>
                         </button>
                     </div>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md">
-                            <Icons.Users className="w-5 h-5 text-white" />
+                    <div className="lux-divider mb-5"></div>
+                    <div className="flex items-center gap-4">
+                        <div className="lux-monogram w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-emerald-600/25 ring-1 ring-emerald-400/25 text-emerald-200">
+                            <Icons.Users className="w-7 h-7" />
                         </div>
-                        <div>
-                            <p className="font-bold text-white text-xs">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-base font-semibold text-white truncate tracking-tight">
                                 {hg.name}
                             </p>
-                            <p className="text-[10px] text-gray-400">Active</p>
+                            <span className="lux-chip mt-2 bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/25">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                Active membership
+                            </span>
                         </div>
                     </div>
                     {!isLeader && (
                         <button
                             onClick={() => onRequestLeave("homegroup")}
-                            className="btn btn-sm bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all"
+                            className="lux-btn mt-auto w-full py-2.5 text-xs text-rose-300 bg-white/5 ring-1 ring-rose-500/25 hover:bg-rose-500/10 hover:ring-rose-500/40"
                         >
-                            Leave Group
+                            Request to leave group
                         </button>
                     )}
                     {isLeader && (
-                        <p className="text-[10px] text-gray-400 text-center">
-                            As leader, contact pastor to transfer leadership before leaving.
+                        <p className="mt-6 text-[11px] text-gray-500 leading-relaxed text-center">
+                            You lead this group. Contact your pastor to transfer
+                            leadership before leaving.
                         </p>
                     )}
                 </div>
@@ -477,27 +487,24 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
         );
     }
     return (
-        <div className="gradient-border card-hover">
-            <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                    <Icons.Users className="w-6 h-6 text-emerald-300" />
-                </div>
-                <h3 className="text-xs font-bold text-white mb-0.5">
-                    No Homegroup Yet
-                </h3>
-                <p className="text-[10px] text-gray-400 mb-2">
-                    Join a homegroup to connect with fellow members and grow spiritually.
-                </p>
-                <div className="bg-emerald-500/10 rounded-lg p-2 mb-3">
-                    <p className="text-[10px] font-bold text-emerald-300 mb-1">💡 Recommended For You</p>
-                    <p className="text-xs font-bold text-white">IOC Central</p>
-                    <p className="text-[9px] text-gray-500">Wednesdays | 3 km away | Perfect for new members!</p>
-                </div>
-                <button
-                    onClick={onBrowseHomegroups || onViewHomegroup}
-                    disabled={homegroupLoading}
-                    className="btn btn-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all disabled:opacity-70"
-                >
+            <div className="lux-card lux-rise" style={{ animationDelay: "60ms" }}>
+                <div className="p-6 sm:p-7 text-center flex flex-1 flex-col">
+                    <div className="lux-monogram w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-500/12 text-emerald-300 ring-1 ring-emerald-500/15">
+                        <Icons.Users className="w-7 h-7" />
+                    </div>
+                    <span className="lux-eyebrow block mb-2">No homegroup yet</span>
+                    <h3 className="text-lg font-semibold text-white mb-2 font-serif tracking-tight">
+                        Find your people
+                    </h3>
+                    <p className="text-[13px] text-gray-400 mb-6 max-w-xs mx-auto leading-relaxed">
+                        Join a homegroup to connect with fellow members, grow
+                        spiritually, and belong to a community that cares.
+                    </p>
+                    <button
+                        onClick={onBrowseHomegroups || onViewHomegroup}
+                        disabled={homegroupLoading}
+                        className="lux-btn mt-auto w-full py-3 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-70"
+                    >
                     {homegroupLoading ? (
                         <span className="flex items-center justify-center gap-2">
                             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -505,7 +512,7 @@ const HomegroupSection = ({ user, onViewHomegroup, onRequestLeave, homegroupLoad
                             </svg>
                             Loading...
                         </span>
-                    ) : "Browse Homegroups"}
+                    ) : "Browse homegroups"}
                 </button>
             </div>
         </div>
@@ -517,46 +524,49 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
     if (dept && dept.name) {
         const isHod = dept.hod_id === user?.id;
         return (
-            <div className="gradient-border card-hover">
-                <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-sm">
-                                <Icons.BuildingOffice className="w-3.5 h-3.5 text-white" />
+            <div className="lux-card lux-rise" style={{ animationDelay: "120ms" }}>
+                <div className="p-5 sm:p-6 flex flex-1 flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2.5">
+                            <div className="lux-monogram w-9 h-9 rounded-xl bg-purple-500/15 text-purple-300">
+                                <Icons.BuildingOffice className="w-4 h-4" />
                             </div>
-                            <h3 className="text-xs font-bold text-white">
-                                My Department
-                            </h3>
+                            <span className="lux-eyebrow">Department</span>
                         </div>
                         <button
                             onClick={onViewDepartments}
-                            className="text-[#dfb15b] hover:text-amber-400 text-[10px] font-semibold flex items-center gap-0.5"
+                            className="lux-link"
                         >
-                            View All <span>→</span>
+                            View all <span aria-hidden="true">→</span>
                         </button>
                     </div>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-md">
-                            <Icons.BuildingOffice className="w-5 h-5 text-white" />
+                    <div className="lux-divider mb-5"></div>
+                    <div className="flex items-center gap-4">
+                        <div className="lux-monogram w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400/20 to-purple-600/25 ring-1 ring-purple-400/25 text-purple-200">
+                            <Icons.BuildingOffice className="w-7 h-7" />
                         </div>
-                        <div>
-                            <p className="font-bold text-white text-xs">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-base font-semibold text-white truncate tracking-tight">
                                 {dept.name}
                             </p>
-                            <p className="text-[10px] text-gray-400">Active</p>
+                            <span className="lux-chip mt-2 bg-purple-500/10 text-purple-300 ring-1 ring-purple-500/25">
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                                Active ministry
+                            </span>
                         </div>
                     </div>
                     {!isHod && (
                         <button
                             onClick={() => onRequestLeave("department")}
-                            className="btn btn-sm bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all"
+                            className="lux-btn mt-auto w-full py-2.5 text-xs text-rose-300 bg-white/5 ring-1 ring-rose-500/25 hover:bg-rose-500/10 hover:ring-rose-500/40"
                         >
-                            Leave Department
+                            Request to leave department
                         </button>
                     )}
                     {isHod && (
-                        <p className="text-[10px] text-gray-400 text-center">
-                            As HOD, contact pastor to transfer leadership before leaving.
+                        <p className="mt-6 text-[11px] text-gray-500 leading-relaxed text-center">
+                            You head this department. Contact your pastor to
+                            transfer leadership before leaving.
                         </p>
                     )}
                 </div>
@@ -564,27 +574,36 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
         );
     }
     return (
-        <div className="gradient-border card-hover">
-            <div className="p-4 text-center">
-                <div className="w-12 h-12 mx-auto mb-2.5 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <Icons.BuildingOffice className="w-6 h-6 text-purple-300" />
-                </div>
-                <h3 className="text-xs font-bold text-white mb-0.5">
-                    No Department Yet
+            <div className="lux-card lux-rise" style={{ animationDelay: "120ms" }}>
+                <div className="p-6 sm:p-7 text-center flex flex-1 flex-col">
+                    <div className="lux-monogram w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-500/12 text-purple-300 ring-1 ring-purple-500/15">
+                        <Icons.BuildingOffice className="w-7 h-7" />
+                    </div>
+                <span className="lux-eyebrow block mb-2">No department yet</span>
+                <h3 className="text-lg font-semibold text-white mb-2 font-serif tracking-tight">
+                    Discover your calling
                 </h3>
-                <p className="text-[10px] text-gray-400 mb-2">
-                    Join a department to serve alongside other members and discover your gifts.
+                <p className="text-[13px] text-gray-400 mb-5 max-w-xs mx-auto leading-relaxed">
+                    Serve alongside other members and use your gifts to make a
+                    difference in the house.
                 </p>
-                <div className="bg-purple-500/10 rounded-lg p-2 mb-3">
-                    <p className="text-[10px] font-bold text-purple-300 mb-1">💡 Suggested Ministry</p>
-                    <p className="text-xs font-bold text-white">Media & ICT</p>
-                    <p className="text-[9px] text-gray-500">4 Open Positions | Training Available</p>
+                <div className="rounded-2xl bg-purple-500/10 ring-1 ring-purple-500/15 p-3.5 mb-5 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Icons.Star className="w-3.5 h-3.5 text-purple-300" />
+                        <p className="text-[11px] font-semibold text-purple-200 uppercase tracking-wide">
+                            Suggested ministry
+                        </p>
+                    </div>
+                    <p className="text-sm font-semibold text-white">Media & ICT</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                        4 open positions · Training available
+                    </p>
                 </div>
                 <button
                     onClick={onViewDepartments}
-                    className="btn btn-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all"
+                    className="lux-btn mt-auto w-full py-3 text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-900/30 hover:from-purple-400 hover:to-purple-500"
                 >
-                    Browse Departments
+                    Browse departments
                 </button>
             </div>
         </div>
@@ -658,6 +677,18 @@ export default function MembersPortal({ onLogout }) {
         refetchInterval: 30000,
     });
 
+    const { data: zoneSummaryData } = useQuery({
+        queryKey: ["member-zone-summary"],
+        queryFn: async () => {
+            const res = await api.get("/members/zone-summary");
+            if (!res.data.success) throw new Error();
+            return res.data.data;
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: true,
+        retry: 1,
+    });
+
     const pendingInvitationsCount = (invitationsData || []).filter(
         (inv) => inv.status === "pending",
     ).length;
@@ -676,12 +707,135 @@ export default function MembersPortal({ onLogout }) {
     const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
     const [leaveModal, setLeaveModal] = useState({ show: false, type: null });
     const [connectSubmenu, setConnectSubmenu] = useState(null); // 'messages' | 'prayer' | 'testimonies'
+    const [showLocationEntry, setShowLocationEntry] = useState(false);
+    const [selectedMemberFor360, setSelectedMemberFor360] = useState(null);
+    const [, setProfileFormVersion] = useState(0);
+    const profileFormRef = useRef(null);
+
+    if (!profileFormRef.current) {
+        profileFormRef.current = new ProfileFormManager({
+            user: {
+                name: user?.name || "",
+                email: user?.email || "",
+                phone: user?.phone || "",
+                address_line_1: user?.address_line_1 || "",
+                address_line_2: user?.address_line_2 || "",
+                city: user?.city || "",
+                province: user?.province || "",
+                country: user?.country || "",
+                postal_code: user?.postal_code || "",
+            },
+            member: {
+                surname: user?.member?.surname || "",
+                date_of_birth: user?.member?.date_of_birth || "",
+                gender_id: user?.member?.gender_id || "",
+                demography_id: user?.member?.demography_id || "",
+            },
+        }, () => setProfileFormVersion(v => v + 1));
+    }
+
+    const profileForm = profileFormRef.current;
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileSaved, setProfileSaved] = useState(false);
 
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
         setNotificationsOpen(false);
         setConnectSubmenu(null);
     };
+
+    const handleSaveProfile = async () => {
+        setProfileSaving(true);
+        try {
+            const payload = profileForm.getFormData();
+            const response = await api.put("/members/me/profile", payload);
+            if (response.data?.success) {
+                const updated = response.data.data;
+                updateUser({
+                    name: updated.user?.name || payload.user.name,
+                    email: updated.user?.email || payload.user.email,
+                    phone: updated.user?.phone || payload.user.phone,
+                    address_line_1: updated.user?.address_line_1 || payload.user.address_line_1,
+                    address_line_2: updated.user?.address_line_2 || payload.user.address_line_2,
+                    city: updated.user?.city || payload.user.city,
+                    province: updated.user?.province || payload.user.province,
+                    country: updated.user?.country || payload.user.country,
+                    postal_code: updated.user?.postal_code || payload.user.postal_code,
+                    member: {
+                        ...user?.member,
+                        surname: updated.member?.surname || payload.member.surname,
+                        date_of_birth: updated.member?.date_of_birth || payload.member.date_of_birth,
+                        gender: updated.member?.gender || user?.member?.gender,
+                        demography: updated.member?.demography || user?.member?.demography,
+                    },
+                });
+                profileForm.reset({
+                    user: {
+                        name: updated.user?.name || payload.user.name,
+                        email: updated.user?.email || payload.user.email,
+                        phone: updated.user?.phone || "",
+                        address_line_1: updated.user?.address_line_1 || "",
+                        address_line_2: updated.user?.address_line_2 || "",
+                        city: updated.user?.city || "",
+                        province: updated.user?.province || "",
+                        country: updated.user?.country || "",
+                        postal_code: updated.user?.postal_code || "",
+                    },
+                    member: {
+                        surname: updated.member?.surname || "",
+                        date_of_birth: updated.member?.date_of_birth || "",
+                        gender_id: updated.member?.gender_id || "",
+                        demography_id: updated.member?.demography_id || "",
+                    },
+                });
+                setProfileSaved(true);
+                setTimeout(() => setProfileSaved(false), 3000);
+                queryClient.invalidateQueries({ queryKey: ["members", "me"] });
+            }
+        } catch (err) {
+            const apiErrors = err.response?.data?.errors || {};
+            Object.entries(apiErrors).forEach(([field, messages]) => {
+                profileForm.setError(field, Array.isArray(messages) ? messages[0] : messages);
+            });
+            alert(err.response?.data?.message || "Failed to save profile. Please try again.");
+            console.error(err);
+        } finally {
+            setProfileSaving(false);
+        }
+    };
+
+    // Check if first-time user needs location entry
+    useEffect(() => {
+        if (user && !user.location_captured && !localStorage.getItem("location-entry-skipped")) {
+            const timer = setTimeout(() => setShowLocationEntry(true), 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [user]);
+
+    // Populate profile form when user data changes
+    useEffect(() => {
+        if (user) {
+            profileForm.reset({
+                user: {
+                    name: user.name || "",
+                    email: user.email || "",
+                    phone: user.phone || "",
+                    address_line_1: user.address_line_1 || "",
+                    address_line_2: user.address_line_2 || "",
+                    city: user.city || "",
+                    province: user.province || "",
+                    country: user.country || "",
+                    postal_code: user.postal_code || "",
+                },
+                member: {
+                    surname: user.member?.surname || "",
+                    date_of_birth: user.member?.date_of_birth || "",
+                    gender_id: user.member?.gender_id || "",
+                    demography_id: user.member?.demography_id || "",
+                },
+            });
+        }
+    }, [user, profileForm]);
 
     // Handle homegroup button click with loading state
     const handleBrowseHomegroups = useCallback(() => {
@@ -762,6 +916,7 @@ export default function MembersPortal({ onLogout }) {
         if (id === "feedback") setActiveTab("home");
         if (id === "homegroups") setShowHomegroupSelector(true);
         if (id === "departments") setShowDepartmentSelector(true);
+        if (id === "edit-profile") setIsEditingProfile(true);
     };
 
     return (
@@ -800,6 +955,24 @@ export default function MembersPortal({ onLogout }) {
                 .text-gradient-gold { background: linear-gradient(135deg, #dfb15b, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
                 @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
                 @keyframes floatUp { 0% { transform: translateY(100vh); } 100% { transform: translateY(-100vh); } }
+
+                /* ===== CONNECT TAB — PREMIUM REFINEMENTS ===== */
+                .connect-eyebrow { font-size: 0.6875rem; letter-spacing: 0.2em; text-transform: uppercase; color: #dfb15b; font-weight: 600; }
+                .connect-title { font-size: 1.875rem; line-height: 1.05; font-weight: 700; letter-spacing: -0.025em; color: #ffffff; }
+                .connect-subtitle { font-size: 0.8125rem; color: #9ca3af; line-height: 1.6; }
+                .lux-eyebrow { font-size: 0.625rem; letter-spacing: 0.16em; text-transform: uppercase; color: #9ca3af; font-weight: 600; }
+                .lux-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.01em; line-height: 1; }
+                .lux-monogram { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+                .lux-link { color: #dfb15b; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.01em; transition: color 0.2s ease, gap 0.2s ease; display: inline-flex; align-items: center; gap: 3px; }
+                .lux-link:hover { color: #f59e0b; gap: 6px; }
+                .lux-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; border-radius: 12px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: none; }
+                .lux-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent); }
+                .lux-card { position: relative; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025)); border: 1px solid rgba(255,255,255,0.09); border-radius: 22px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); overflow: hidden; transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease; }
+                .lux-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, rgba(212,175,55,0.55), rgba(212,175,55,0) 38%, rgba(255,255,255,0.06)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0; transition: opacity 0.45s ease; pointer-events: none; }
+                .lux-card:hover { transform: translateY(-3px); border-color: rgba(212,175,55,0.18); box-shadow: 0 24px 48px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.12); }
+                .lux-card:hover::before { opacity: 1; }
+                @keyframes lux-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+                .lux-rise { animation: lux-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
             `}</style>
 
             <div className="relative z-10 pb-20">
@@ -1145,6 +1318,15 @@ export default function MembersPortal({ onLogout }) {
                                 />
                             </div>
 
+                            {/* Recommended Home Group */}
+                            <RecommendedHomeGroupCard onJoin={(groupId) => {
+                                handleBrowseHomegroups();
+                                setTimeout(() => setShowHomegroupSelector(true), 2000);
+                            }} />
+
+                            {/* Profile Completeness Nudge */}
+                            <ProfileCompletenessNudge user={user} />
+
                             {/* 4. SPIRITUAL PROGRESS DASHBOARD */}
                             <div className="gradient-border p-4">
                                 <h3 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
@@ -1227,98 +1409,166 @@ export default function MembersPortal({ onLogout }) {
                         </div>
                     )}
 
-{/* ZONE TAB */}
-                     {activeTab === "zone" && (
-                         <div className="tab-panel space-y-4">
-                             <div className="gradient-border card-hover p-4">
-                                 <div className="flex items-center gap-2 mb-3">
-                                     <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-sm">
-                                         <Icons.MapPin className="w-4 h-4 text-white" />
-                                     </div>
-                                     <div>
-                                         <h3 className="text-xs font-bold text-white">
-                                             My Zone
-                                         </h3>
-                                         <p className="text-[10px] text-gray-400">
-                                             {user && user.zone
-                                                 ? user.zone.name
-                                                 : "Not Assigned"}
-                                         </p>
-                                     </div>
-                                 </div>
-                                 <div className="space-y-1.5 text-[10px] text-gray-300 mb-3">
-                                     <p>
-                                         <strong>Region:</strong>{" "}
-                                         {user && user.zone && user.zone.region
-                                             ? user.zone.region.name
-                                             : "—"}
-                                     </p>
-                                     <p>
-                                         <strong>Pastor:</strong>{" "}
-                                         {user && user.pastor
-                                             ? user.pastor.user.name
-                                             : user &&
-                                                   user.zone &&
-                                                   user.zone.pastor_name
-                                             ? user.zone.pastor_name
-                                             : "Not Assigned"}
-                                     </p>
-                                     <p>
-                                         <strong>Address:</strong>{" "}
-                                         {user && user.zone
-                                             ? user.zone.address || "—"
-                                             : "—"}
-                                     </p>
-                                     <p>
-                                         <strong>Phone:</strong>{" "}
-                                         {user && user.zone
-                                             ? user.zone.phone || "—"
-                                             : "—"}
-                                     </p>
-                                 </div>
-                                 <button
-                                     onClick={() => handleAction("view-zone")}
-                                     className="btn btn-lg bg-gradient-to-r from-[#dfb15b]/20 to-amber-500/20 text-[#d4af37] border border-[#dfb15b]/30 hover:from-[#dfb15b]/30 hover:to-amber-500/30 transition-all"
-                                 >
-                                     View Zone Details
-                                 </button>
-                             </div>
-                             
-                             {/* Membership Card Section */}
-                             <div>
-                                 <h3 className="text-xs font-bold text-white mb-2 flex items-center gap-2">
-                                     <Icons.ShieldCheck className="w-4 h-4 text-[#d4af37]" />
-                                     Digital Membership Card
-                                 </h3>
-                                 <MembershipCard user={user} />
-                             </div>
-                         </div>
-                     )}
+                      {/* ZONE TAB */}
+                      {activeTab === "zone" && (
+                          <div className="tab-panel">
+                              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0A192F] via-[#112240] to-[#1A365D] border border-white/10">
+                                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#dfb15b]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-sky-500/10 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
 
-{/* GROUPS TAB - Unified Homegroups & Departments */}
-                     {activeTab === "homegroup" && (
-                         <div className="tab-panel space-y-4">
-                             <div className="flex items-center justify-between mb-4">
-                                 <div className="flex items-center gap-2">
-                                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
-                                         <Icons.Users className="w-4 h-4 text-white" />
-                                     </div>
-                                     <h3 className="text-sm font-bold text-white">My Groups</h3>
-                                 </div>
-                             </div>
+                                  <div className="relative p-6 md:p-8 space-y-8">
+                                      {/* Header */}
+                                      <div>
+                                          <p className="text-[10px] font-bold text-[#dfb15b] uppercase tracking-[0.2em] mb-1">Zone History</p>
+                                          <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">Zone Timeline</h2>
+                                      </div>
 
-                             <HomegroupSection
-                                 user={user}
-                                 onViewHomegroup={() => handleAction("homegroups")}
-                                 onRequestLeave={onRequestLeave}
-                             />
-                             <DepartmentsSection
-                                 user={user}
-                                 onViewDepartments={() => handleAction("departments")}
-                                 onRequestLeave={onRequestLeave}
-                             />
-                         </div>
-                     )}
+                                      {/* Current Zone Pastor */}
+                                      <div>
+                                          <div className="flex items-center gap-2 mb-4">
+                                              <div className="w-1 h-5 bg-[#d4af37] rounded-full" />
+                                              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.15em]">Current Zone Pastor</h3>
+                                          </div>
+                                          <div className="flex items-center gap-5">
+                                              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-xl shadow-[#dfb15b]/20 flex-shrink-0">
+                                                  <span className="text-white font-bold text-2xl">
+                                                      {(user && user.pastor && user.pastor.user ? user.pastor.user.name : (user && user.zone && user.zone.pastor_name ? user.zone.pastor_name : "P")).charAt(0)}
+                                                  </span>
+                                              </div>
+                                              <div className="min-w-0 flex-1">
+                                                  <h4 className="text-base font-bold text-white truncate">
+                                                      {user && user.pastor && user.pastor.user ? user.pastor.user.name : (user && user.zone && user.zone.pastor_name ? user.zone.pastor_name : "Not Assigned")}
+                                                  </h4>
+                                                  <p className="text-xs text-gray-400 mt-0.5">
+                                                      {user && user.pastor && user.pastor.title ? user.pastor.title : "Pastor"}
+                                                  </p>
+                                                  <div className="flex items-center gap-3 mt-2">
+                                                      <span className="text-[10px] text-gray-500">Since {user && user.zone ? (user.zone.year_established || "—") : "—"}</span>
+                                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                                                          <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                                          Current
+                                                      </span>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      {/* My Zone */}
+                                      <div>
+                                          <div className="flex items-center gap-2 mb-4">
+                                              <div className="w-1 h-5 bg-[#d4af37] rounded-full" />
+                                              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.15em]">My Zone</h3>
+                                          </div>
+                                          <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+                                              <div className="p-5 md:p-6">
+                                                  <div className="flex items-center gap-4 mb-5">
+                                                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-xl shadow-[#dfb15b]/20 flex-shrink-0">
+                                                          <span className="text-white font-bold text-xl md:text-2xl tracking-tight">
+                                                              {user && user.zone ? user.zone.name.charAt(0) : 'Z'}
+                                                          </span>
+                                                      </div>
+                                                      <div>
+                                                          <h3 className="text-lg md:text-xl font-bold text-white tracking-tight">
+                                                              {user && user.zone ? user.zone.name : 'Not Assigned'}
+                                                          </h3>
+                                                      </div>
+                                                  </div>
+
+                                                  <div className="space-y-0">
+                                                      <div className="flex items-center justify-between py-3 border-b border-white/5">
+                                                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Location</span>
+                                                          <span className="text-sm font-semibold text-white text-right">{user && user.zone ? (user.zone.location || "—") : "—"}</span>
+                                                      </div>
+                                                      <div className="flex items-center justify-between py-3 border-b border-white/5">
+                                                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Established</span>
+                                                          <span className="text-sm font-semibold text-white text-right">{user && user.zone ? (user.zone.year_established || "—") : "—"}</span>
+                                                      </div>
+                                                      <div className="flex items-center justify-between py-3 border-b border-white/5">
+                                                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</span>
+                                                          <span className="text-sm font-semibold text-white text-right">{user && user.zone ? (user.zone.phone || "—") : "—"}</span>
+                                                      </div>
+                                                      <div className="flex items-center justify-between py-3">
+                                                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address</span>
+                                                          <span className="text-sm font-semibold text-white text-right max-w-[60%]">{user && user.zone ? (user.zone.address || "—") : "—"}</span>
+                                                      </div>
+                                                  </div>
+                                              </div>
+
+                                              {/* Pastors & Leadership */}
+                                              <div className="px-5 md:px-6 py-5 bg-white/[0.02] border-t border-white/5">
+                                                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-[0.15em] mb-4">Pastors & Leadership</h4>
+                                                  <div className="flex items-center gap-4">
+                                                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center shadow-lg shadow-[#dfb15b]/20 flex-shrink-0">
+                                                          <span className="text-white font-bold text-sm">
+                                                              {(user && user.pastor && user.pastor.user ? user.pastor.user.name : (user && user.zone && user.zone.pastor_name ? user.zone.pastor_name : "P")).charAt(0)}
+                                                          </span>
+                                                      </div>
+                                                      <div className="min-w-0">
+                                                          <p className="text-sm font-bold text-white truncate">
+                                                              {user && user.pastor && user.pastor.user ? user.pastor.user.name : (user && user.zone && user.zone.pastor_name ? user.zone.pastor_name : "Not Assigned")}
+                                                          </p>
+                                                          <p className="text-xs text-gray-400 mt-0.5">
+                                                              {user && user.pastor && user.pastor.title ? user.pastor.title : "Pastor"}
+                                                          </p>
+                                                          <div className="flex items-center gap-3 mt-2">
+                                                              <span className="text-[10px] text-gray-500">Since {user && user.zone ? (user.zone.year_established || "—") : "—"}</span>
+                                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+                                                                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                                                  Current
+                                                              </span>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                       )}
+
+{/* CONNECT TAB — Premium community hub */}
+                      {activeTab === "homegroup" && (
+                          <div className="tab-panel">
+                              <header className="lux-rise mb-7">
+                                  <p className="connect-eyebrow mb-2">Members · Community</p>
+                                  <div className="flex items-end justify-between gap-4 flex-wrap">
+                                      <div className="max-w-md">
+                                          <h2 className="connect-title">Connect</h2>
+                                          <p className="connect-subtitle mt-2.5">
+                                              Your place within the family.
+                                              Manage your homegroup and ministry,
+                                              and respond to invitations.
+                                          </p>
+                                      </div>
+                                      {(pendingInvitationsCount + pendingDeptCount) > 0 && (
+                                          <span className="lux-chip bg-gold-500/10 text-[#dfb15b] ring-1 ring-gold-400/30">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-[#dfb15b] badge-pulse"></span>
+                                              {pendingInvitationsCount + pendingDeptCount}{" "}
+                                              {pendingInvitationsCount + pendingDeptCount === 1
+                                                  ? "pending invitation"
+                                                  : "pending invitations"}
+                                          </span>
+                                      )}
+                                  </div>
+                              </header>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch">
+                                  <HomegroupSection
+                                      user={user}
+                                      onViewHomegroup={() => handleAction("homegroups")}
+                                      onRequestLeave={onRequestLeave}
+                                      homegroupLoading={homegroupLoading}
+                                      onBrowseHomegroups={handleBrowseHomegroups}
+                                  />
+                                  <DepartmentsSection
+                                      user={user}
+                                      onViewDepartments={() => handleAction("departments")}
+                                      onRequestLeave={onRequestLeave}
+                                  />
+                              </div>
+                          </div>
+                      )}
 
                     {/* EVENTS TAB */}
                     {activeTab === "events" && (
@@ -1542,42 +1792,218 @@ export default function MembersPortal({ onLogout }) {
                           </div>
                       )}
 
-                       {/* PROFILE TAB */}
-                       {activeTab === "profile" && (
-                           <div className="tab-panel space-y-4">
-                               <div className="gradient-border card-hover p-4">
-                                   <div className="flex items-center gap-3 mb-4">
-                                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                                           <Icons.User className="w-5 h-5 text-white" />
-                                       </div>
-                                       <div>
-                                           <h3 className="text-sm font-bold text-white">My Profile</h3>
-                                           <p className="text-[10px] text-gray-400">{user?.email}</p>
-                                       </div>
-                                   </div>
-                                   <div className="space-y-2 text-[10px]">
-                                       <p className="flex justify-between py-1.5 border-b border-white/10">
-                                           <span className="text-gray-400">Name</span>
-                                           <span className="text-white font-medium">{user?.name || "—"}</span>
-                                       </p>
-                                       <p className="flex justify-between py-1.5 border-b border-white/10">
-                                           <span className="text-gray-400">Phone</span>
-                                           <span className="text-white font-medium">{user?.phone || "—"}</span>
-                                       </p>
-                                       <p className="flex justify-between py-1.5 border-b border-white/10">
-                                           <span className="text-gray-400">Member Since</span>
-                                           <span className="text-white font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
-                                       </p>
-                                   </div>
-                                   <button
-                                       onClick={() => handleAction("edit-profile")}
-                                       className="w-full mt-4 btn btn-lg bg-white/5 text-white hover:bg-white/10 transition-all"
-                                   >
-                                       Edit Profile
-                                   </button>
-                               </div>
-                           </div>
-                       )}
+                          {/* PROFILE TAB */}
+                          {activeTab === "profile" && (
+                              <div className="tab-panel space-y-6">
+                                  {/* Profile Header */}
+                                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0A192F] via-[#112240] to-[#1A365D] border border-white/10 p-6 md:p-8">
+                                      <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-[#dfb15b]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+                                      <div className="relative flex flex-col md:flex-row md:items-center gap-5">
+                                          <div className="flex-shrink-0">
+                                              <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-gradient-to-br from-[#dfb15b] to-amber-600 flex items-center justify-center text-white font-bold text-3xl shadow-2xl shadow-[#dfb15b]/20 border-2 border-white/10">
+                                                  {(profileForm.user.name || user?.name || "M").charAt(0)}
+                                              </div>
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                              <p className="text-[10px] font-bold text-[#dfb15b] uppercase tracking-[0.2em] mb-1">Member Profile</p>
+                                              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1">{profileForm.user.name || user?.name || "Member"}</h2>
+                                              <p className="text-sm text-gray-400 font-light">{profileForm.user.email || user?.email}</p>
+                                              <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+                                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                                      {user?.member?.status || "Active"}
+                                                  </span>
+                                                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                                                      {user?.zone?.name || "No zone"} • {user?.zone?.region?.name || ""}
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div className="flex-shrink-0 flex items-center gap-3">
+                                              {profileSaved && (
+                                                  <span className="text-xs text-emerald-400 font-medium">Saved</span>
+                                              )}
+                                              <button
+                                                  onClick={() => {
+                                                      if (profileForm.hasChanges) {
+                                                          if (confirm("You have unsaved changes. Discard them?")) {
+                                                              profileForm.reset({
+                                                                  user: {
+                                                                      name: user?.name || "",
+                                                                      email: user?.email || "",
+                                                                      phone: user?.phone || "",
+                                                                      address_line_1: user?.address_line_1 || "",
+                                                                      address_line_2: user?.address_line_2 || "",
+                                                                      city: user?.city || "",
+                                                                      province: user?.province || "",
+                                                                      country: user?.country || "",
+                                                                      postal_code: user?.postal_code || "",
+                                                                  },
+                                                                  member: {
+                                                                      surname: user?.member?.surname || "",
+                                                                      date_of_birth: user?.member?.date_of_birth || "",
+                                                                      gender_id: user?.member?.gender_id || "",
+                                                                      demography_id: user?.member?.demography_id || "",
+                                                                  },
+                                                              });
+                                                          }
+                                                      } else {
+                                                          profileForm.reset({
+                                                              user: {
+                                                                  name: user?.name || "",
+                                                                  email: user?.email || "",
+                                                                  phone: user?.phone || "",
+                                                                  address_line_1: user?.address_line_1 || "",
+                                                                  address_line_2: user?.address_line_2 || "",
+                                                                  city: user?.city || "",
+                                                                  province: user?.province || "",
+                                                                  country: user?.country || "",
+                                                                  postal_code: user?.postal_code || "",
+                                                              },
+                                                              member: {
+                                                                  surname: user?.member?.surname || "",
+                                                                  date_of_birth: user?.member?.date_of_birth || "",
+                                                                  gender_id: user?.member?.gender_id || "",
+                                                                  demography_id: user?.member?.demography_id || "",
+                                                              },
+                                                          });
+                                                      }
+                                                  }}
+                                                  className="btn bg-white/5 text-white hover:bg-white/10 border border-white/10 px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all"
+                                              >
+                                                  Cancel
+                                              </button>
+                                              <button
+                                                  onClick={handleSaveProfile}
+                                                  disabled={profileSaving || !profileForm.hasChanges}
+                                                  className="btn bg-gradient-to-r from-[#d4af37] to-amber-600 text-white hover:from-[#d4af37] hover:to-amber-700 transition-all px-5 py-2.5 rounded-xl text-xs font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#d4af37]/10"
+                                              >
+                                                  {profileSaving ? "Saving..." : "Save Changes"}
+                                              </button>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-8 space-y-8">
+                                      <div className="flex items-center gap-3 mb-6">
+                                          <div className="w-1 h-6 bg-[#d4af37] rounded-full" />
+                                          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Profile Information</h3>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Full Name</label>
+                                              <input type="text" value={profileForm.user.name} onChange={(e) => profileForm.setUserField("name", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                              {profileForm.getError("user.name") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.name")}</p>}
+                                          </div>
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Email</label>
+                                              <input type="email" value={profileForm.user.email} onChange={(e) => profileForm.setUserField("email", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                              {profileForm.getError("user.email") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.email")}</p>}
+                                          </div>
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Phone</label>
+                                              <input type="tel" value={profileForm.user.phone} onChange={(e) => profileForm.setUserField("phone", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                              {profileForm.getError("user.phone") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.phone")}</p>}
+                                          </div>
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Member Code</label>
+                                              <input type="text" value={user?.member?.member_code || user?.unique_code || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                          </div>
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Surname</label>
+                                              <input type="text" value={profileForm.member.surname} onChange={(e) => profileForm.setMemberField("surname", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                              {profileForm.getError("member.surname") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("member.surname")}</p>}
+                                          </div>
+                                          <div>
+                                              <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Date of Birth</label>
+                                              <input type="date" value={profileForm.member.date_of_birth} onChange={(e) => profileForm.setMemberField("date_of_birth", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                              {profileForm.getError("member.date_of_birth") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("member.date_of_birth")}</p>}
+                                          </div>
+                                      </div>
+
+                                      <div className="pt-6 border-t border-white/5">
+                                          <div className="flex items-center gap-3 mb-6">
+                                              <div className="w-1 h-6 bg-[#d4af37] rounded-full" />
+                                              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Address</h3>
+                                          </div>
+                                          <div className="space-y-6">
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Address Line 1</label>
+                                                  <input type="text" value={profileForm.user.address_line_1} onChange={(e) => profileForm.setUserField("address_line_1", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                  {profileForm.getError("user.address_line_1") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.address_line_1")}</p>}
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Address Line 2</label>
+                                                  <input type="text" value={profileForm.user.address_line_2} onChange={(e) => profileForm.setUserField("address_line_2", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                  {profileForm.getError("user.address_line_2") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.address_line_2")}</p>}
+                                              </div>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                  <div>
+                                                      <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">City</label>
+                                                      <input type="text" value={profileForm.user.city} onChange={(e) => profileForm.setUserField("city", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                      {profileForm.getError("user.city") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.city")}</p>}
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Province</label>
+                                                      <input type="text" value={profileForm.user.province} onChange={(e) => profileForm.setUserField("province", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                      {profileForm.getError("user.province") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.province")}</p>}
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Country</label>
+                                                      <input type="text" value={profileForm.user.country} onChange={(e) => profileForm.setUserField("country", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                      {profileForm.getError("user.country") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.country")}</p>}
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Postal Code</label>
+                                                      <input type="text" value={profileForm.user.postal_code} onChange={(e) => profileForm.setUserField("postal_code", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#d4af37]/50 focus:bg-white/10 transition-all" />
+                                                      {profileForm.getError("user.postal_code") && <p className="text-red-400 text-[10px] mt-1">{profileForm.getError("user.postal_code")}</p>}
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      <div className="pt-6 border-t border-white/5">
+                                          <div className="flex items-center gap-3 mb-6">
+                                              <div className="w-1 h-6 bg-[#d4af37] rounded-full" />
+                                              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Church Affiliation</h3>
+                                          </div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Zone</label>
+                                                  <input type="text" value={user?.zone?.name || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Region</label>
+                                                  <input type="text" value={user?.zone?.region?.name || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Pastor</label>
+                                                  <input type="text" value={user?.pastor?.user?.name || user?.zone?.pastor_name || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Home Group</label>
+                                                  <input type="text" value={user?.home_group?.name || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Department</label>
+                                                  <input type="text" value={user?.department?.name || "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wider">Membership Date</label>
+                                                  <input type="text" value={user?.member?.membership_date ? new Date(user.member.membership_date).toLocaleDateString() : "—"} disabled className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-500 cursor-not-allowed" />
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  {/* Membership Card */}
+                                  <MembershipCard user={user} />
+
+                                   {/* Spiritual Journey */}
+                                 <SpiritualJourney milestones={user?.spiritual_milestones || []} />
+                             </div>
+                         )}
 
                        {/* PRAYER CENTER TAB */}
                        {activeTab === "prayer-center" && (
@@ -1619,25 +2045,52 @@ export default function MembersPortal({ onLogout }) {
                  </Drawer>
              )}
              
-             {/* Leave Reason Modal */}
-             <LeaveReasonModal
-                 isOpen={leaveModal.show}
-                 onClose={() => setLeaveModal({ show: false, type: null })}
-                 onConfirm={(reason) => {
-                     if (leaveModal.type === "homegroup") {
-                         handleLeaveHomegroup(reason);
-                     } else if (leaveModal.type === "department") {
-                         handleLeaveDepartment(reason);
-                     }
-                     setLeaveModal({ show: false, type: null });
-                 }}
-                 title={leaveModal.type === "homegroup" ? "Leave Home Group" : "Leave Department"}
-                 description={leaveModal.type === "homegroup" 
-                     ? "Please provide a reason for leaving your home group." 
-                     : "Please provide a reason for leaving your department."}
-             />
-         </div>
-    );
+              {/* Leave Reason Modal */}
+              <LeaveReasonModal
+                  isOpen={leaveModal.show}
+                  onClose={() => setLeaveModal({ show: false, type: null })}
+                  onConfirm={(reason) => {
+                      if (leaveModal.type === "homegroup") {
+                          handleLeaveHomegroup(reason);
+                      } else if (leaveModal.type === "department") {
+                          handleLeaveDepartment(reason);
+                      }
+                      setLeaveModal({ show: false, type: null });
+                  }}
+                  title={leaveModal.type === "homegroup" ? "Leave Home Group" : "Leave Department"}
+                  description={leaveModal.type === "homegroup" 
+                      ? "Please provide a reason for leaving your home group." 
+                      : "Please provide a reason for leaving your department."}
+              />
+
+              {/* Location Entry Modal */}
+              {showLocationEntry && (
+                  <LocationEntry
+                      onComplete={(saved) => {
+                          setShowLocationEntry(false);
+                          if (saved) {
+                              updateUser({
+                                  location_captured: true,
+                                  address_line_1: saved.address_line_1,
+                                  city: saved.city,
+                                  country: saved.country,
+                                  latitude: saved.latitude,
+                                  longitude: saved.longitude,
+                              });
+                          }
+                      }}
+                  />
+              )}
+
+               {/* Pastor 360 Member View */}
+               {selectedMemberFor360 && (
+                   <Member360View
+                       memberId={selectedMemberFor360}
+                       onClose={() => setSelectedMemberFor360(null)}
+                   />
+               )}
+           </div>
+      );
 }
 
 // ============================================================================

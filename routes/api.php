@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\HomeGroupInvitationController;
 use App\Http\Controllers\Api\HomeGroupMemberController;
 use App\Http\Controllers\Api\HomeGroupReportController;
 use App\Http\Controllers\Api\HomeGroupUpdateController;
+use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
@@ -38,8 +39,11 @@ Route::post('/register', RegisterController::class)
      ->middleware('throttle:3,1'); // 3 registrations per minute
 
 // ── Zone Lookup (public — no auth required, used during registration) ─────────
-Route::get('/zones/lookup', [DashboardController::class, 'lookupZone'])
-     ->middleware('throttle:30,1');
+    Route::get('/zones/lookup', [DashboardController::class, 'lookupZone'])
+         ->middleware('throttle:30,1');
+
+    Route::post('/location/reverse-geocode', [LocationController::class, 'reverseGeocode'])
+         ->middleware('auth:sanctum', 'throttle:30,1');
 
 // ── Partnership Packages (public — no auth required) ─────────────────────────
 Route::prefix('partnership-packages')->group(function () {
@@ -90,27 +94,44 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // ── Members ────────────────────────────────────────────────────────────────
     Route::prefix('members')->group(function () {
         Route::get('/me', [MemberController::class, 'me']);
+        Route::get('/zone-summary', [MemberController::class, 'zoneSummary']);
+        Route::get('/zone-history', [MemberController::class, 'zoneHistory']);
         Route::put('/me', [MemberController::class, 'updateMe']);
+        Route::put('/me/profile', [MemberController::class, 'updateProfile']);
+        Route::put('/me/location', [MemberController::class, 'updateMeLocation']);
         Route::get('/', [MemberController::class, 'index'])
              ->middleware('throttle:120,1'); // Higher limit for list endpoints
         Route::get('/{id}', [MemberController::class, 'show']);
     });
 
-     // ── Pastor Portal ──────────────────────────────────────────────────────────
-     Route::prefix('pastors')->group(function () {
-         Route::get('/me', [PastorController::class, 'me']);
-         Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
-         Route::get('/dashboard', [PastorController::class, 'dashboard']);
-         Route::get('/members', [PastorController::class, 'members'])
-              ->middleware('throttle:120,1');
-         Route::post('/members/bulk', [PastorController::class, 'bulkMemberAction']);
-         Route::post('/members/{member}/status', [PastorController::class, 'updateMemberStatus']);
-         Route::get('/home-groups', [PastorController::class, 'homeGroups']);
-         Route::get('/activities', [PastorController::class, 'activities']);
-          Route::put('/zone', [PastorController::class, 'updateZoneInfo']);
-          Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
-         Route::get('/partners', [PastorController::class, 'partners']);
-      });
+    // ── Profile ──────────────────────────────────────────────────────────────────
+    Route::get('/profile/completeness', [MemberController::class, 'completeness']);
+
+    // ── Spiritual Milestones ─────────────────────────────────────────────────────
+    Route::get('/spiritual-milestones', [MemberController::class, 'milestones']);
+
+    // ── Badges ───────────────────────────────────────────────────────────────────
+    Route::get('/badges', [MemberController::class, 'badges']);
+
+    // ── Pastor Portal ────────────────────────────────────────────────────────────
+    Route::prefix('pastors')->group(function () {
+        Route::get('/me', [PastorController::class, 'me']);
+        Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
+        Route::get('/dashboard', [PastorController::class, 'dashboard']);
+        Route::get('/members', [PastorController::class, 'members'])
+             ->middleware('throttle:120,1');
+        Route::post('/members/bulk', [PastorController::class, 'bulkMemberAction']);
+        Route::post('/members/{member}/status', [PastorController::class, 'updateMemberStatus']);
+        Route::get('/home-groups', [PastorController::class, 'homeGroups']);
+        Route::get('/activities', [PastorController::class, 'activities']);
+        Route::put('/zone', [PastorController::class, 'updateZoneInfo']);
+        Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
+        Route::get('/partners', [PastorController::class, 'partners']);
+
+        // 360 member view
+        Route::get('/members/{member}/360', [PastorController::class, 'member360']);
+        Route::put('/members/{member}/notes', [PastorController::class, 'updateMemberNotes']);
+    });
 
     // ── Dashboard Metrics ──────────────────────────────────────────────────────
     Route::get('/dashboard/metrics', [DashboardController::class, 'metrics']);

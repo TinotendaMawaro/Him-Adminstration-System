@@ -12,8 +12,11 @@ use App\Models\HomeGroupInvitation;
 use App\Models\Member;
 use App\Models\Partner;
 use App\Models\Report;
+use App\Models\SpiritualMilestone;
+use App\Models\UserBadge;
 use App\Models\Zone;
 use App\Models\ZoneHistory;
+use App\Services\ProfileCompletenessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -699,12 +702,103 @@ class PastorController extends Controller
               'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
           ]);
 
-          $member->status = $validated['status'];
-          $member->save();
+           $member->status = $validated['status'];
+           $member->save();
 
-          return response()->json([
-              'success' => true,
-              'data' => new MemberResource($member->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
-          ]);
-      }
+           return response()->json([
+               'success' => true,
+               'data' => new MemberResource($member->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
+           ]);
+       }
+
+    /** GET /api/pastors/members/{member}/360 — 360-degree member view */
+    public function member360(Request $request, Member $member): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isPastor() || !$user->zone_id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        if ($member->zone_id !== $user->zone_id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        $member->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography', 'partner']);
+        $memberUser = $member->user;
+
+        $engagement = [
+            'total_events_attended'   => (int) $memberUser->eventRegistrations()->where('status', 'attended')->count(),
+            'upcoming_events'         => (int) $memberUser->eventRegistrations()->whereHas('event', fn($q) => $q->upcoming())->count(),
+            'home_group_tenure_months'=> $member->homeGroup ? $member->homeGroup->created_at->diffInMonths(now()) : 0,
+            'department_tenure_months'=> $member->department ? $member->department->created_at->diffInMonths(now()) : 0,
+            'partner_since'           => $member->partner?->enrolled_at?->format('Y-m-d'),
+            'total_donations'         => (float) $memberUser->payments()->sum('amount'),
+        ];
+
+        $milestones = SpiritualMilestone::where('user_id', $memberUser->id)
+            ->orderByDesc('achieved_at')
+            ->get();
+
+        $events = $memberUser->eventRegistrations()
+            ->with('event')
+            ->orderByDesc('registered_at')
+            ->limit(10)
+            ->get()
+            ->pluck('event')
+            ->map(fn($e) => [
+                'id'       => $e->id,
+                'title'    => $e->title,
+                'starts_at'=> $e->starts_at?->format('Y-m-d H:i'),
+                'venue'    => $e->venue_name,
+            ]);
+
+        $badges = UserBadge::where('user_id', $memberUser->id)
+            ->with('badgeCatalog')
+            ->orderByDesc('earned_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'member'     => new MemberResource($member),
+                'engagement' => $engagement,
+                'milestones' => $milestones,
+                'events'     => $events,
+                'badges'     => $badges,
+                'notes'      => $member->pastor_notes,
+                'affiliations' => [
+                    'current_home_group' => $member->homeGroup?->name,
+                    'current_department' => $member->department?->name,
+                    'zone_name'          => $member->zone?->name,
+                ],
+            ],
+        ]);
+    }
+
+    /** PUT /api/pastors/members/{member}/notes — update pastor notes */
+    public function updateMemberNotes(Request $request, Member $member): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isPastor() || !$user->zone_id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        if ($member->zone_id !== $user->zone_id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $member->update([
+            'pastor_notes'          => $validated['notes'] ?? null,
+            'pastor_notes_by'       => $user->id,
+            'pastor_notes_updated_at'=> now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Notes saved successfully.']);
+    }
 }

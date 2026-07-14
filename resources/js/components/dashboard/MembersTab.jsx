@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
-import MemberDrawer from "./MemberDrawer.jsx";
+import Member360View from "../pastors/Member360View.jsx";
 import Pagination from "../Pagination.jsx";
 
 const ROW_CLASS = "h-11";
@@ -98,13 +98,14 @@ export default function MembersTab() {
 
     const handleViewMember = async (member) => {
       try {
-        const response = await api.get(`/members/${member.id}`);
+        const response = await api.get(`/pastors/members/${member.id}/360`);
         if (response.data.success) {
           setSelectedMember(response.data.data);
           setShowDrawer(true);
         }
       } catch (err) {
-        console.error('Error fetching member details:', err);
+        console.error('Error fetching member 360:', err);
+        // Fallback to basic member data
         setSelectedMember(member);
         setShowDrawer(true);
       }
@@ -270,7 +271,7 @@ export default function MembersTab() {
         </div>
 
         {showDrawer && selectedMember && (
-          <MemberDrawer member={selectedMember} onClose={() => setShowDrawer(false)} onUpdated={handleRefresh} />
+          <Member360View memberId={selectedMember?.member?.id || selectedMember?.id} onClose={() => setShowDrawer(false)} />
         )}
 
         {showRegisterModal && (

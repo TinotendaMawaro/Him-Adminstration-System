@@ -17,3 +17,4 @@ enum PrayerReplyType: string
         };
     }
 }
+
