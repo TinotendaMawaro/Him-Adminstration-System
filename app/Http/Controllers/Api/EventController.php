@@ -236,4 +236,110 @@ class EventController extends Controller
             'data'    => EventRegistrationResource::collection($registrations),
         ]);
     }
+
+    public function featured(): JsonResponse
+    {
+        $event = Event::where('status', 'published')
+            ->where('is_featured', true)
+            ->where('starts_at', '>', now())
+            ->orderBy('starts_at')
+            ->first();
+
+        if (!$event) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => new EventResource($event->load('zone', 'createdBy')),
+        ]);
+    }
+
+    public function stats(): JsonResponse
+    {
+        $user = request()->user();
+        $now = now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
+
+        $thisMonthCount = Event::where('status', 'published')
+            ->where('starts_at', '>=', $startOfMonth)
+            ->where('starts_at', '<=', $endOfMonth)
+            ->count();
+
+        $nextEvent = Event::where('status', 'published')
+            ->where('starts_at', '>', $now)
+            ->orderBy('starts_at')
+            ->first();
+
+        $nextFeatured = Event::where('status', 'published')
+            ->where('is_featured', true)
+            ->where('starts_at', '>', $now)
+            ->orderBy('starts_at')
+            ->first();
+
+        $livestreamsToday = Event::where('status', 'published')
+            ->where('is_livestream', true)
+            ->whereDate('starts_at', $now->toDateString())
+            ->count();
+
+        $registeredCount = 0;
+        $attendedCount = 0;
+        if ($user) {
+            $registeredCount = EventRegistration::where('user_id', $user->id)
+                ->where('status', 'confirmed')
+                ->count();
+            $attendedCount = EventRegistration::where('user_id', $user->id)
+                ->where('attended', true)
+                ->count();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'this_month_count'    => $thisMonthCount,
+                'next_event_in'       => $nextEvent ? $now->diffForHumans($nextEvent->starts_at, true) : null,
+                'total_this_month'    => $thisMonthCount,
+                'livestreams_today'   => $livestreamsToday,
+                'registered_count'    => $registeredCount,
+                'attended_count'      => $attendedCount,
+                'next_featured_event' => $nextFeatured ? [
+                    'id'       => $nextFeatured->id,
+                    'title'    => $nextFeatured->title,
+                    'starts_at'=> $nextFeatured->starts_at?->toIso8601String(),
+                ] : null,
+            ],
+        ]);
+    }
+
+    public function myRegistrations(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $registrations = EventRegistration::where('user_id', $user->id)
+            ->with(['event' => fn ($q) => $q->select('id', 'title', 'starts_at', 'ends_at', 'venue_name', 'status', 'is_livestream', 'livestream_url')])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($registration) {
+                $event = $registration->event;
+                return [
+                    'id'                  => $registration->id,
+                    'registration_number' => 'HIM-2026-' . str_pad($registration->id, 6, '0', STR_PAD_LEFT),
+                    'event_id'            => $event?->id,
+                    'event_title'         => $event?->title,
+                    'starts_at'           => $event?->starts_at?->toIso8601String(),
+                    'ends_at'             => $event?->ends_at?->toIso8601String(),
+                    'venue_name'          => $event?->venue_name,
+                    'status'              => $registration->status,
+                    'attended'            => $registration->attended,
+                    'checked_in_at'       => $registration->checked_in_at,
+                    'qr_code_url'         => $event ? "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode("/events/{$event->id}/checkin?registration={$registration->id}") : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $registrations,
+        ]);
+    }
 }

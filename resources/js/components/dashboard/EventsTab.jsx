@@ -1,242 +1,236 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import api from "../../lib/api.js";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "../../lib/api";
+import EventsHeaderAnalytics from "./EventsHeaderAnalytics";
+import EventsFilterBar from "./EventsFilterBar";
+import FeaturedEventBanner from "./FeaturedEventBanner";
+import EventsTimeline from "./EventsTimeline";
+import MyRegisteredEvents from "./MyRegisteredEvents";
+import RegistrationModal from "./RegistrationModal";
+import CalendarViewToggle from "./CalendarViewToggle";
+import CalendarMonth from "./CalendarMonth";
+import CalendarAgenda from "./CalendarAgenda";
+import InlineLivePlayer from "./InlineLivePlayer";
+import EventDetailModal from "./EventDetailModal";
+import AISuggestionsWidget from "./AISuggestionsWidget";
 
-const Icons = {
-    Calendar: ({ className }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-    ),
-    Clock: ({ className }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-    ),
-    MapPin: ({ className }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-    ),
-    Users: ({ className }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-        </svg>
-    ),
-    CheckCircle: ({ className }) => (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-    ),
+const INITIAL_FILTERS = {
+  scope: "all",
+  demographics: [],
+  eventType: [],
+  view: "list",
 };
 
+const FALLBACK_EVENTS = [
+  { id: "e29", title: "Operation Come and See", startDate: "2026-07-19", location: "All Zones", category: "Events", starts_at: "2026-07-19T09:00:00Z", ends_at: "2026-07-19T12:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e30", title: "Empowerment Summit SA", startDate: "2026-07-23", endDate: "2026-07-25", location: "South Africa", category: "International", starts_at: "2026-07-23T09:00:00Z", ends_at: "2026-07-25T18:00:00Z", venue_name: "South Africa", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e31", title: "Anointing Night – Men on Fire", startDate: "2026-07-30", location: "IOC", category: "International", starts_at: "2026-07-30T18:00:00Z", ends_at: "2026-07-30T21:00:00Z", venue_name: "IOC", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e32", title: "Pastors Prayer Outing", startDate: "2026-08-03", endDate: "2026-08-05", location: "Richland", category: "International", starts_at: "2026-08-03T08:00:00Z", ends_at: "2026-08-05T17:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e33", title: "Operation Come and See", startDate: "2026-08-16", location: "All Zones", category: "Events", starts_at: "2026-08-16T09:00:00Z", ends_at: "2026-08-16T12:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e34", title: "Gideon Prayer Army", startDate: "2026-08-19", endDate: "2026-08-21", location: "Richland", category: "International", starts_at: "2026-08-19T09:00:00Z", ends_at: "2026-08-21T18:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e35", title: "Catch The Fire Conference", startDate: "2026-08-24", endDate: "2026-08-30", location: "Richland", image: "/images/ctf.jpeg", category: "International", starts_at: "2026-08-24T09:00:00Z", ends_at: "2026-08-30T18:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: true, is_featured: true },
+  { id: "e36", title: "Operation Come and See", startDate: "2026-09-20", location: "All Zones", category: "Events", starts_at: "2026-09-20T09:00:00Z", ends_at: "2026-09-20T12:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e37", title: "Anointing Night – Night to Remember", startDate: "2026-10-02", location: "IOC", category: "International", starts_at: "2026-10-02T18:00:00Z", ends_at: "2026-10-02T21:00:00Z", venue_name: "IOC", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e38", title: "Parents Day", startDate: "2026-10-04", location: "All Zones", category: "Events", starts_at: "2026-10-04T10:00:00Z", ends_at: "2026-10-04T15:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e39", title: "Dubai Apostolic Visit (Fresh Oil)", startDate: "2026-10-08", endDate: "2026-10-10", location: "UAE", category: "International", starts_at: "2026-10-08T09:00:00Z", ends_at: "2026-10-10T18:00:00Z", venue_name: "UAE", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e40", title: "Men on Fire", startDate: "2026-10-14", endDate: "2026-10-17", location: "Richland", category: "International", starts_at: "2026-10-14T09:00:00Z", ends_at: "2026-10-17T18:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e41", title: "International Sports Day", startDate: "2026-10-17", location: "Richland", category: "International", starts_at: "2026-10-17T10:00:00Z", ends_at: "2026-10-17T17:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e42", title: "Operation Come and See", startDate: "2026-10-18", location: "All Zones", category: "Events", starts_at: "2026-10-18T09:00:00Z", ends_at: "2026-10-18T12:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e43", title: "Super Sunday", startDate: "2026-10-18", location: "Richland", category: "International", starts_at: "2026-10-18T10:00:00Z", ends_at: "2026-10-18T13:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e44", title: "White Sunday", startDate: "2026-10-25", location: "All Zones", category: "Events", starts_at: "2026-10-25T10:00:00Z", ends_at: "2026-10-25T15:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e45", title: "Success Night", startDate: "2026-10-30", location: "IOC", category: "International", starts_at: "2026-10-30T18:00:00Z", ends_at: "2026-10-30T21:00:00Z", venue_name: "IOC", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e46", title: "Interdenominational Ministers and Leaders Conference", startDate: "2026-11-12", endDate: "2026-11-14", location: "Richland", category: "International", starts_at: "2026-11-12T09:00:00Z", ends_at: "2026-11-14T18:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e47", title: "Spiritual Heritage Week", startDate: "2026-11-16", endDate: "2026-11-22", location: "IOC and Zones", category: "International", starts_at: "2026-11-16T09:00:00Z", ends_at: "2026-11-22T18:00:00Z", venue_name: "IOC and Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e48", title: "Operation Come and See", startDate: "2026-11-22", location: "All Zones", category: "Events", starts_at: "2026-11-22T09:00:00Z", ends_at: "2026-11-22T12:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e49", title: "Anointing Night – Children's Ministry", startDate: "2026-11-27", location: "IOC", category: "International", starts_at: "2026-11-27T18:00:00Z", ends_at: "2026-11-27T21:00:00Z", venue_name: "IOC", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e50", title: "Day of Honor", startDate: "2026-12-06", location: "All Zones", category: "Events", starts_at: "2026-12-06T10:00:00Z", ends_at: "2026-12-06T15:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e51", title: "Pastor's Seminar", startDate: "2026-12-07", endDate: "2026-12-09", location: "TBD", category: "International", starts_at: "2026-12-07T09:00:00Z", ends_at: "2026-12-09T17:00:00Z", venue_name: "TBD", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e52", title: "Home Groups Close", startDate: "2026-12-08", location: "All Zones", category: "Events", starts_at: "2026-12-08T17:00:00Z", ends_at: "2026-12-08T19:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e53", title: "Operation Come and See & Welfare Day & Children's Church Service", startDate: "2026-12-13", location: "All Zones", category: "Events", starts_at: "2026-12-13T09:00:00Z", ends_at: "2026-12-13T15:00:00Z", venue_name: "All Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e54", title: "Success Camp", startDate: "2026-12-16", endDate: "2026-12-19", location: "TBD", category: "International", image: "/images/Success.jpg", starts_at: "2026-12-16T09:00:00Z", ends_at: "2026-12-19T17:00:00Z", venue_name: "TBD", status: "published", is_past: false, registration_open: true, requires_registration: true },
+  { id: "e55", title: "Absolute Fasting", startDate: "2026-12-28", endDate: "2026-12-29", location: "IOC and Zones", category: "International", starts_at: "2026-12-28T09:00:00Z", ends_at: "2026-12-29T18:00:00Z", venue_name: "IOC and Zones", status: "published", is_past: false, registration_open: true, requires_registration: false },
+  { id: "e56", title: "Marchover Night & Thanksgiving Service", startDate: "2026-12-31", location: "Richland", category: "International", starts_at: "2026-12-31T18:00:00Z", ends_at: "2026-12-31T21:00:00Z", venue_name: "Richland", status: "published", is_past: false, registration_open: true, requires_registration: false },
+];
+
 export default function EventsTab() {
-    const [activeTab, setActiveTab] = useState("upcoming");
-    const [registrationStatus, setRegistrationStatus] = useState({});
+  const queryClient = useQueryClient();
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [registrationModal, setRegistrationModal] = useState(null);
+  const [registrationStatus, setRegistrationStatus] = useState({});
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [timelinePage, setTimelinePage] = useState(1);
 
-    const { data: eventsResponse, isLoading, error, refetch } = useQuery({
-        queryKey: ['zone-events', activeTab],
-        queryFn: async () => {
-            const response = await api.get(`/events?${activeTab === "upcoming" ? "upcoming=true" : ""}`);
-            if (!response.data.success) throw new Error(response.data.message || 'Failed to load events');
-            
-            // Filter and sort events
-            const events = response.data.data.map(e => ({
-                ...e,
-                startDate: e.starts_at ? new Date(e.starts_at).toLocaleDateString() : null,
-                startTime: e.starts_at ? new Date(e.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
-                isPast: e.starts_at ? new Date(e.starts_at) < new Date() : false,
-            }));
+  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+    queryKey: ["events", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.scope !== "all") params.append("scope", filters.scope);
+      if (filters.eventType?.length) params.append("type", filters.eventType.join(","));
+      if (filters.view === "upcoming") params.append("upcoming", "true");
+      const res = await api.get(`/events?${params.toString()}`);
+      if (!res.data.success) throw new Error(res.data.message || "Failed to load events");
+      return res.data.data || [];
+    },
+    staleTime: 30000,
+  });
 
-            // If past events tab, filter for past events
-            if (activeTab === "past") {
-                return events.filter(e => e.isPast);
-            }
-            
-            // For upcoming, sort by date (most recent first)
-            return events.sort((a, b) => {
-                if (!a.starts_at || !b.starts_at) return 0;
-                return new Date(b.starts_at) - new Date(a.starts_at);
-            });
-        },
-        staleTime: 30000,
-        gcTime: 300000,
-        refetchOnWindowFocus: true,
+  const { data: featuredData } = useQuery({
+    queryKey: ["events", "featured"],
+    queryFn: async () => {
+      const res = await api.get("/events/featured");
+      return res.data.data || null;
+    },
+    staleTime: 60000,
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: ["events", "stats"],
+    queryFn: async () => {
+      const res = await api.get("/events/stats");
+      return res.data.data || {};
+    },
+    staleTime: 30000,
+  });
+
+  const { data: myRegistrationsData } = useQuery({
+    queryKey: ["my-registrations"],
+    queryFn: async () => {
+      const res = await api.get("/events/my-registrations");
+      return res.data.data || [];
+    },
+    staleTime: 30000,
+  });
+
+  const events = useMemo(() => {
+    const source = eventsData && eventsData.length > 0 ? eventsData : FALLBACK_EVENTS;
+    return source.map((event) => ({
+      ...event,
+      is_past: event.starts_at ? new Date(event.starts_at) < new Date() : false,
+    }));
+  }, [eventsData]);
+  const featuredEvent = featuredData || FALLBACK_EVENTS.find((e) => e.is_featured) || FALLBACK_EVENTS[0];
+  const stats = statsData || {
+    thisMonthCount: FALLBACK_EVENTS.length,
+    nextEventIn: null,
+    totalThisMonth: FALLBACK_EVENTS.length,
+    livestreamsToday: 0,
+    registeredCount: 0,
+    attendedCount: 0,
+  };
+
+  const isRegisteredMap = useMemo(() => {
+    const map = {};
+    (myRegistrationsData || []).forEach((r) => {
+      map[r.event_id] = true;
     });
+    return map;
+  }, [myRegistrationsData]);
 
-    const events = eventsResponse || [];
+  const handleRegister = async (eventId) => {
+    setRegistrationModal(eventId);
+  };
 
-    const handleRegister = async (eventId) => {
-        setRegistrationStatus(prev => ({ ...prev, [eventId]: 'registering' }));
-        try {
-            const response = await api.post(`/events/${eventId}/register`);
-            if (response.data.success) {
-                setRegistrationStatus(prev => ({ ...prev, [eventId]: 'registered' }));
-                refetch();
-            }
-        } catch (err) {
-            setRegistrationStatus(prev => ({ ...prev, [eventId]: 'error' }));
-        }
-    };
-
-    const handleCancelRegistration = async (eventId) => {
-        setRegistrationStatus(prev => ({ ...prev, [eventId]: 'cancelling' }));
-        try {
-            const response = await api.delete(`/events/${eventId}/register`);
-            if (response.data.success) {
-                setRegistrationStatus(prev => ({ ...prev, [eventId]: 'cancelled' }));
-                refetch();
-            }
-        } catch (err) {
-            setRegistrationStatus(prev => ({ ...prev, [eventId]: 'error' }));
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
-            </div>
-        );
+  const handleConfirmRegistration = async (eventId, data) => {
+    setRegistrationStatus((prev) => ({ ...prev, [eventId]: "registering" }));
+    try {
+      const res = await api.post(`/events/${eventId}/register`, data);
+      if (res.data.success) {
+        setRegistrationStatus((prev) => ({ ...prev, [eventId]: "registered" }));
+        setRegistrationModal(null);
+        queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
+        queryClient.invalidateQueries({ queryKey: ["events"] });
+      }
+    } catch (err) {
+      setRegistrationStatus((prev) => ({ ...prev, [eventId]: "error" }));
+      alert(err.response?.data?.message || "Registration failed. Please try again.");
     }
+  };
 
-    if (error) {
-        return (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                <p className="text-red-600">{error.message}</p>
-                <button onClick={() => refetch()} className="mt-3 text-gold-600 hover:underline">
-                    Try Again
-                </button>
-            </div>
-        );
+  const handleCancelRegistration = async (eventId) => {
+    if (!confirm("Are you sure you want to cancel your registration?")) return;
+    try {
+      const res = await api.delete(`/events/${eventId}/register`);
+      if (res.data.success) {
+        queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
+        queryClient.invalidateQueries({ queryKey: ["events"] });
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to cancel registration.");
     }
+  };
 
+  if (eventsLoading) {
     return (
-        <div className="space-y-6">
-            {/* Tab Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Events</h2>
-                    <p className="text-gray-500 mt-1">Upcoming and past events in your zone</p>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setActiveTab("upcoming")}
-                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                            activeTab === "upcoming"
-                                ? "bg-gradient-to-r from-sky-400 to-sky-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                    >
-                        Upcoming
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("past")}
-                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                            activeTab === "past"
-                                ? "bg-gradient-to-r from-gray-500 to-gray-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                    >
-                        Past Events
-                    </button>
-                </div>
-            </div>
-
-            {/* Events List */}
-            {events.length === 0 ? (
-                <div className="text-center py-20 bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40">
-                    <Icons.Calendar className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                        {activeTab === "upcoming" ? "No Upcoming Events" : "No Past Events"}
-                    </h3>
-                    <p className="text-gray-500">
-                        {activeTab === "upcoming" 
-                            ? "Check back later for new events" 
-                            : "No events have occurred yet"}
-                    </p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {events.map((event) => {
-                        const isRegistered = event.registrations?.[0]?.status === 'confirmed';
-                        const regStatus = registrationStatus[event.id] || (isRegistered ? 'registered' : null);
-
-                        return (
-                            <div key={event.id} className="group relative bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 overflow-hidden hover:shadow-xl transition-all duration-300">
-                                <div className="relative bg-white/70 backdrop-blur-xl rounded-[1.4rem] m-0.5 p-5 h-full">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400/20 to-sky-100/10 flex items-center justify-center">
-                                            <Icons.Calendar className="w-6 h-6 text-sky-600" />
-                                        </div>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                            event.isPast
-                                                ? "bg-gray-100 text-gray-600"
-                                                : "bg-emerald-50 text-emerald-600"
-                                        }`}>
-                                            {event.isPast ? "Past" : "Upcoming"}
-                                        </span>
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
-                                        {event.description && (
-                                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{event.description}</p>
-                                        )}
-                                    </div>
-
-                                    <div className="bg-emerald-50/50 rounded-xl p-3 mb-4">
-                                        <p className="text-xs text-gray-500 uppercase tracking-wider">Event Schedule</p>
-                                        <p className="font-semibold text-gray-900">
-                                            {event.startDate || 'Date TBD'} at {event.startTime || 'Time TBD'}
-                                        </p>
-                                        {event.venue_name && (
-                                            <p className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                                                <Icons.MapPin className="w-4 h-4" />
-                                                {event.venue_name}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {event.category && (
-                                        <span className="inline-block px-2 py-1 rounded-lg text-xs font-medium bg-sky-50 text-sky-700 mb-4">
-                                            {event.category}
-                                        </span>
-                                    )}
-
-                                    {/* Registration Status & Actions */}
-                                    {!event.isPast && event.requires_registration && (
-                                        <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                                            {regStatus === 'registering' ? (
-                                                <span className="text-sm text-gray-500">Registering...</span>
-                                            ) : isRegistered ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Icons.CheckCircle className="w-5 h-5 text-emerald-500" />
-                                                    <span className="text-sm font-medium text-emerald-700">Registered</span>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleRegister(event.id)}
-                                                    disabled={regStatus === 'registering'}
-                                                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-400 to-sky-600 text-white font-semibold hover:from-sky-500 hover:to-sky-700 transition-all duration-300 disabled:opacity-50"
-                                                >
-                                                    Register
-                                                </button>
-                                            )}
-                                            {event.capacity && (
-                                                <span className="text-sm text-gray-500">
-                                                    {event.registrations_count || 0} / {event.capacity} registered
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#d4af37]"></div>
+      </div>
     );
+  }
+
+  const liveEvent = events.find((e) => e.is_livestream && new Date(e.starts_at) <= new Date() && (!e.ends_at || new Date(e.ends_at) >= new Date()));
+
+  return (
+    <div className="space-y-6">
+      <EventsHeaderAnalytics stats={stats} />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <EventsFilterBar filters={filters} onChange={(next) => { setFilters(next); setTimelinePage(1); }} />
+        <CalendarViewToggle view={filters.view} onChange={(view) => setFilters((f) => ({ ...f, view }))} />
+      </div>
+
+      {featuredEvent && (
+        <FeaturedEventBanner
+          event={featuredEvent}
+          onRegister={handleRegister}
+          isRegistered={isRegisteredMap[featuredEvent.id]}
+        />
+      )}
+
+      {liveEvent && (
+        <InlineLivePlayer event={liveEvent} />
+      )}
+
+      <div>
+        <h3 className="text-lg font-bold text-white mb-4">Upcoming Events</h3>
+        {filters.view === "monthly" ? (
+          <CalendarMonth events={events} onSelectEvent={setSelectedEvent} />
+        ) : filters.view === "agenda" ? (
+          <CalendarAgenda events={events} onSelectEvent={setSelectedEvent} />
+        ) : (
+          <EventsTimeline
+            events={events}
+            isRegistered={isRegisteredMap}
+            onRegister={handleRegister}
+            onCancelRegistration={handleCancelRegistration}
+            registrationStatus={registrationStatus}
+            page={timelinePage}
+            onPageChange={setTimelinePage}
+            pageSize={6}
+          />
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-lg font-bold text-white mb-4">My Registered Events</h3>
+        <MyRegisteredEvents registrations={myRegistrationsData} onCancel={handleCancelRegistration} />
+      </div>
+
+      <AISuggestionsWidget />
+
+      {registrationModal && (
+        <RegistrationModal
+          event={
+            events.find((e) => e.id === registrationModal) ||
+            featuredEvent
+          }
+          onClose={() => setRegistrationModal(null)}
+          onConfirm={handleConfirmRegistration}
+        />
+      )}
+
+      {selectedEvent && (
+        <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
+    </div>
+  );
 }

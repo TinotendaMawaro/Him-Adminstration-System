@@ -1636,7 +1636,7 @@ const CHURCH_CALENDAR_EVENTS = Object.freeze([
         endDate: "2026-08-30",
         category: "International",
         location: "Richland",
-        image: "/images/CTF.jpg",
+        image: "/images/ctf.jpeg",
     },
     {
         id: "e36",

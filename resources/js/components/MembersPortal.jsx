@@ -425,6 +425,26 @@ const Icons = {
             />
         </svg>
     ),
+    PlayCircle: ({ className }) => (
+        <svg
+            className={className}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z"
+            />
+        </svg>
+    ),
 };
 
 export { Icons };
@@ -981,7 +1001,9 @@ export default function MembersPortal({ onLogout }) {
                 <nav className="hidden md:block bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-40">
                     <div className="max-w-7xl mx-auto px-4">
                         <div className="flex items-center justify-between h-14">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-4">
+                                <img src="/images/logo.webp" alt="HIM" className="h-8 w-auto" />
+                                <div className="flex items-center gap-1">
                                 <button
                                     onClick={() => handleTabChange("home")}
                                     className={
@@ -1101,6 +1123,7 @@ export default function MembersPortal({ onLogout }) {
                                     <span>Profile</span>
                                 </button>
                             </div>
+                        </div>
                             <div className="flex items-center gap-3">
                                 <div className="nav-avatar">
                                     {(user?.name || "M").charAt(0)}
@@ -1574,73 +1597,8 @@ export default function MembersPortal({ onLogout }) {
 
                     {/* EVENTS TAB */}
                     {activeTab === "events" && (
-                        <div className="tab-panel space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-white">
-                                    All Upcoming Events
-                                </h3>
-                            </div>
-                            <div className="grid grid-cols-1 gap-2.5">
-                                {CHURCH_EVENTS_2026.filter(
-                                    (e) =>
-                                        new Date(e.startDate) >=
-                                        new Date(new Date().toDateString()),
-                                )
-                                    .slice(0, 8)
-                                    .map((event) => (
-                                        <div
-                                            key={event.id}
-                                            className="gradient-border card-hover p-3 cursor-pointer"
-                                            onClick={() =>
-                                                handleAction("view-events")
-                                            }
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className={
-                                                        "w-9 h-9 rounded-md bg-gradient-to-br " +
-                                                        (event.category ===
-                                                        "International"
-                                                            ? "from-[#d4af37] to-amber-500"
-                                                            : "from-sky-400 to-sky-600") +
-                                                        " flex items-center justify-center shadow-sm flex-shrink-0"
-                                                    }
-                                                >
-                                                    <Icons.Calendar className="w-4 h-4 text-white" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-white truncate">
-                                                        {event.title}
-                                                    </h4>
-                                                    <p className="text-[10px] text-gray-400 mt-0.5">
-                                                        {event.startDate}
-                                                        {event.endDate !==
-                                                        event.startDate
-                                                            ? " — " +
-                                                              event.endDate
-                                                            : ""}
-                                                    </p>
-                                                    {event.location && (
-                                                        <p className="text-[9px] text-gray-500 mt-0.5">
-                                                            📍 {event.location}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <span
-                                                    className={
-                                                        "px-1.5 py-0.5 rounded-md text-[9px] font-bold " +
-                                                        (event.category ===
-                                                        "International"
-                                                            ? "bg-[#d4af37]/10 text-[#d4af37]"
-                                                            : "bg-sky-500/20 text-sky-300")
-                                                    }
-                                                >
-                                                    {event.category}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
+                        <div className="tab-panel">
+                            <EventsTab />
                         </div>
                     )}
 

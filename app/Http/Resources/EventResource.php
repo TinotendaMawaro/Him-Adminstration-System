@@ -29,6 +29,14 @@ class EventResource extends JsonResource
             'registration_closes_at'=> $this->registration_closes_at?->toIso8601String(),
             'banner_image'          => $this->banner_image,
             'is_public'             => $this->is_public,
+            'category'              => $this->category,
+            'image'                 => $this->image,
+            'banner_image'          => $this->banner_image,
+            'host'                  => $this->host,
+            'theme'                 => $this->theme,
+            'is_featured'           => $this->is_featured ?? false,
+            'is_livestream'         => $this->is_livestream ?? false,
+            'livestream_url'        => $this->livestream_url,
             'registration_count'    => $this->when(
                 $request->user()?->hasAnyRole(['master', 'event', 'finance']),
                 $this->registration_count

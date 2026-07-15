@@ -77,6 +77,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/events/{id}', [EventController::class, 'destroy']);
     Route::get('/events/{id}/registrations', [EventController::class, 'registrations']);
 
+    Route::get('/events/featured', [EventController::class, 'featured']);
+    Route::get('/events/stats', [EventController::class, 'stats']);
+    Route::get('/events/my-registrations', [EventController::class, 'myRegistrations']);
+
     // ── Assets ──────────────────────────────────────────────────────────────────
     Route::get('/assets', [AssetController::class, 'index']);
     Route::get('/assets/options', [AssetController::class, 'options']);

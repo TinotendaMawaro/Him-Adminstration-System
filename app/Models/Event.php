@@ -22,6 +22,8 @@ class Event extends Model
         'registration_closes_at', 'status', 'is_public',
         'created_by', 'banner_image',
         'category', 'image',
+        'host', 'theme', 'is_featured', 'is_livestream',
+        'livestream_url', 'target_demographics', 'requires_checkin',
     ];
 
     protected function casts(): array
@@ -35,7 +37,11 @@ class Event extends Model
             'requires_registration'  => 'boolean',
             'requires_payment'       => 'boolean',
             'is_public'              => 'boolean',
+            'is_featured'            => 'boolean',
+            'is_livestream'          => 'boolean',
+            'requires_checkin'       => 'boolean',
             'registration_fee'       => 'decimal:2',
+            'target_demographics'    => 'array',
         ];
     }
 

@@ -98,16 +98,22 @@ class EventSeeder extends Seeder
             Event::updateOrCreate(
                 ['title' => $event[0], 'starts_at' => $event[1]],
                 [
-                    'title' => $event[0],
-                    'description' => $event[0],
-                    'starts_at' => $event[1] . ' 00:00:00',
-                    'ends_at' => $event[2] ? $event[2] . ' 23:59:59' : null,
-                    'venue_name' => $event[3],
-                    'category' => $event[4],
-                    'zone_id' => $event[5],
-                    'status' => 'published',
-                    'is_public' => true,
-                    'created_by' => $eventCoordinator?->id ?? 1,
+                    'description'            => $event[0],
+                    'starts_at'              => $event[1] . ' 00:00:00',
+                    'ends_at'                => $event[2] ? $event[2] . ' 23:59:59' : null,
+                    'venue_name'             => $event[3],
+                    'category'               => $event[4],
+                    'zone_id'                => $event[5],
+                    'status'                 => 'published',
+                    'is_public'              => true,
+                    'is_featured'            => $event[0] === 'Catch The Fire Conference',
+                    'image'                  => $event[0] === 'Catch The Fire Conference' ? '/images/ctf.jpeg' : ($event[0] === 'Success Camp' ? '/images/Success.jpg' : null),
+                    'host'                   => null,
+                    'theme'                  => null,
+                    'is_livestream'          => false,
+                    'livestream_url'         => null,
+                    'requires_registration'  => true,
+                    'created_by'             => $eventCoordinator?->id ?? 1,
                 ]
             );
         }
