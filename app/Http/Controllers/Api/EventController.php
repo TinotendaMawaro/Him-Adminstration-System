@@ -25,8 +25,15 @@ class EventController extends Controller
             ->published()
             ->orderBy('starts_at');
 
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
+        if ($request->filled('type')) {
+            $types = array_filter(array_map('trim', explode(',', (string) $request->get('type'))));
+            if ($types) {
+                $query->whereIn('type', $types);
+            }
+        }
+
+        if ($request->filled('scope') && $request->get('scope') !== 'all') {
+            $query->where('scope', $request->get('scope'));
         }
 
         if ($request->boolean('upcoming')) {

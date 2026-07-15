@@ -6,7 +6,7 @@ import HomeGroupCommunity from "./HomeGroupCommunity";
 import HomeGroupSelector from "./HomeGroupSelector.jsx";
 import DepartmentRequest from "./DepartmentRequest.jsx";
 import Drawer from "./Drawer.jsx";
-import EventsTab from "./dashboard/EventsTab.jsx";
+import EventsTab, { FALLBACK_EVENTS } from "./dashboard/EventsTab.jsx";
 import LeaveReasonModal from "./LeaveReasonModal.jsx";
 import MembershipCard from "./MembershipCard.jsx";
 import PrayerCenter from "./prayer-center/PrayerCenter.jsx";
@@ -633,43 +633,6 @@ const DepartmentsSection = ({ user, onViewDepartments, onRequestLeave }) => {
 };
 
 // ============================================================================
-// EVENTS DATA
-// ============================================================================
-
-const CHURCH_EVENTS_2026 = [
-    {
-        id: "e1",
-        title: "21 Days of Prayer and Fasting",
-        startDate: "2026-01-11",
-        endDate: "2026-01-31",
-        category: "International",
-        location: "IOC and Zones",
-    },
-    {
-        id: "e2",
-        title: "Anointing Night",
-        startDate: "2026-01-30",
-        endDate: "2026-01-30",
-        category: "International",
-        location: "IOC",
-    },
-    {
-        id: "e3",
-        title: "Operation Come and See",
-        startDate: "2026-01-18",
-        endDate: "2026-01-18",
-        category: "Events",
-    },
-    {
-        id: "e4",
-        title: "Homegroup Opening",
-        startDate: "2026-02-03",
-        endDate: "2026-02-03",
-        category: "Events",
-    },
-];
-
-// ============================================================================
 // MAIN MEMBERS PORTAL
 // ============================================================================
 
@@ -711,6 +674,16 @@ export default function MembersPortal({ onLogout }) {
         retry: 1,
     });
 
+    const { data: homeEventsData } = useQuery({
+        queryKey: ["home-upcoming-events"],
+        queryFn: async () => {
+            const res = await api.get("/events?upcoming=true");
+            if (!res.data.success) throw new Error();
+            return res.data.data || [];
+        },
+        staleTime: 30000,
+    });
+
     const pendingInvitationsCount = (invitationsData || []).filter(
         (inv) => inv.status === "pending",
     ).length;
@@ -718,9 +691,15 @@ export default function MembersPortal({ onLogout }) {
         (r) => r.status === "pending",
     ).length;
 
-    const upcomingEventsCount = CHURCH_EVENTS_2026.filter(
-        (e) => new Date(e.startDate) >= new Date(new Date().toDateString())
-    ).length;
+    const upcomingEvents = useMemo(() => {
+        const source = homeEventsData && homeEventsData.length > 0 ? homeEventsData : FALLBACK_EVENTS;
+        return source
+            .filter((e) => !e.is_past)
+            .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
+            .slice(0, 4);
+    }, [homeEventsData]);
+
+    const upcomingEventsCount = upcomingEvents.length;
 
     const [activeTab, setActiveTab] = useState("home");
     const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -1391,19 +1370,43 @@ export default function MembersPortal({ onLogout }) {
                                     </button>
                                 </div>
                                 <div className="space-y-2">
-                                    {CHURCH_EVENTS_2026.slice(0, 4).map((event) => (
-                                        <div key={event.id} className="gradient-border card-hover p-3 cursor-pointer" onClick={() => handleTabChange("events")}>
-                                            <div className="flex items-start gap-3">
-                                                <span className={`text-[10px] px-2 py-0.5 rounded ${event.category === "International" ? "bg-[#d4af37]/10 text-[#d4af37]" : "bg-sky-500/20 text-sky-300"}`}>
-                                                    {event.category === "International" ? "🔥 FEATURED" : "📅"}
-                                                </span>
-                                                <div className="flex-1">
-                                                    <p className="text-xs font-bold text-white">{event.title}</p>
-                                                    <p className="text-[10px] text-gray-400">{event.startDate} • {event.location || "Open to All"}</p>
-                                                </div>
-                                            </div>
+                                    {upcomingEvents.length === 0 ? (
+                                        <div className="text-center py-6 text-gray-500 text-xs">
+                                            No upcoming events at this time.
                                         </div>
-                                    ))}
+                                    ) : (
+                                        upcomingEvents.map((event) => {
+                                            const dateStr = event.starts_at
+                                                ? new Date(event.starts_at).toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })
+                                                : "Date TBD";
+                                            const location = event.venue_name || event.location || "Open to All";
+                                            const isFeatured = event.is_featured || event.category === "International";
+
+                                            return (
+                                                <div
+                                                    key={event.id}
+                                                    className="gradient-border card-hover p-3 cursor-pointer"
+                                                    onClick={() => handleTabChange("events")}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded ${isFeatured ? "bg-[#d4af37]/10 text-[#d4af37]" : "bg-sky-500/20 text-sky-300"}`}>
+                                                            {isFeatured ? "🔥 FEATURED" : "📅"}
+                                                        </span>
+                                                        <div className="flex-1">
+                                                            <p className="text-xs font-bold text-white">{event.title}</p>
+                                                            <p className="text-[10px] text-gray-400">
+                                                                {dateStr} • {location}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             </div>
 

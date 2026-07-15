@@ -1,7 +1,7 @@
 import { Icons } from "../MembersPortal";
 import EventCountdown from "./EventCountdown";
 
-export default function FeaturedEventBanner({ event, onRegister, isRegistered }) {
+export default function FeaturedEventBanner({ event, onRegister, isRegistered, onAddReminder, onShare, onViewDetails }) {
   if (!event) return null;
 
   return (
@@ -58,13 +58,13 @@ export default function FeaturedEventBanner({ event, onRegister, isRegistered })
               Register Now
             </button>
           )}
-          <button className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
+          <button onClick={() => onAddReminder?.(event)} className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
             <Icons.Bell className="w-3.5 h-3.5" /> Add Reminder
           </button>
-          <button className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
+          <button onClick={() => onShare?.(event)} className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
             <Icons.Share className="w-3.5 h-3.5" /> Share
           </button>
-          <button className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
+          <button onClick={() => onViewDetails?.(event)} className="lux-btn px-4 py-2 text-xs bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10">
             View Details
           </button>
         </div>

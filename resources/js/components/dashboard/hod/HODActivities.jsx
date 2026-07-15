@@ -38,7 +38,7 @@ const CHURCH_EVENTS_2026 = Object.freeze([
   { id: "e32", title: "Pastors Prayer Outing", startDate: "2026-08-03", endDate: "2026-08-05", category: "International", location: "Richland" },
   { id: "e33", title: "Operation Come and See", startDate: "2026-08-16", endDate: "2026-08-16", category: "Events" },
   { id: "e34", title: "Gideon Prayer Army", startDate: "2026-08-19", endDate: "2026-08-21", category: "International", location: "Richland" },
-  { id: "e35", title: "Catch The Fire Conference", startDate: "2026-08-24", endDate: "2026-08-30", category: "International", location: "Richland", image: "/images/CTF.jpg" },
+  { id: "e35", title: "Catch The Fire Conference", startDate: "2026-08-24", endDate: "2026-08-30", category: "International", location: "Richland", image: "/images/ctf.jpeg" },
   { id: "e36", title: "Operation Come and See", startDate: "2026-09-20", endDate: "2026-09-20", category: "Events" },
   { id: "e37", title: "Anointing Night – Night to Remember", startDate: "2026-10-02", endDate: "2026-10-02", category: "International", location: "IOC" },
   { id: "e38", title: "Parents Day", startDate: "2026-10-04", endDate: "2026-10-04", category: "Events", location: "All Zones" },

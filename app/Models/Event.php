@@ -16,7 +16,7 @@ class Event extends Model
 
     protected $fillable = [
         'title', 'description', 'type', 'starts_at', 'ends_at',
-        'venue_name', 'venue_address', 'zone_id',
+        'venue_name', 'venue_address', 'zone_id', 'scope',
         'requires_registration', 'requires_payment',
         'registration_fee', 'currency', 'capacity',
         'registration_closes_at', 'status', 'is_public',
@@ -29,7 +29,6 @@ class Event extends Model
     protected function casts(): array
     {
         return [
-            'type'                   => EventType::class,    // ← enum cast
             'status'                 => EventStatus::class,  // ← enum cast
             'starts_at'              => 'datetime',
             'ends_at'                => 'datetime',

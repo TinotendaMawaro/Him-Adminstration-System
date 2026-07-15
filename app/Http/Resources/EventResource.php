@@ -19,6 +19,8 @@ class EventResource extends JsonResource
             'ends_at'               => $this->ends_at?->toIso8601String(),
             'venue_name'            => $this->venue_name,
             'venue_address'         => $this->venue_address,
+            'zone_id'               => $this->zone_id,
+            'scope'                 => $this->scope,
             'requires_registration' => $this->requires_registration,
             'requires_payment'      => $this->requires_payment,
             'registration_fee'      => $this->registration_fee,

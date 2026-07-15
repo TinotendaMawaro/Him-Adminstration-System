@@ -40,6 +40,9 @@ export default function EventsTimeline({
   page = 1,
   onPageChange,
   pageSize = 6,
+  onViewDetails,
+  onShare,
+  onAddReminder,
 }) {
   const grouped = useMemo(() => groupEventsByDate(events || []), [events]);
 
@@ -109,6 +112,9 @@ export default function EventsTimeline({
                 onRegister={onRegister}
                 onCancelRegistration={onCancelRegistration}
                 registrationStatus={registrationStatus?.[event.id]}
+                onViewDetails={onViewDetails}
+                onShare={onShare}
+                onAddReminder={onAddReminder}
               />
             ))}
           </div>

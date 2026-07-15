@@ -39,6 +39,9 @@ export default function SmartEventCard({
   onRegister,
   onCancelRegistration,
   registrationStatus,
+  onViewDetails,
+  onShare,
+  onAddReminder,
 }) {
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -176,7 +179,7 @@ export default function SmartEventCard({
                   <Icons.Check className="w-3.5 h-3.5" /> Registered
                 </span>
               )}
-              <button className="lux-btn px-3 py-2 text-[10px] font-semibold bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 hover:text-white">
+              <button onClick={() => onViewDetails?.(event)} className="lux-btn px-3 py-2 text-[10px] font-semibold bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 hover:text-white">
                 Details
               </button>
               {event.venue_address && (
@@ -203,10 +206,10 @@ export default function SmartEventCard({
             </div>
 
             <div className="flex items-center gap-1.5">
-              <button className="lux-btn p-2 rounded-xl bg-white/5 ring-1 ring-white/10 text-gray-400 hover:text-white hover:bg-white/10">
+              <button onClick={() => onAddReminder?.(event)} className="lux-btn p-2 rounded-xl bg-white/5 ring-1 ring-white/10 text-gray-400 hover:text-white hover:bg-white/10">
                 <Icons.Calendar className="w-3.5 h-3.5" />
               </button>
-              <button className="lux-btn p-2 rounded-xl bg-white/5 ring-1 ring-white/10 text-gray-400 hover:text-white hover:bg-white/10">
+              <button onClick={() => onShare?.(event)} className="lux-btn p-2 rounded-xl bg-white/5 ring-1 ring-white/10 text-gray-400 hover:text-white hover:bg-white/10">
                 <Icons.Share className="w-3.5 h-3.5" />
               </button>
             </div>
