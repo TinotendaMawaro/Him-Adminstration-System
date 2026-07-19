@@ -111,7 +111,7 @@ export default function EventsHeaderStats({ stats }) {
           />
         </svg>
       ),
-      link: "https://youtube.com/@HIM",
+      link: "https://www.youtube.com/@ApostleTavongaVutabwashe/",
     },
   ];
 

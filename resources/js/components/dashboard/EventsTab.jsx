@@ -69,7 +69,7 @@ export default function EventsTab() {
     setTimeout(() => el.classList.remove("ring-2", "ring-[#d4af37]", "rounded-2xl"), 1600);
   }, []);
 
-  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+  const { data: eventsData } = useQuery({
     queryKey: ["events", filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -80,6 +80,7 @@ export default function EventsTab() {
       return res.data.data || [];
     },
     staleTime: 30000,
+    initialData: FALLBACK_EVENTS,
   });
 
   const { data: featuredData } = useQuery({
@@ -214,14 +215,6 @@ export default function EventsTab() {
   const handleViewDetails = (event) => {
     setSelectedEvent(event);
   };
-
-  if (eventsLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#d4af37]"></div>
-      </div>
-    );
-  }
 
   const liveEvent = events.find((e) => e.is_livestream && new Date(e.starts_at) <= new Date() && (!e.ends_at || new Date(e.ends_at) >= new Date()));
 

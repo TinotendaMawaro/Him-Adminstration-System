@@ -36,7 +36,7 @@ export default function EventsHeaderAnalytics({ stats }) {
             </span>
           </span>
           <a
-            href="https://youtube.com/@HIM"
+            href="https://www.youtube.com/@ApostleTavongaVutabwashe/"
             target="_blank"
             rel="noopener"
             className="text-xs text-[#d4af37] hover:text-amber-400 font-semibold flex items-center gap-1"
