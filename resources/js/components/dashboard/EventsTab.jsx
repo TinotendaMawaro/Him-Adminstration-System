@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api";
 import EventsHeaderAnalytics from "./EventsHeaderAnalytics";
@@ -17,7 +17,6 @@ import AISuggestionsWidget from "./AISuggestionsWidget";
 const INITIAL_FILTERS = {
   scope: "all",
   demographics: [],
-  eventType: [],
   view: "list",
 };
 
@@ -60,13 +59,21 @@ export default function EventsTab() {
   const [registrationStatus, setRegistrationStatus] = useState({});
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [timelinePage, setTimelinePage] = useState(1);
+  const upcomingRef = useRef(null);
+
+  const handleBrowse = useCallback(() => {
+    const el = upcomingRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("ring-2", "ring-[#d4af37]", "rounded-2xl");
+    setTimeout(() => el.classList.remove("ring-2", "ring-[#d4af37]", "rounded-2xl"), 1600);
+  }, []);
 
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ["events", filters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.scope !== "all") params.append("scope", filters.scope);
-      if (filters.eventType?.length) params.append("type", filters.eventType.join(","));
       if (filters.view === "upcoming") params.append("upcoming", "true");
       const res = await api.get(`/events?${params.toString()}`);
       if (!res.data.success) throw new Error(res.data.message || "Failed to load events");
@@ -106,17 +113,26 @@ export default function EventsTab() {
     const source = eventsData && eventsData.length > 0 ? eventsData : FALLBACK_EVENTS;
     return source.map((event) => ({
       ...event,
-      is_past: event.starts_at ? new Date(event.starts_at) < new Date() : false,
+      is_past: (event.ends_at || event.starts_at)
+        ? new Date(event.ends_at || event.starts_at) < new Date()
+        : false,
     }));
   }, [eventsData]);
   const featuredEvent = featuredData || FALLBACK_EVENTS.find((e) => e.is_featured) || FALLBACK_EVENTS[0];
   const stats = statsData || {
-    thisMonthCount: FALLBACK_EVENTS.length,
-    nextEventIn: null,
-    totalThisMonth: FALLBACK_EVENTS.length,
+    thisMonthCount: FALLBACK_EVENTS.filter(
+      (e) => e.starts_at && new Date(e.starts_at).getMonth() === new Date().getMonth()
+        && new Date(e.starts_at).getFullYear() === new Date().getFullYear()
+    ).length,
+    next_event_starts_at: null,
+    totalThisMonth: FALLBACK_EVENTS.filter(
+      (e) => e.starts_at && new Date(e.starts_at).getMonth() === new Date().getMonth()
+        && new Date(e.starts_at).getFullYear() === new Date().getFullYear()
+    ).length,
     livestreamsToday: 0,
     registeredCount: 0,
     attendedCount: 0,
+    currentMonth: new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" }),
   };
 
   const isRegisteredMap = useMemo(() => {
@@ -233,7 +249,7 @@ export default function EventsTab() {
         <InlineLivePlayer event={liveEvent} />
       )}
 
-      <div>
+      <div ref={upcomingRef}>
         <h3 className="text-lg font-bold text-white mb-4">Upcoming Events</h3>
         {filters.view === "monthly" ? (
           <CalendarMonth events={events} onSelectEvent={setSelectedEvent} />
@@ -258,7 +274,11 @@ export default function EventsTab() {
 
       <div>
         <h3 className="text-lg font-bold text-white mb-4">My Registered Events</h3>
-        <MyRegisteredEvents registrations={myRegistrationsData} onCancel={handleCancelRegistration} />
+        <MyRegisteredEvents
+          registrations={myRegistrationsData}
+          onCancel={handleCancelRegistration}
+          onBrowse={handleBrowse}
+        />
       </div>
 
       <AISuggestionsWidget />

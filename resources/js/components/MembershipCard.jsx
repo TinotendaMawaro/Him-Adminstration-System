@@ -14,7 +14,7 @@ const DocumentDownloadIcon = ({ className }) => (
 
 const ShareIcon = ({ className }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 100 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 1 0 0 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 13.5l3 3m0 0l-3 3m3-3H9" />
     </svg>
 );

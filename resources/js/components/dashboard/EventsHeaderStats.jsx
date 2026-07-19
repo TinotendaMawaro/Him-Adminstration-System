@@ -1,7 +1,38 @@
+import { useEffect, useState } from "react";
+
+function useNow(intervalMs = 1000) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
+function formatCountdown(targetIso, now) {
+  const target = targetIso ? new Date(targetIso) : null;
+  if (!target) return "—";
+  const diff = target.getTime() - now.getTime();
+  if (diff <= 0) return "Now";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 export default function EventsHeaderStats({ stats }) {
+  const now = useNow(1000);
+  const currentMonth =
+    stats?.currentMonth ||
+    now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
   const items = [
     {
-      label: "This Month",
+      label: currentMonth,
       value: stats?.thisMonthCount ?? 0,
       icon: (
         <svg
@@ -21,7 +52,7 @@ export default function EventsHeaderStats({ stats }) {
     },
     {
       label: "Next Event In",
-      value: stats?.nextEventIn ?? "—",
+      value: formatCountdown(stats?.next_event_starts_at, now),
       icon: (
         <svg
           className="w-4 h-4"
@@ -39,7 +70,7 @@ export default function EventsHeaderStats({ stats }) {
       ),
     },
     {
-      label: "Total This Month",
+      label: `Total ${currentMonth}`,
       value: stats?.totalThisMonth ?? 0,
       icon: (
         <svg

@@ -18,22 +18,6 @@ const DEMOGRAPHICS_OPTIONS = [
   "Pastors",
 ];
 
-const EVENT_TYPE_OPTIONS = [
-  "Prayer",
-  "Conferences",
-  "Training",
-  "Leadership",
-  "Online Events",
-  "Livestreams",
-];
-
-const VIEW_OPTIONS = [
-  { value: "list", label: "List" },
-  { value: "monthly", label: "Monthly" },
-  { value: "agenda", label: "Agenda" },
-  { value: "timeline", label: "Timeline" },
-];
-
 function FilterPill({ active, onClick, children, ...props }) {
   return (
     <button
@@ -80,34 +64,6 @@ export default function EventsFilterBar({ filters, onChange }) {
       ))}
 
       <span className="w-px h-5 bg-white/10 mx-2 hidden md:block" />
-
-      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mr-1 hidden md:block">
-        Type
-      </span>
-      {EVENT_TYPE_OPTIONS.map((type) => (
-        <FilterPill
-          key={type}
-          active={(filters.eventType || []).includes(type)}
-          onClick={() => toggleArray("eventType", type)}
-        >
-          {type}
-        </FilterPill>
-      ))}
-
-      <span className="w-px h-5 bg-white/10 mx-2 hidden md:block" />
-
-      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mr-1 hidden md:block">
-        View
-      </span>
-      {VIEW_OPTIONS.map((opt) => (
-        <FilterPill
-          key={opt.value}
-          active={filters.view === opt.value}
-          onClick={() => setSingle("view", opt.value)}
-        >
-          {opt.label}
-        </FilterPill>
-      ))}
     </div>
   );
 }

@@ -306,10 +306,12 @@ class EventController extends Controller
             'data'    => [
                 'this_month_count'    => $thisMonthCount,
                 'next_event_in'       => $nextEvent ? $now->diffForHumans($nextEvent->starts_at, true) : null,
+                'next_event_starts_at' => $nextEvent ? $nextEvent->starts_at?->toIso8601String() : null,
                 'total_this_month'    => $thisMonthCount,
                 'livestreams_today'   => $livestreamsToday,
                 'registered_count'    => $registeredCount,
                 'attended_count'      => $attendedCount,
+                'current_month'       => $now->format('F Y'),
                 'next_featured_event' => $nextFeatured ? [
                     'id'       => $nextFeatured->id,
                     'title'    => $nextFeatured->title,

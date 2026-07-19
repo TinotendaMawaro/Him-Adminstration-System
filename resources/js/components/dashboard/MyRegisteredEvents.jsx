@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icons } from "../MembersPortal";
 
-export default function MyRegisteredEvents({ registrations, onCancel }) {
+export default function MyRegisteredEvents({ registrations, onCancel, onBrowse }) {
   const [activeTab, setActiveTab] = useState("upcoming");
 
   const upcoming = registrations?.filter((r) => !r.attended && new Date(r.starts_at) >= new Date()) || [];
@@ -16,10 +16,16 @@ export default function MyRegisteredEvents({ registrations, onCancel }) {
         <h3 className="text-lg font-semibold text-gray-700 mb-2">
           No Registered Events Yet
         </h3>
-        <p className="text-gray-500 text-sm mb-4">
-          You haven't registered for any events. Browse upcoming events to get
-          started.
+        <p className="text-gray-500 text-sm mb-5 max-w-xs mx-auto">
+          Registration is quick and confirmation is instant. Browse upcoming
+          events to reserve your place.
         </p>
+        <button
+          onClick={onBrowse}
+          className="lux-btn px-5 py-2.5 text-xs font-semibold bg-[#d4af37] text-[#0A192F] hover:bg-amber-400 transition-all"
+        >
+          Browse Events <span aria-hidden="true">→</span>
+        </button>
       </div>
     );
   }

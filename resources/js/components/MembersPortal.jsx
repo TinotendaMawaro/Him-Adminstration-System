@@ -416,7 +416,7 @@ const Icons = {
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M7.217 10.907a2.25 2.25 0 100-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 100 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z"
+                d="M7.217 10.907a2.25 2.25 0 1 0 0-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 1 0 0 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z"
             />
             <path
                 strokeLinecap="round"
@@ -1044,40 +1044,6 @@ export default function MembersPortal({ onLogout }) {
                                     <span>Events</span>
                                 </button>
                                 <button
-                                    onClick={() => handleTabChange("reports")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "reports"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.DocumentText className="nav-icon" />{" "}
-                                    <span>Reports</span>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        handleTabChange("notifications");
-                                        handleNotificationToggle();
-                                    }}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "notifications"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <span className="nav-icon-wrap">
-                                        <Icons.Bell className="nav-icon" />
-                                        {pendingInvitationsCount > 0 && (
-                                            <span className="nav-badge">
-                                                {pendingInvitationsCount}
-                                            </span>
-                                        )}
-                                    </span>
-                                    <span>Alerts</span>
-                                </button>
-                                <button
                                     onClick={() => handleTabChange("partnership")}
                                     className={
                                         "nav-btn " +
@@ -1104,6 +1070,23 @@ export default function MembersPortal({ onLogout }) {
                             </div>
                         </div>
                             <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        handleTabChange("notifications");
+                                        handleNotificationToggle();
+                                    }}
+                                    className="nav-logout relative"
+                                    title="Alerts"
+                                >
+                                    <span className="nav-icon-wrap">
+                                        <Icons.Bell className="w-4 h-4" />
+                                        {pendingInvitationsCount > 0 && (
+                                            <span className="nav-badge">
+                                                {pendingInvitationsCount}
+                                            </span>
+                                        )}
+                                    </span>
+                                </button>
                                 <div className="nav-avatar">
                                     {(user?.name || "M").charAt(0)}
                                     <span className="nav-avatar-dot"></span>
@@ -1171,12 +1154,6 @@ export default function MembersPortal({ onLogout }) {
                                     label: "Events",
                                     gradient: "from-violet-400 to-violet-600",
                                 },
-                            {
-                                id: "reports",
-                                icon: Icons.DocumentText,
-                                label: "Reports",
-                                gradient: "from-orange-400 to-orange-600",
-                            },
                             {
                                 id: "notifications",
                                 icon: Icons.Bell,
@@ -1605,33 +1582,7 @@ export default function MembersPortal({ onLogout }) {
                         </div>
                     )}
 
-                    {/* REPORTS TAB */}
-                    {activeTab === "reports" && (
-                        <div className="tab-panel space-y-4">
-                            <div className="gradient-border card-hover p-4 text-center">
-                                <div className="w-12 h-12 mx-auto mb-2.5 rounded-md bg-orange-500/20 flex items-center justify-center">
-                                    <Icons.DocumentText className="w-5 h-5 text-orange-300" />
-                                </div>
-                                <h3 className="text-xs font-bold text-white mb-0.5">
-                                    Submit a Report
-                                </h3>
-                                <p className="text-[10px] text-gray-400 mb-2.5">
-                                    Share prayer requests, report absences, or
-                                    give feedback.
-                                </p>
-                                <button
-                                    onClick={() =>
-                                        handleAction("submit-reports")
-                                    }
-                                    className="btn btn-lg bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:shadow-lg transition-all"
-                                >
-                                    Open Report Form
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-{/* ALERTS TAB */}
+                    {/* ALERTS TAB */}
                       {activeTab === "notifications" && (
                           <div className="tab-panel space-y-4">
                               <div className="flex items-center justify-between">
