@@ -18,6 +18,8 @@ import NearbyHomeGroups from "./dashboard/NearbyHomeGroups.jsx";
 import Member360View from "./pastors/Member360View.jsx";
 import LocationEntry from "./onboarding/LocationEntry.jsx";
 import ProfileFormManager from "../utils/ProfileFormManager.js";
+import MembersNavBar, { membersNavStyles, ProfilePictureModal } from "./MembersNavBar.jsx";
+import MembersPartnershipPage from "./MembersPartnershipPage.jsx";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND
@@ -710,6 +712,8 @@ export default function MembersPortal({ onLogout }) {
     const [connectSubmenu, setConnectSubmenu] = useState(null); // 'messages' | 'prayer' | 'testimonies'
     const [showLocationEntry, setShowLocationEntry] = useState(false);
     const [selectedMemberFor360, setSelectedMemberFor360] = useState(null);
+    const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+    const [mobileUploadOpen, setMobileUploadOpen] = useState(false);
     const [, setProfileFormVersion] = useState(0);
     const profileFormRef = useRef(null);
 
@@ -974,146 +978,115 @@ export default function MembersPortal({ onLogout }) {
                 .lux-card:hover::before { opacity: 1; }
                 @keyframes lux-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
                 .lux-rise { animation: lux-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+                /* ===== PREMIUM NAVBAR (MembersNavBar) ===== */
+                ${membersNavStyles}
+
+                /* ===== MOBILE BOTTOM NAV (redesigned) ===== */
+                .mpm-mobile-tab {
+                    position: relative;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 2px;
+                    flex: 1;
+                    height: 100%;
+                }
+                .mpm-mobile-icon {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #94a3b8;
+                    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .mpm-mobile-icon.is-active {
+                    color: #fff;
+                    background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.1));
+                    transform: translateY(-2px) scale(1.04);
+                    box-shadow: 0 8px 18px -8px rgba(212,175,55,0.5);
+                }
+                .mpm-mobile-label {
+                    font-size: 9px;
+                    font-weight: 500;
+                    color: #94a3b8;
+                    transition: color 0.2s;
+                }
+                .mpm-mobile-label.is-active { color: #fff; font-weight: 600; }
+                .mpm-mobile-dot {
+                    position: absolute;
+                    top: 4px;
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                    background: #d4af37;
+                }
+                .mpm-mobile-badge {
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    min-width: 14px;
+                    height: 14px;
+                    padding: 0 3px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #ef4444, #e11d48);
+                    color: #fff;
+                    font-size: 8px;
+                    font-weight: 700;
+                    border-radius: 999px;
+                }
+                .mpm-mobile-avatar {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 11px;
+                    overflow: hidden;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, #d4af37, #f59e0b);
+                    border: 1px solid rgba(255,255,255,0.15);
+                    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.4);
+                }
+                .mpm-mobile-sheet {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    width: 100%;
+                    padding: 0.7rem 0.9rem;
+                    border: none;
+                    background: rgba(255,255,255,0.04);
+                    border-radius: 0.7rem;
+                    color: #e2e8f0;
+                    font-size: 0.82rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                }
+                .mpm-mobile-sheet:hover { background: rgba(255,255,255,0.08); }
             `}</style>
 
             <div className="relative z-10 pb-20">
-                <nav className="hidden md:block bg-white/5 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-40">
-                    <div className="max-w-7xl mx-auto px-4">
-                        <div className="flex items-center justify-between h-14">
-                            <div className="flex items-center gap-4">
-                                <img src="/images/logo.webp" alt="HIM" className="h-8 w-auto" />
-                                <div className="flex items-center gap-1">
-                                <button
-                                    onClick={() => handleTabChange("home")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "home"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.Home className="nav-icon" />{" "}
-                                    <span>Home</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("zone")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "zone"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.MapPin className="nav-icon" />{" "}
-                                    <span>Zone</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("homegroup")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "homegroup"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.Users className="nav-icon" />{" "}
-                                    <span>Connect</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("prayer-center")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "prayer-center"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.HandsPraying className="nav-icon" />{" "}
-                                    <span>Prayer</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("events")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "events"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.Calendar className="nav-icon" />{" "}
-                                    <span>Events</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("partnership")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "partnership"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.Heart className="nav-icon" />{" "}
-                                    <span>Partnership</span>
-                                </button>
-                                <button
-                                    onClick={() => handleTabChange("profile")}
-                                    className={
-                                        "nav-btn " +
-                                        (activeTab === "profile"
-                                            ? "nav-active"
-                                            : "nav-inactive")
-                                    }
-                                >
-                                    <Icons.User className="nav-icon" />{" "}
-                                    <span>Profile</span>
-                                </button>
-                            </div>
-                        </div>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => {
-                                        handleTabChange("notifications");
-                                        handleNotificationToggle();
-                                    }}
-                                    className="nav-logout relative"
-                                    title="Alerts"
-                                >
-                                    <span className="nav-icon-wrap">
-                                        <Icons.Bell className="w-4 h-4" />
-                                        {pendingInvitationsCount > 0 && (
-                                            <span className="nav-badge">
-                                                {pendingInvitationsCount}
-                                            </span>
-                                        )}
-                                    </span>
-                                </button>
-                                <div className="nav-avatar">
-                                    {(user?.name || "M").charAt(0)}
-                                    <span className="nav-avatar-dot"></span>
-                                </div>
-                                <button
-                                    onClick={onLogout}
-                                    className="nav-logout"
-                                    title="Logout"
-                                >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
+                <MembersNavBar
+                    user={user}
+                    activeTab={activeTab}
+                    alertCount={pendingInvitationsCount}
+                    onNavigate={handleTabChange}
+                    onAlerts={() => {
+                        handleTabChange("notifications");
+                        handleNotificationToggle();
+                    }}
+                    onLogout={onLogout}
+                    onProfile={() => handleTabChange("profile")}
+                    onUpload={(url) => updateUser({ profile_photo: url })}
+                />
 
                 {/* Mobile Bottom Nav */}
                 <nav
@@ -1122,115 +1095,122 @@ export default function MembersPortal({ onLogout }) {
                         paddingBottom: "env(safe-area-inset-bottom, 0px)",
                     }}
                 >
-                    <div className="flex items-center justify-around h-16">
+                    <div className="flex items-center justify-around h-16 px-1">
                         {[
-                            {
-                                id: "home",
-                                icon: Icons.Home,
-                                label: "Home",
-                                gradient: "from-sky-400 to-sky-600",
-                            },
-                            {
-                                id: "zone",
-                                icon: Icons.MapPin,
-                                label: "Zone",
-                                gradient: "from-[#d4af37] to-amber-600",
-                            },
-                                {
-                                    id: "homegroup",
-                                    icon: Icons.Users,
-                                    label: "Connect",
-                                    gradient: "from-emerald-400 to-emerald-600",
-                                },
-                                {
-                                    id: "prayer-center",
-                                    icon: Icons.HandsPraying,
-                                    label: "Prayer",
-                                    gradient: "from-[#D4AF37] to-amber-600",
-                                },
-                                {
-                                    id: "events",
-                                    icon: Icons.Calendar,
-                                    label: "Events",
-                                    gradient: "from-violet-400 to-violet-600",
-                                },
-                            {
-                                id: "notifications",
-                                icon: Icons.Bell,
-                                label: "Alerts",
-                                gradient: "from-rose-400 to-rose-600",
-                                badge: pendingInvitationsCount,
-                            },
-                            {
-                                id: "partnership",
-                                icon: Icons.Heart,
-                                label: "Partner",
-                                gradient: "from-pink-400 to-pink-600",
-                            },
-                            {
-                                id: "profile",
-                                icon: Icons.User,
-                                label: "Profile",
-                                gradient: "from-indigo-400 to-indigo-600",
-                            },
+                            { id: "home", icon: Icons.Home, label: "Home" },
+                            { id: "zone", icon: Icons.MapPin, label: "Zone" },
+                            { id: "homegroup", icon: Icons.Users, label: "Connect" },
+                            { id: "prayer-center", icon: Icons.HandsPraying, label: "Prayer" },
+                            { id: "events", icon: Icons.Calendar, label: "Events" },
+                            { id: "partnership", icon: Icons.Heart, label: "Partner" },
                         ].map((item) => {
                             const Icon = item.icon;
                             const isActive = activeTab === item.id;
-                            const isNotif = item.id === "notifications";
                             return (
                                 <button
                                     key={item.id}
-                                    onClick={() => {
-                                        if (isNotif) {
-                                            handleTabChange("notifications");
-                                            handleNotificationToggle();
-                                        } else handleTabChange(item.id);
-                                    }}
-                                    className="mobile-tab"
+                                    onClick={() => handleTabChange(item.id)}
+                                    className="mpm-mobile-tab"
                                 >
                                     <div
                                         className={
-                                            "mobile-tab-icon " +
-                                            (isActive
-                                                ? "bg-gradient-to-br text-white shadow-lg scale-110"
-                                                : "text-gray-400")
-                                        }
-                                        style={
-                                            isActive
-                                                ? {
-                                                      background:
-                                                          "linear-gradient(135deg, " +
-                                                          item.gradient +
-                                                          ")",
-                                                  }
-                                                : {}
+                                            "mpm-mobile-icon " +
+                                            (isActive ? "is-active" : "")
                                         }
                                     >
                                         <Icon className="w-5 h-5" />
-                                        {(item.badge || 0) > 0 && isActive && (
-                                            <span className="mobile-badge">
-                                                {item.badge}
-                                            </span>
-                                        )}
                                     </div>
                                     <span
                                         className={
-                                            "mobile-tab-label " +
-                                            (isActive
-                                                ? "text-white"
-                                                : "text-gray-400")
+                                            "mpm-mobile-label " +
+                                            (isActive ? "is-active" : "")
                                         }
                                     >
                                         {item.label}
                                     </span>
-                                    {isActive && (
-                                        <span className="mobile-tab-dot"></span>
-                                    )}
+                                    {isActive && <span className="mpm-mobile-dot" />}
                                 </button>
                             );
                         })}
+
+                        <button
+                            onClick={() => {
+                                handleTabChange("notifications");
+                                handleNotificationToggle();
+                            }}
+                            className="mpm-mobile-tab"
+                        >
+                            <div className="mpm-mobile-icon relative">
+                                <Icons.Bell className="w-5 h-5" />
+                                {pendingInvitationsCount > 0 && (
+                                    <span className="mpm-mobile-badge">
+                                        {pendingInvitationsCount}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="mpm-mobile-label">Alerts</span>
+                        </button>
+
+                        <button
+                            onClick={() => setMobileProfileOpen((v) => !v)}
+                            className="mpm-mobile-tab"
+                        >
+                            <div className="mpm-mobile-avatar">
+                                {user?.profile_photo || user?.profile_picture ? (
+                                    <img
+                                        src={user.profile_photo || user.profile_picture}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-white font-bold text-sm">
+                                        {(user?.name || "M").charAt(0).toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="mpm-mobile-label">Profile</span>
+                        </button>
                     </div>
+
+                    {mobileProfileOpen && (
+                        <div
+                            className="absolute inset-x-0 bottom-16 bg-[#0d1a2e]/95 backdrop-blur-xl border-t border-white/10 p-3 space-y-1"
+                            onClick={() => setMobileProfileOpen(false)}
+                        >
+                            <button
+                                className="mpm-mobile-sheet"
+                                onClick={() => { setMobileProfileOpen(false); setMobileUploadOpen(true); }}
+                            >
+                                <Icons.Users className="w-4 h-4 text-[#f0c66b]" />
+                                Change profile picture
+                            </button>
+                            <button
+                                className="mpm-mobile-sheet"
+                                onClick={() => { setMobileProfileOpen(false); handleTabChange("profile"); }}
+                            >
+                                <Icons.User className="w-4 h-4 text-gray-300" />
+                                View profile
+                            </button>
+                            <button
+                                className="mpm-mobile-sheet text-rose-300"
+                                onClick={() => { setMobileProfileOpen(false); onLogout(); }}
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                </svg>
+                                Sign out
+                            </button>
+                        </div>
+                    )}
                 </nav>
+
+                {mobileUploadOpen && (
+                    <ProfilePictureModal
+                        user={user}
+                        onClose={() => setMobileUploadOpen(false)}
+                        onUpdate={(url) => { updateUser({ profile_photo: url }); setMobileUploadOpen(false); }}
+                    />
+                )}
 
                 {/* ===== TAB CONTENT ===== */}
                 <div className="max-w-7xl mx-auto px-4 py-4 pb-24 md:pb-8">
@@ -1685,25 +1665,9 @@ export default function MembersPortal({ onLogout }) {
 
                       {/* PARTNERSHIP TAB */}
                       {activeTab === "partnership" && (
-                          <div className="tab-panel space-y-4">
-                              <div className="gradient-border card-hover p-4 text-center">
-                                  <div className="w-12 h-12 mx-auto mb-2.5 rounded-md bg-pink-500/20 flex items-center justify-center">
-                                      <Icons.Heart className="w-5 h-5 text-pink-300" />
-                                  </div>
-                                  <h3 className="text-xs font-bold text-white mb-0.5">
-                                      Partnership
-                                  </h3>
-                                  <p className="text-[10px] text-gray-400 mb-2.5">
-                                      Support the global vision of HIM
-                                  </p>
-                                  <button
-                                      onClick={() => handleAction("become-partner")}
-                                      className="btn btn-lg bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md hover:shadow-lg transition-all"
-                                  >
-                                      Activate Partnership
-                                  </button>
-                              </div>
-                          </div>
+                           <div className="tab-panel space-y-4">
+                               <MembersPartnershipPage />
+                           </div>
                       )}
 
                           {/* PROFILE TAB */}
