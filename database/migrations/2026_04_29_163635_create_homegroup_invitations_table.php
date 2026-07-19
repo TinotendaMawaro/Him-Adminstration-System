@@ -15,7 +15,7 @@ return new class extends Migration
               $table->id();
               $table->foreignId('homegroup_id')->constrained('home_groups')->onDelete('cascade');
               $table->foreignId('member_id')->constrained('users')->onDelete('cascade');
-              $table->foreignId('pastor_id')->constrained('users')->onDelete('cascade');
+              $table->foreignId('pastor_id')->nullable()->constrained('users')->onDelete('cascade');
               $table->foreignId('requested_by')->constrained('users')->onDelete('cascade');
               $table->boolean('is_request')->default(false);
               $table->text('message')->nullable();

@@ -418,7 +418,7 @@ const Icons = {
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M7.217 10.907a2.25 2.25 0 1 0 0-2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 1 0 0 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z"
+                d="M7.217 10.907a2.25 2.25 0 1 0 0 -2.25 2.217L8 10.907l-1.107-.01a2.25 2.25 0 1 0 0 4.43 2.217L8 10.907l1.107.01zm0 0l2.217 2.217L12 14.124l-1.107-.01-2.217-2.217z"
             />
             <path
                 strokeLinecap="round"
@@ -1562,104 +1562,170 @@ export default function MembersPortal({ onLogout }) {
                         </div>
                     )}
 
-                    {/* ALERTS TAB */}
+                    {/* ALERTS TAB — PREMIUM */}
                       {activeTab === "notifications" && (
-                          <div className="tab-panel space-y-4">
-                              <div className="flex items-center justify-between">
-                                  <h3 className="text-xs font-bold text-white">
-                                      Notifications
-                                  </h3>
-                                  <span className="text-[10px] text-gray-400">
-                                      {pendingInvitationsCount + pendingDeptCount}{" "}
-                                      pending
-                                  </span>
-                              </div>
-                              <div className="space-y-2.5">
-                                  {(invitationsData || [])
-                                      .filter((inv) => inv.status === "pending")
-                                      .map((inv) => (
-                                          <div
-                                              key={inv.id}
-                                              className="gradient-border card-hover p-3"
-                                          >
-                                              <div className="flex items-center gap-2">
-                                                  <div className="w-8 h-8 rounded-md bg-rose-500/20 flex items-center justify-center flex-shrink-0">
-                                                      <Icons.Users className="w-4 h-4 text-rose-300" />
-                                                  </div>
-                                                  <div className="flex-1 min-w-0">
-                                                      <p className="text-[10px] font-bold text-white">
-                                                          {inv.home_group
-                                                              ? inv.home_group
-                                                                  .name
-                                                              : "Homegroup Invitation"}
-                                                      </p>
-                                                      <p className="text-[9px] text-gray-400 mt-0.5">
-                                                          You have been invited to
-                                                          join this homegroup
-                                                      </p>
-                                                      <p className="text-[9px] text-gray-500 mt-0.5">
-                                                          {inv.created_at
-                                                              ? new Date(
-                                                                    inv.created_at,
-                                                                ).toLocaleDateString()
-                                                              : ""}
-                                                      </p>
-                                                  </div>
-                                              </div>
+                          <div className="tab-panel space-y-5">
+                              {/* Header */}
+                              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0A192F] via-[#112240] to-[#1A365D] border border-white/10 p-5 md:p-6">
+                                  <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-[#dfb15b]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                                  <div className="relative flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                          <div className="lux-monogram w-11 h-11 rounded-2xl bg-gradient-to-br from-[#dfb15b]/25 to-amber-600/25 ring-1 ring-[#dfb15b]/30 text-[#dfb15b]">
+                                              <Icons.Bell className="w-5 h-5" />
                                           </div>
-                                      ))}
-                                  {(deptRequestsData || [])
-                                      .filter((r) => r.status === "pending")
-                                      .map((req) => (
-                                          <div
-                                              key={req.id}
-                                              className="gradient-border card-hover p-3"
-                                          >
-                                              <div className="flex items-center gap-2">
-                                                  <div className="w-8 h-8 rounded-md bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                                                      <Icons.BuildingOffice className="w-4 h-4 text-purple-300" />
-                                                  </div>
-                                                  <div className="flex-1 min-w-0">
-                                                      <p className="text-[10px] font-bold text-white">
-                                                          {req.department
-                                                              ? req.department
-                                                                    .name
-                                                              : "Department Request"}
-                                                      </p>
-                                                      <p className="text-[9px] text-gray-400 mt-0.5">
-                                                          Your request is pending
-                                                          approval
-                                                      </p>
-                                                      <p className="text-[9px] text-gray-500 mt-0.5">
-                                                          {req.created_at
-                                                              ? new Date(
-                                                                    req.created_at,
-                                                                ).toLocaleDateString()
-                                                              : ""}
-                                                      </p>
-                                                  </div>
-                                              </div>
+                                          <div>
+                                              <p className="lux-eyebrow">Updates</p>
+                                              <h3 className="text-lg font-bold text-white tracking-tight font-serif">
+                                                  Notifications
+                                              </h3>
                                           </div>
-                                      ))}
+                                      </div>
+                                      <span className="lux-chip bg-[#dfb15b]/10 text-[#dfb15b] ring-1 ring-[#dfb15b]/25">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-[#dfb15b]" />
+                                          {pendingInvitationsCount + pendingDeptCount} pending
+                                      </span>
+                                  </div>
                               </div>
-{(invitationsData || []).filter(
-                                   (inv) => inv.status === "pending",
-                               ).length === 0 &&
-                               (deptRequestsData || []).filter(
-                                   (r) => r.status === "pending",
-                               ).length === 0 ? (
-                                   <div className="gradient-border card-hover p-6 text-center">
-                                       <div className="w-12 h-12 mx-auto mb-2 rounded-md bg-gray-500/20 flex items-center justify-center">
-                                           <Icons.Bell className="w-5 h-5 text-gray-400" />
-                                       </div>
-                                       <h3 className="text-xs font-bold text-white mb-0.5">
-                                           All Caught Up!
-                                       </h3>
-                                       <p className="text-[10px] text-gray-400">
-                                           No new notifications.
-                                       </p>
-                                   </div>
-                               ) : null}
+
+                              {pendingInvitationsCount + pendingDeptCount === 0 ? (
+                                  /* Empty state */
+                                  <div className="lux-card lux-rise p-10 text-center">
+                                      <div className="lux-monogram w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/12 ring-1 ring-emerald-500/20 text-emerald-300">
+                                          <Icons.Check className="w-7 h-7" />
+                                      </div>
+                                      <h3 className="text-base font-bold text-white mb-1 font-serif tracking-tight">
+                                          All Caught Up!
+                                      </h3>
+                                      <p className="text-[12px] text-gray-400 max-w-xs mx-auto leading-relaxed">
+                                          You have no pending invitations or requests. We'll
+                                          let you know the moment something needs your
+                                          attention.
+                                      </p>
+                                  </div>
+                              ) : (
+                                  <div className="space-y-6">
+                                      {/* Home Group Invitations */}
+                                      {(invitationsData || []).filter(
+                                          (inv) => inv.status === "pending",
+                                      ).length > 0 && (
+                                          <div className="space-y-3">
+                                              <div className="flex items-center gap-2 px-1">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                                  <p className="lux-eyebrow text-rose-300/80">
+                                                      Home Group Invitations
+                                                  </p>
+                                                  <div className="flex-1 h-px bg-gradient-to-r from-rose-400/20 to-transparent" />
+                                              </div>
+                                              {(invitationsData || [])
+                                                  .filter((inv) => inv.status === "pending")
+                                                  .map((inv) => (
+                                                      <div
+                                                          key={inv.id}
+                                                          className="lux-card lux-rise p-4"
+                                                      >
+                                                          <div className="flex items-center gap-3.5">
+                                                              <div className="lux-monogram w-11 h-11 rounded-2xl bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/20 flex-shrink-0">
+                                                                  <Icons.Users className="w-5 h-5" />
+                                                              </div>
+                                                              <div className="flex-1 min-w-0">
+                                                                  <div className="flex items-center gap-2">
+                                                                      <p className="text-[13px] font-semibold text-white truncate">
+                                                                          {inv.home_group
+                                                                              ? inv.home_group.name
+                                                                              : "Homegroup Invitation"}
+                                                                      </p>
+                                                                      <span className="lux-chip bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/25 shrink-0">
+                                                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                                                          Pending
+                                                                      </span>
+                                                                  </div>
+                                                                  <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                                                                      {inv.message
+                                                                          ? inv.message
+                                                                          : "You have been invited to join this homegroup."}
+                                                                  </p>
+                                                                  <p className="text-[10px] text-gray-500 mt-1.5">
+                                                                      {inv.created_at
+                                                                          ? new Date(
+                                                                                inv.created_at,
+                                                                            ).toLocaleDateString(
+                                                                                undefined,
+                                                                                {
+                                                                                    day: "numeric",
+                                                                                    month: "short",
+                                                                                    year: "numeric",
+                                                                                },
+                                                                            )
+                                                                          : ""}
+                                                                  </p>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  ))}
+                                          </div>
+                                      )}
+
+                                      {/* Department Requests */}
+                                      {(deptRequestsData || []).filter(
+                                          (r) => r.status === "pending",
+                                      ).length > 0 && (
+                                          <div className="space-y-3">
+                                              <div className="flex items-center gap-2 px-1">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                                  <p className="lux-eyebrow text-purple-300/80">
+                                                      Department Requests
+                                                  </p>
+                                                  <div className="flex-1 h-px bg-gradient-to-r from-purple-400/20 to-transparent" />
+                                              </div>
+                                              {(deptRequestsData || [])
+                                                  .filter((r) => r.status === "pending")
+                                                  .map((req) => (
+                                                      <div
+                                                          key={req.id}
+                                                          className="lux-card lux-rise p-4"
+                                                      >
+                                                          <div className="flex items-center gap-3.5">
+                                                              <div className="lux-monogram w-11 h-11 rounded-2xl bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/20 flex-shrink-0">
+                                                                  <Icons.BuildingOffice className="w-5 h-5" />
+                                                              </div>
+                                                              <div className="flex-1 min-w-0">
+                                                                  <div className="flex items-center gap-2">
+                                                                      <p className="text-[13px] font-semibold text-white truncate">
+                                                                          {req.department
+                                                                              ? req.department.name
+                                                                              : "Department Request"}
+                                                                      </p>
+                                                                      <span className="lux-chip bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/25 shrink-0">
+                                                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                                                          Pending
+                                                                      </span>
+                                                                  </div>
+                                                                  <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                                                                      Your request is pending
+                                                                      approval from your pastor.
+                                                                  </p>
+                                                                  <p className="text-[10px] text-gray-500 mt-1.5">
+                                                                      {req.created_at
+                                                                          ? new Date(
+                                                                                req.created_at,
+                                                                            ).toLocaleDateString(
+                                                                                undefined,
+                                                                                {
+                                                                                    day: "numeric",
+                                                                                    month: "short",
+                                                                                    year: "numeric",
+                                                                                },
+                                                                            )
+                                                                          : ""}
+                                                                  </p>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  ))}
+                                          </div>
+                                      )}
+                                  </div>
+                              )}
                           </div>
                       )}
 
@@ -1912,7 +1978,7 @@ export default function MembersPortal({ onLogout }) {
                  <Drawer
                      isOpen={showDepartmentSelector}
                      onClose={() => setShowDepartmentSelector(false)}
-                     title="My Department"
+                     title={user?.department ? "My Department" : "Departments"}
                      size="lg"
                  >
                      <DepartmentRequest

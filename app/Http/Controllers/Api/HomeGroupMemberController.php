@@ -551,10 +551,15 @@ class HomeGroupMemberController extends Controller
                 ], 403);
             }
 
+            $leadPastor = User::where('role', 'pastor')
+                ->where('zone_id', $user->zone_id)
+                ->first();
+
             $homeGroupRequest = HomeGroupInvitation::create([
                 'member_id' => $user->id,
                 'homegroup_id' => $validated['home_group_id'],
                 'requested_by' => $user->id,
+                'pastor_id' => $leadPastor ? $leadPastor->id : null,
                 'status' => 'pending',
                 'message' => isset($validated['notes']) ? $validated['notes'] : null,
             ]);

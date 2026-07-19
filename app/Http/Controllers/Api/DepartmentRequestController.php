@@ -410,6 +410,20 @@ class DepartmentRequestController extends Controller
             'category' => 'join_approved',
         ]);
 
+        // Notify pastors in the member's zone
+        $pastors = User::where('role', 'pastor')
+            ->where('zone_id', $member->zone_id)
+            ->get();
+
+        foreach ($pastors as $pastor) {
+            $pastor->notifications()->create([
+                'title' => 'Member Joined Department',
+                'message' => "{$member->name} has joined {$departmentName}.",
+                'type' => 'department',
+                'category' => 'member_joined',
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Department request approved successfully.',

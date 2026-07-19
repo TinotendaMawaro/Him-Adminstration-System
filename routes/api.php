@@ -268,6 +268,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 
     // ── Department Requests ────────────────────────────────────────────────────
+    Route::post('/department-request', [DepartmentRequestController::class, 'requestJoin']);
     Route::get('/department-request/my', [DepartmentRequestController::class, 'myRequest']);
     Route::delete('/department-request/cancel', [DepartmentRequestController::class, 'cancelRequest']);
     Route::delete('/department/leave', [DepartmentRequestController::class, 'leaveDepartment']);
