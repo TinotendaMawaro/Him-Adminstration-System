@@ -20,6 +20,11 @@ class CountryResource extends Resource
 {
     protected static ?string $model = Country::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-s-globe-americas';
 
     protected static ?string $navigationGroup = 'System Management';

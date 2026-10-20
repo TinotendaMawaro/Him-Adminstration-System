@@ -22,6 +22,11 @@ class CityResource extends Resource
 {
     protected static ?string $model = City::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
 
     protected static ?string $navigationGroup = 'System Management';

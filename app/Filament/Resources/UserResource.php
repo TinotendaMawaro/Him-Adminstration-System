@@ -23,6 +23,11 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-user';
 
     protected static ?string $navigationLabel = 'Users';

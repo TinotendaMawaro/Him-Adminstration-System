@@ -22,6 +22,11 @@ class HomeGroupResource extends Resource
 {
     protected static ?string $model = HomeGroup::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
 
     protected static ?string $navigationGroup = 'Church Management';

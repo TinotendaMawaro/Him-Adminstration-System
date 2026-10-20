@@ -86,7 +86,7 @@ class PartnerResource extends Resource
                 TextColumn::make('partner_number')->searchable()->sortable(),
                 TextColumn::make('full_name')->searchable()->sortable(),
                 TextColumn::make('tier')->badge()->color(fn ($state) => $state?->getColor()),
-                BadgeColumn::make('status')->color(fn ($state) => \App\Enums\PartnerStatus::from($state)?->getColor()),
+                TextColumn::make('status')->badge(),
                 TextColumn::make('pledge_amount')->money('USD')->sortable(),
                 TextColumn::make('total_giving')->money('USD')->sortable(),
                 TextColumn::make('partnership_date')->date()->sortable(),

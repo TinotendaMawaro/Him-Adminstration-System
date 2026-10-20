@@ -20,6 +20,11 @@ class DemographyResource extends Resource
 {
     protected static ?string $model = Demography::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'Demography';

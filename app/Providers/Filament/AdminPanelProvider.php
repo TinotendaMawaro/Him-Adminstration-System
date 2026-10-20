@@ -42,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
 
             // ── Navigation groups (visibility controlled per-resource) ────────
             ->navigationGroups([
-                NavigationGroup::make('Church Structure')
+                NavigationGroup::make('Church Management')
                     ->collapsed(),
 
                 NavigationGroup::make('People')

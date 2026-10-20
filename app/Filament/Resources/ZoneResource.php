@@ -3,24 +3,27 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ZoneResource\Pages;
-use App\Filament\Resources\ZoneResource\RelationManagers;
-use App\Models\City;
-use App\Models\Country;
 use App\Models\Zone;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Card;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 class ZoneResource extends Resource
 {
     protected static ?string $model = Zone::class;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
 
@@ -32,26 +35,28 @@ class ZoneResource extends Resource
     {
         return $form
             ->schema([
-                Card::make()
+                Section::make()
+                    ->columns(2)
                     ->schema([
-                        TextInput::make('name')->required(),
-                        Select::make('country_id')
-                            ->label('Country')
-                            ->options(Country::all()->pluck('name', 'id')->toArray())
+                        TextInput::make('name')->required()->maxLength(255),
+                        // Members register with this code (e.g. R0101), so it must be unique.
+                        TextInput::make('code')
+                            ->required()
+                            ->maxLength(20)
+                            ->unique(ignoreRecord: true)
+                            ->helperText('Region + zone code, e.g. R0101. Members need this to register.'),
+                        Select::make('region_id')
+                            ->label('Region')
+                            ->relationship('region', 'name')
                             ->searchable()
-                            ->reactive()
-                            ->afterStateUpdated(fn (callable $set) => $set('city_id', null)),
-                        Select::make('city_id')
-                            ->label('City')
-                            ->options(function (callable $get){
-                                $country = Country::find($get('country_id'));
-                                if (!$country){
-                                    return City::all()->pluck('name', 'id');
-                                }
-                                return $country->cities->pluck('name', 'id');
-                            })
-                            ->searchable()
-                    ])
+                            ->preload()
+                            ->required(),
+                        TextInput::make('year_established')->numeric()->minValue(1900)->maxValue((int) date('Y')),
+                        TextInput::make('phone')->tel()->maxLength(50),
+                        TextInput::make('location')->maxLength(255),
+                        TextInput::make('address')->maxLength(500)->columnSpanFull(),
+                        Textarea::make('description')->rows(3)->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -59,13 +64,17 @@ class ZoneResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('code')->sortable()->searchable(),
                 TextColumn::make('name')->sortable()->searchable(),
-                TextColumn::make('country.name')->sortable(),
-                TextColumn::make('city.name')->sortable(),
-                TextColumn::make('created_at')->dateTime()
+                TextColumn::make('region.name')->sortable()->placeholder('—'),
+                TextColumn::make('location')->toggleable(),
+                TextColumn::make('phone')->toggleable(),
+                TextColumn::make('home_groups_count')->counts('home_groups')->label('Home groups')->sortable(),
+                TextColumn::make('created_at')->dateTime()->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('code')
             ->filters([
-                //
+                SelectFilter::make('region_id')->label('Region')->relationship('region', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -20,6 +20,11 @@ class GenderResource extends Resource
 {
     protected static ?string $model = Gender::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'Gender';

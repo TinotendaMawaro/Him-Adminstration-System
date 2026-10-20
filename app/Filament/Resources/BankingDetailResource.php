@@ -20,6 +20,11 @@ class BankingDetailResource extends Resource
 {
     protected static ?string $model = BankingDetail::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master', 'finance']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
     public static function form(Form $form): Form

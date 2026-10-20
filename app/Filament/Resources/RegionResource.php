@@ -22,6 +22,11 @@ class RegionResource extends Resource
 {
     protected static ?string $model = Region::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationGroup = 'Church Management';

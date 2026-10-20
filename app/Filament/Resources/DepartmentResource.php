@@ -20,6 +20,11 @@ class DepartmentResource extends Resource
 {
     protected static ?string $model = Department::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasAnyRole(['master']) ?? false;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
 
     protected static ?string $navigationGroup = 'Church Management';
