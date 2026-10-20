@@ -130,6 +130,6 @@ class PartnerResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isMaster() ?? false;
+        return auth()->user()?->hasAnyRole(['master', 'finance']) ?? false;
     }
 }

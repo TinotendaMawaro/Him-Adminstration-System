@@ -23,11 +23,10 @@ class EventPolicy
         return $user->hasAnyRole(['master', 'event']);
     }
 
+    /** Events is a department: any events-team member can manage any event. */
     public function update(User $user, \App\Models\Event $event): bool
     {
-        if ($user->isMaster()) return true;
-        if ($user->isEventRole()) return $event->created_by === $user->id;
-        return false;
+        return $user->hasAnyRole(['master', 'event']);
     }
 
     public function delete(User $user, \App\Models\Event $event): bool
@@ -37,8 +36,6 @@ class EventPolicy
 
     public function manageRegistrations(User $user, \App\Models\Event $event): bool
     {
-        if ($user->isMaster()) return true;
-        if ($user->isEventRole()) return $event->created_by === $user->id;
-        return false;
+        return $user->hasAnyRole(['master', 'event']);
     }
 }

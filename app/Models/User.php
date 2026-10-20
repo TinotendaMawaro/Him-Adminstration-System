@@ -147,9 +147,22 @@ class User extends Authenticatable
 
     // ─── Filament access gate ─────────────────────────────────────────────────
 
+    /**
+     * Each staff portal is its own panel. Master may enter all of them; Finance and
+     * Events staff are confined to their own portal.
+     */
     public function canAccessPanel(\Filament\Panel $panel): bool
     {
-        return $this->role->isFilamentRole() && $this->is_active;
+        if (!$this->is_active || !$this->role->isFilamentRole()) {
+            return false;
+        }
+
+        return match ($panel->getId()) {
+            'admin'   => $this->isMaster(),
+            'finance' => $this->hasAnyRole(['master', 'finance']),
+            'events'  => $this->hasAnyRole(['master', 'event']),
+            default   => false,
+        };
     }
 
     /**

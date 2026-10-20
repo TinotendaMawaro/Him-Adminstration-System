@@ -11,6 +11,7 @@ enum PaymentStatus: string implements HasLabel, HasColor
     case Completed = 'completed';
     case Failed    = 'failed';
     case Refunded  = 'refunded';
+    case Voided    = 'voided';
 
     public function getLabel(): string
     {
@@ -19,6 +20,7 @@ enum PaymentStatus: string implements HasLabel, HasColor
             self::Completed => 'Completed',
             self::Failed    => 'Failed',
             self::Refunded  => 'Refunded',
+            self::Voided    => 'Voided',
         };
     }
 
@@ -29,6 +31,7 @@ enum PaymentStatus: string implements HasLabel, HasColor
             self::Completed => 'success',
             self::Failed    => 'danger',
             self::Refunded  => 'gray',
+            self::Voided    => 'danger',
         };
     }
 

@@ -13,6 +13,9 @@ enum PaymentType: string implements HasLabel, HasColor, HasIcon
     case FamilyAltar       = 'family_altar';
     case Partnership       = 'partnership';
     case EventRegistration = 'event_registration';
+    case Seed              = 'seed';
+    case BuildingFund      = 'building_fund';
+    case Missions          = 'missions';
     case Other             = 'other';
 
     public function getLabel(): string
@@ -23,6 +26,9 @@ enum PaymentType: string implements HasLabel, HasColor, HasIcon
             self::FamilyAltar       => 'Family Altar',
             self::Partnership       => 'Partnership',
             self::EventRegistration => 'Event Registration',
+            self::Seed              => 'Seed',
+            self::BuildingFund      => 'Building Fund',
+            self::Missions          => 'Missions',
             self::Other             => 'Other',
         };
     }
@@ -35,6 +41,9 @@ enum PaymentType: string implements HasLabel, HasColor, HasIcon
             self::FamilyAltar       => 'warning',
             self::Partnership       => 'primary',
             self::EventRegistration => 'danger',
+            self::Seed              => 'warning',
+            self::BuildingFund      => 'primary',
+            self::Missions          => 'info',
             self::Other             => 'gray',
         };
     }
@@ -47,6 +56,9 @@ enum PaymentType: string implements HasLabel, HasColor, HasIcon
             self::FamilyAltar       => 'heroicon-o-home',
             self::Partnership       => 'heroicon-o-heart',
             self::EventRegistration => 'heroicon-o-ticket',
+            self::Seed              => 'heroicon-o-sparkles',
+            self::BuildingFund      => 'heroicon-o-building-office-2',
+            self::Missions          => 'heroicon-o-globe-alt',
             self::Other             => 'heroicon-o-banknotes',
         };
     }

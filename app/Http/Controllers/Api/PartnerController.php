@@ -235,18 +235,17 @@ class PartnerController extends Controller
     public function submitPayment(Request $request): JsonResponse
     {
         $request->validate([
-            'type'           => ['required', 'in:tithe,offering,family_altar,partnership,event_registration,other'],
+            'type'           => ['required', \Illuminate\Validation\Rule::in(\App\Enums\PaymentType::values())],
             'amount'         => ['required', 'numeric', 'min:0.01'],
-            'method'         => ['required', 'in:cash,bank_transfer,card,mobile_money,online'],
+            'method'         => ['required', \Illuminate\Validation\Rule::in(\App\Enums\PaymentMethod::values())],
             'transaction_id' => ['nullable', 'string', 'max:255'],
             'notes'          => ['nullable', 'string', 'max:2000'],
             'receipt'        => ['nullable', 'file', 'max:5120'],
         ]);
 
-        $status = match ($request->method) {
-            'cash' => 'completed',
-            default => 'pending',
-        };
+        // Self-submitted payments are never auto-completed: finance must verify and confirm
+        // them (which also issues the receipt). A member cannot mark their own cash as received.
+        $status = 'pending';
 
         $data = [
             'user_id'     => $request->user()->id,
@@ -257,7 +256,7 @@ class PartnerController extends Controller
             'method'      => $request->method,
             'transaction_id' => $request->transaction_id,
             'notes'       => $request->notes,
-            'paid_at'     => $status === 'completed' ? now() : null,
+            'paid_at'     => null,
         ];
 
         if ($request->hasFile('receipt')) {

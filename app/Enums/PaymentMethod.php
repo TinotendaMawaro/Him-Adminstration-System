@@ -7,6 +7,10 @@ use Filament\Support\Contracts\HasLabel;
 
 enum PaymentMethod: string implements HasLabel, HasIcon
 {
+    case Cash         = 'cash';
+    case MobileMoney  = 'mobile_money';
+    case Card         = 'card';
+    case Online       = 'online';
     case EcoCash      = 'ecocash';
     case OneMoney     = 'onemoney';
     case InnBucks     = 'innbucks';
@@ -19,6 +23,10 @@ enum PaymentMethod: string implements HasLabel, HasIcon
     public function getLabel(): string
     {
         return match($this) {
+            self::Cash         => 'Cash',
+            self::MobileMoney  => 'Mobile Money',
+            self::Card         => 'Card',
+            self::Online       => 'Online',
             self::EcoCash      => 'EcoCash',
             self::OneMoney     => 'OneMoney',
             self::InnBucks     => 'InnBucks',
@@ -33,6 +41,10 @@ enum PaymentMethod: string implements HasLabel, HasIcon
     public function getIcon(): ?string
     {
         return match($this) {
+            self::Cash         => 'heroicon-o-banknotes',
+            self::MobileMoney  => 'heroicon-o-device-phone-mobile',
+            self::Card         => 'heroicon-o-credit-card',
+            self::Online       => 'heroicon-o-globe-alt',
             self::EcoCash      => 'heroicon-o-device-phone-mobile',
             self::OneMoney     => 'heroicon-o-device-phone-mobile',
             self::InnBucks     => 'heroicon-o-device-phone-mobile',

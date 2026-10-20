@@ -21,18 +21,41 @@ class PaymentPolicy
         return $payment->user_id === $user->id;
     }
 
+    /** Only finance/master may record a payment as received. Members submit via /partners/me/payment (pending). */
     public function create(User $user): bool
-    {
-        return $user->hasAnyRole(['master', 'finance']) || $user->isPartner() || $user->isMember();
-    }
-
-    public function update(User $user, Payment $payment): bool
     {
         return $user->hasAnyRole(['master', 'finance']);
     }
 
+    /** Completed/voided payments are immutable financial records; correct them by voiding. */
+    public function update(User $user, Payment $payment): bool
+    {
+        return $user->hasAnyRole(['master', 'finance']) && $payment->isPending();
+    }
+
+    public function confirm(User $user, Payment $payment): bool
+    {
+        return $user->hasAnyRole(['master', 'finance']) && $payment->isPending();
+    }
+
+    public function void(User $user, Payment $payment): bool
+    {
+        return $user->hasAnyRole(['master', 'finance']) && $payment->status !== \App\Enums\PaymentStatus::Voided;
+    }
+
+    /** Financial records are never deleted. */
     public function delete(User $user, Payment $payment): bool
     {
-        return $user->isMaster();
+        return false;
+    }
+
+    public function restore(User $user, Payment $payment): bool
+    {
+        return false;
+    }
+
+    public function forceDelete(User $user, Payment $payment): bool
+    {
+        return false;
     }
 }

@@ -74,10 +74,10 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'user_id'                => 'required|exists:users,id',
             'event_registration_id'  => 'nullable|exists:event_registrations,id',
-            'type'                   => 'required|in:tithe,offering,family_altar,partnership,event_registration,other',
+            'type'                   => ['required', \Illuminate\Validation\Rule::in(\App\Enums\PaymentType::values())],
             'amount'                 => 'required|numeric|min:0.01',
             'currency'               => 'string|size:3',
-            'method'                 => 'required|in:cash,bank_transfer,card,mobile_money,online',
+            'method'                 => ['required', \Illuminate\Validation\Rule::in(\App\Enums\PaymentMethod::values())],
             'transaction_id'         => 'nullable|string|max:255',
             'notes'                  => 'nullable|string',
             'paid_at'                => 'nullable|date',
