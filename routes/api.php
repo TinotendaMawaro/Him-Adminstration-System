@@ -233,12 +233,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/recommendations/nearby-home-groups', [RecommendationController::class, 'nearbyHomeGroups']);
 
     // ── Reports ────────────────────────────────────────────────────────────────
-    Route::get('/reports/history', [WeeklyReportController::class, 'history']);
-    Route::get('/reports/pending', [WeeklyReportController::class, 'pendingReminders']);
-    Route::post('/reports', [WeeklyReportController::class, 'store']);
-    Route::get('/reports/{id}', [WeeklyReportController::class, 'show']);
-    Route::put('/reports/{id}', [WeeklyReportController::class, 'update']);
-    Route::post('/reports/{id}/remittance', [WeeklyReportController::class, 'submitRemittance']);
+    Route::middleware('role:pastor,master')->group(function () {
+        Route::get('/reports/history', [WeeklyReportController::class, 'history']);
+        Route::get('/reports/pending', [WeeklyReportController::class, 'pendingReminders']);
+        Route::post('/reports', [WeeklyReportController::class, 'store']);
+        Route::get('/reports/{id}', [WeeklyReportController::class, 'show']);
+        Route::put('/reports/{id}', [WeeklyReportController::class, 'update']);
+        Route::post('/reports/{id}/remittance', [WeeklyReportController::class, 'submitRemittance']);
+    });
 
     // ── Activity Feed ──────────────────────────────────────────────────────────
     Route::get('/activities', [ActivityController::class, 'index']);

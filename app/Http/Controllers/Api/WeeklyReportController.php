@@ -141,7 +141,7 @@ class WeeklyReportController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $report = Report::findOrFail($id);
+        $report = $this->findAccessibleReport($id);
         
         // Only allow updates if status is draft
         if ($report->status !== 'draft') {
@@ -227,7 +227,7 @@ class WeeklyReportController extends Controller
      */
     public function show($id)
     {
-        $report = Report::with(['zone', 'user'])->findOrFail($id);
+        $report = $this->findAccessibleReport($id)->load(['zone', 'user']);
         $report->equipment_pledged = json_decode($report->equipment_pledged, true);
 
         return response()->json([
@@ -293,7 +293,7 @@ class WeeklyReportController extends Controller
      */
     public function submitRemittance(Request $request, $id)
     {
-        $report = Report::findOrFail($id);
+        $report = $this->findAccessibleReport($id);
 
         $validated = $request->validate([
             'remittance_date' => 'required|date',
@@ -317,7 +317,7 @@ class WeeklyReportController extends Controller
      */
     public function uploadAttachment(Request $request, $id)
     {
-        $report = Report::findOrFail($id);
+        $report = $this->findAccessibleReport($id);
 
         $request->validate([
             'file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
@@ -339,5 +339,20 @@ class WeeklyReportController extends Controller
             'attachments' => $attachments
         ]);
     }
-}
 
+    /**
+     * Find a report the current user may access: their own zone's report,
+     * or any report for a master admin.
+     */
+    private function findAccessibleReport($id): Report
+    {
+        $user = Auth::user();
+        $report = Report::findOrFail($id);
+
+        if (!$user->isMaster() && (int) $report->zone_id !== (int) $user->zone_id) {
+            abort(404);
+        }
+
+        return $report;
+    }
+}
