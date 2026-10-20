@@ -297,7 +297,7 @@ class EventController extends Controller
                 ->where('status', 'confirmed')
                 ->count();
             $attendedCount = EventRegistration::where('user_id', $user->id)
-                ->where('attended', true)
+                ->where('status', 'attended')
                 ->count();
         }
 
@@ -340,7 +340,7 @@ class EventController extends Controller
                     'ends_at'             => $event?->ends_at?->toIso8601String(),
                     'venue_name'          => $event?->venue_name,
                     'status'              => $registration->status,
-                    'attended'            => $registration->attended,
+                    'attended'            => $registration->status?->value === 'attended',
                     'checked_in_at'       => $registration->checked_in_at,
                     'qr_code_url'         => $event ? "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode("/events/{$event->id}/checkin?registration={$registration->id}") : null,
                 ];
