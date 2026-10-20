@@ -31,24 +31,4 @@ class MemberObserver
             ]);
         }
     }
-
-    public function savedUser(User $user): void
-    {
-        if (!$user->member) {
-            return;
-        }
-
-        // First home group
-        if ($user->wasChanged('home_group_id') && $user->home_group_id) {
-            $this->badges->awardIfEligible($user, 'first_homegroup');
-            $this->milestones->dispatch('leadership', $user, [
-                'title' => 'Joined a Home Group',
-            ]);
-        }
-
-        // First department
-        if ($user->wasChanged('department_id') && $user->department_id) {
-            $this->badges->awardIfEligible($user, 'first_department');
-        }
-    }
 }

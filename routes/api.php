@@ -167,12 +167,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
      // ── Home Groups ────────────────────────────────────────────────────────────
      Route::get('/homegroups', [HomeGroupApiController::class, 'index']);
-     Route::post('/homegroups', [HomeGroupApiController::class, 'store']);
      Route::get('/homegroups/{id}', [HomeGroupApiController::class, 'show']);
-     Route::put('/homegroups/{id}', [HomeGroupApiController::class, 'update']);
-     Route::delete('/homegroups/{id}', [HomeGroupApiController::class, 'destroy']);
-     Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
-     Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
+     Route::middleware('role:pastor,master')->group(function () {
+         Route::post('/homegroups', [HomeGroupApiController::class, 'store']);
+         Route::put('/homegroups/{id}', [HomeGroupApiController::class, 'update']);
+         Route::delete('/homegroups/{id}', [HomeGroupApiController::class, 'destroy']);
+         Route::post('/homegroups/{id}/assign-leader', [HomeGroupApiController::class, 'assignLeader']);
+         Route::post('/homegroups/{id}/demote-leader', [HomeGroupApiController::class, 'demoteLeader']);
+     });
       Route::get('/homegroups/{id}/available-members', [HomeGroupApiController::class, 'availableMembers']);
       Route::get('/homegroups/{id}/available-members-for-invite', [HomeGroupApiController::class, 'availableMembersForInvite']);
      
@@ -247,8 +249,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']); // support PUT too
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']); // support PUT too
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 
     // ── Messages ───────────────────────────────────────────────────────────────
     Route::get('/messages', [MessageController::class, 'index']);
@@ -283,6 +285,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // ── Department Management ───────────────────────────────────────────────────
     Route::get('/departments', [DepartmentController::class, 'index']);
+    Route::get('/departments/metrics', [DepartmentController::class, 'metrics']);
     Route::get('/departments/{id}', [DepartmentController::class, 'show']);
     Route::post('/departments/{id}/assign-hod', [DepartmentController::class, 'assignHod']);
     Route::post('/departments/{id}/remove-hod', [DepartmentController::class, 'removeHod']);
@@ -290,5 +293,4 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/departments/{id}/decline-hod', [DepartmentController::class, 'declineHod']);
     Route::get('/departments/{id}/members', [DepartmentController::class, 'members']);
     Route::get('/departments/{id}/activities', [DepartmentController::class, 'activities']);
-    Route::get('/departments/metrics', [DepartmentController::class, 'metrics']);
 });

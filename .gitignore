@@ -21,3 +21,18 @@ yarn-error.log
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
+
+# Secrets / local env variants
+.env.secure
+.env.*.local
+
+# Scratch output and database dumps
+/tmp
+*.sql
+*.sqlmysqldump
+*.sql~
+response*.json
+localhost_test.json
+auth_test.json
+plainTextToken
+*.msi

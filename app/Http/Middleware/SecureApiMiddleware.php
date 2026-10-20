@@ -40,14 +40,6 @@ class SecureApiMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        // Log all API requests for debugging
-        \Log::info('SecureApiMiddleware: API request received', [
-            'path' => $request->path(),
-            'method' => $request->method(),
-            'is_api' => $request->is('api/*'),
-            'headers' => $request->headers->all(),
-        ]);
-
         // 1️⃣ Content-Length check (prevent large payload DoS)
         $contentLength = $request->server('CONTENT_LENGTH', 0);
         if ($contentLength > self::MAX_REQUEST_SIZE) {
@@ -104,10 +96,6 @@ class SecureApiMiddleware
 
         // 6️⃣ Remove server signature
         $response->headers->set('X-Powered-By', '');
-
-        // 7️⃣ Rate limit headers
-        $response->headers->set('X-RateLimit-Limit', '120');
-        $response->headers->set('X-RateLimit-Remaining', '119');
 
         return $response;
     }

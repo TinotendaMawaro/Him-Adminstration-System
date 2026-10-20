@@ -21,11 +21,6 @@ class AuthController extends Controller
      */
     public function loginWithCode(Request $request): JsonResponse
     {
-        \Log::info('Login attempt', [
-            'input' => $request->all(),
-            'headers' => $request->headers->all(),
-        ]);
-        
         $request->validate(['unique_code' => 'required|string']);
 
         $user = User::where('unique_code', $request->unique_code)
@@ -45,14 +40,6 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        // Debug: check if this method is reached
-        \Log::info('AuthController login method reached', [
-            'request_method' => $request->method(),
-            'request_path' => $request->path(),
-            'content_type' => $request->header('Content-Type'),
-            'request_data' => $request->all(),
-        ]);
-
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
