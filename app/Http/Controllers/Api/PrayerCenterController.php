@@ -151,9 +151,9 @@ class PrayerCenterController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user   = $request->user();
-        $message = PrayerCenterMessage::with(['category', 'replies.user'])->findOrFail($id);
+        $message = PrayerCenterMessage::with(['category', 'replies.user', 'user'])->findOrFail($id);
 
-        if (!$user->isPastor() && $message->user_id !== $user->id) {
+        if (!$this->canAccessMessage($user, $message)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -176,9 +176,9 @@ class PrayerCenterController extends Controller
     public function reply(Request $request, int $id): JsonResponse
     {
         $user    = $request->user();
-        $message = PrayerCenterMessage::with('category')->findOrFail($id);
+        $message = PrayerCenterMessage::with(['category', 'user'])->findOrFail($id);
 
-        if (!$user->isPastor() && $message->user_id !== $user->id) {
+        if (!$this->canAccessMessage($user, $message)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -257,7 +257,11 @@ class PrayerCenterController extends Controller
             'priority' => ['nullable', Rule::In(['low', 'normal', 'high', 'urgent'])],
         ]);
 
-        $message = PrayerCenterMessage::findOrFail($id);
+        $message = PrayerCenterMessage::with('user')->findOrFail($id);
+        if (!$this->canAccessMessage($user, $message)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         $message->update($validated);
 
         \App\Models\Notification::create([
@@ -374,5 +378,19 @@ class PrayerCenterController extends Controller
                 'is_read'     => false,
             ]);
         }
+    }
+
+    /**
+     * A message is visible to its author, and to pastors of the author's zone.
+     */
+    private function canAccessMessage($user, PrayerCenterMessage $message): bool
+    {
+        if ($message->user_id === $user->id) {
+            return true;
+        }
+
+        return $user->isPastor()
+            && !empty($user->zone_id)
+            && (int) $message->user?->zone_id === (int) $user->zone_id;
     }
 }

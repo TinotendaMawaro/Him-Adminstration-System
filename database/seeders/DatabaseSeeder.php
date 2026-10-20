@@ -165,6 +165,9 @@ class DatabaseSeeder extends Seeder
         $genderId = DB::table('genders')->where('name', 'Male')->first()?->id;
         $demographyId = DB::table('demographies')->where('name', 'Adult')->first()?->id;
 
+        // Zone-scoped pastor views filter on users.zone_id, so the demo member needs it too.
+        $memberUser->update(['zone_id' => $zoneId, 'home_group_id' => $homeGroupId]);
+
         \App\Models\Member::updateOrCreate(
             ['user_id' => $memberUser->id],
             [
