@@ -774,6 +774,13 @@ class DepartmentController extends Controller
     {
         $user = $request->user();
 
+        if (!$user->hasAnyRole(['master', 'finance', 'event', 'pastor', 'hod'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized.',
+            ], 403);
+        }
+
         // If HOD, show only their department
         if ($user->isHOD() && $user->department_id) {
             $department = Department::withCount(['activeMembers', 'activities'])
