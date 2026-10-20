@@ -8,11 +8,12 @@ import { GlobalStateProvider } from "./hooks/GlobalStateProvider.jsx";
 import AuthPage        from "./components/AuthPage.jsx";
 import ErrorBoundary   from "./components/ErrorBoundary.jsx";
 import LoadingScreen   from "./components/onboarding/LoadingScreen.jsx";
+import { MemberLoginSplash } from "./components/MemberSplash.jsx";
 import TermsModal      from "./components/onboarding/TermsModal.jsx";
 import GuidedTour      from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal   from "./components/PastorsPortal.jsx";
 import HODPortal       from "./components/HODPortal.jsx";
-import MembersPortal   from "./components/MembersPortal.jsx";
+import MembersPortal   from "./components/MembersPortalWrapper.jsx";
 import PartnerPortal   from "./components/PartnerPortal.jsx";
 import PartnerEnrollmentPage from "./components/PartnerEnrollmentPage.jsx";
 import api             from "./lib/api.js";
@@ -201,39 +202,62 @@ function RootRedirect() {
 // ─── Login page wrapper ────────────────────────────────────────────────────────
 function LoginPage() {
     const navigate = useNavigate();
-    const { user, updateUser } = useUser();
+    const { user, updateUser, refreshUser, loading: userLoading } = useUser();
     const location = useLocation();
+    const [showMemberSplash, setShowMemberSplash] = useState(false);
+    const [loginDone, setLoginDone] = useState(false);
 
+    // For non-member roles, redirect as before. Members use the splash flow.
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const intent = params.get('intent');
-        if (intent === 'partner') {
-            if (user) {
-                if (user.role === 'pastor') {
-                    navigate("/dashboard", { replace: true });
-                } else {
-                    navigate("/partner/enroll", { replace: true });
-                }
+        if (!showMemberSplash && user) {
+            const params = new URLSearchParams(location.search);
+            const intent = params.get('intent');
+            if (intent === 'partner') {
+                navigate(user.role === 'pastor' ? "/dashboard" : "/partner/enroll", { replace: true });
+            } else if (user.role !== 'member') {
+                navigate("/dashboard", { replace: true });
             }
-        } else if (user) {
-            navigate("/dashboard", { replace: true });
         }
-    }, [user, navigate, location]);
+    }, [user, navigate, location, showMemberSplash]);
+
+    // Keep the splash visible until the member's data has been freshly fetched
+    // (refreshUser resolves) and the user is ready to be routed to the dashboard.
+    useEffect(() => {
+        if (showMemberSplash && !userLoading && user && user.role === 'member') {
+            setLoginDone(true);
+        }
+    }, [showMemberSplash, userLoading, user]);
 
     const handleLoginSuccess = (userData) => {
         updateUser(userData);
         const params = new URLSearchParams(location.search);
         const intent = params.get('intent');
+
         if (intent === 'partner' && userData.role === 'pastor') {
             navigate("/dashboard", { replace: true });
         } else if (intent === 'partner') {
             navigate("/partner/enroll", { replace: true });
+        } else if (userData.role === 'member') {
+            setShowMemberSplash(true);
+            // Fetch the full, fresh member profile before clearing the splash.
+            refreshUser();
         } else {
             navigate("/dashboard", { replace: true });
         }
     };
 
-    return <AuthPage onLoginSuccess={handleLoginSuccess} onPartnerEnroll={() => navigate("/partner/enroll", { replace: true })} />;
+    return (
+        <>
+            {showMemberSplash && (
+                <MemberLoginSplash
+                    memberName={user?.name?.split(" ")[0]}
+                    done={loginDone}
+                    onComplete={() => navigate("/dashboard", { replace: true })}
+                />
+            )}
+            <AuthPage onLoginSuccess={handleLoginSuccess} onPartnerEnroll={() => navigate("/partner/enroll", { replace: true })} />
+        </>
+    );
 }
 
 // ─── Protected route guard ─────────────────────────────────────────────────────

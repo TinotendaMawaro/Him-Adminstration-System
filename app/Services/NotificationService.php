@@ -238,6 +238,51 @@ class NotificationService
     }
 
     /**
+     * Create leader promotion request notification (sent to member)
+     */
+    public static function createLeaderPromotionRequested(User $member, HomeGroup $homeGroup, User $pastor): Notification
+    {
+        return Notification::create([
+            'user_id' => $member->id,
+            'title' => "🏆 Homegroup Leader Promotion",
+            'message' => "Pastor {$pastor->name} has nominated you to become a Homegroup Leader for {$homeGroup->name}. Please accept or decline this request in your portal.",
+            'type' => self::TYPE_INFO,
+            'category' => 'leader_promotion',
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Create leader promotion accepted notification (sent to pastor)
+     */
+    public static function createLeaderPromotionAccepted(User $pastor, HomeGroup $homeGroup, User $member): Notification
+    {
+        return Notification::create([
+            'user_id' => $pastor->id,
+            'title' => "✅ Leader Promotion Accepted",
+            'message' => "{$member->name} has accepted the Homegroup Leader promotion for {$homeGroup->name}. They have been redirected to the HOD Portal.",
+            'type' => self::TYPE_SUCCESS,
+            'category' => 'leader_promotion',
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Create leader promotion declined notification (sent to pastor)
+     */
+    public static function createLeaderPromotionDeclined(User $pastor, HomeGroup $homeGroup, User $member): Notification
+    {
+        return Notification::create([
+            'user_id' => $pastor->id,
+            'title' => "❌ Leader Promotion Declined",
+            'message' => "{$member->name} has declined the Homegroup Leader promotion for {$homeGroup->name}.",
+            'type' => self::TYPE_WARNING,
+            'category' => 'leader_promotion',
+            'is_read' => false,
+        ]);
+    }
+
+    /**
      * Get notification icon based on category
      */
     public static function getCategoryIcon(string $category): string

@@ -59,7 +59,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $request->email)
-            ->whereIn('role', [UserRole::Member->value, UserRole::Partner->value])
+            ->whereIn('role', [UserRole::Member->value, UserRole::Partner->value, UserRole::HOD->value])
             ->where('is_active', true)
             ->first();
 

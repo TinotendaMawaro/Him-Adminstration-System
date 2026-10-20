@@ -20,6 +20,8 @@ import LocationEntry from "./onboarding/LocationEntry.jsx";
 import ProfileFormManager from "../utils/ProfileFormManager.js";
 import MembersNavBar, { membersNavStyles, ProfilePictureModal } from "./MembersNavBar.jsx";
 import MembersPartnershipPage from "./MembersPartnershipPage.jsx";
+import { MemberLogoutSplash } from "./MemberSplash.jsx";
+import LeaderPromotionConsent from "./LeaderPromotionConsent.jsx";
 
 // ============================================================================
 // FLOATING PARTICLES BACKGROUND
@@ -662,6 +664,18 @@ export default function MembersPortal({ onLogout }) {
         },
         staleTime: 15000,
         refetchInterval: 30000,
+    });
+
+    const { data: leaderPromotion } = useQuery({
+        queryKey: ["my-leader-promotion"],
+        queryFn: async () => {
+            const res = await api.get("/home-group/my-promotion");
+            if (!res.data.success) throw new Error();
+            return res.data.promotion;
+        },
+        staleTime: 0,
+        refetchInterval: 20000,
+        enabled: !!user && user.role === "member",
     });
 
     const { data: zoneSummaryData } = useQuery({
@@ -2026,15 +2040,23 @@ export default function MembersPortal({ onLogout }) {
                   />
               )}
 
-               {/* Pastor 360 Member View */}
-               {selectedMemberFor360 && (
-                   <Member360View
-                       memberId={selectedMemberFor360}
-                       onClose={() => setSelectedMemberFor360(null)}
-                   />
-               )}
-           </div>
-      );
+                {/* Pastor 360 Member View */}
+                {selectedMemberFor360 && (
+                    <Member360View
+                        memberId={selectedMemberFor360}
+                        onClose={() => setSelectedMemberFor360(null)}
+                    />
+                )}
+
+                {/* Leader Promotion Consent Modal */}
+                {leaderPromotion && (
+                    <LeaderPromotionConsent
+                        user={user}
+                        onLogout={onLogout}
+                    />
+                )}
+            </div>
+       );
 }
 
 // ============================================================================

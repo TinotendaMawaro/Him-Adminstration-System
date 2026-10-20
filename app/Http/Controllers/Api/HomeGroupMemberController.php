@@ -886,4 +886,189 @@ class HomeGroupMemberController extends Controller
             'request' => $homeGroupRequest->fresh(['member', 'homeGroup']),
         ]);
     }
+
+    // ============================================================================
+    // LEADER PROMOTION WORKFLOW
+    // ============================================================================
+
+    /**
+     * Promote a member to homegroup leader (pastor only)
+     * Creates a promotion request that the member must accept/decline
+     */
+    public function promoteLeader(Request $request, $homeGroupId): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isPastor()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only pastors can promote home group leaders.',
+            ], 403);
+        }
+
+        $zoneId = $user->zone_id;
+
+        $homeGroup = HomeGroup::where('zone_id', $zoneId)
+            ->findOrFail($homeGroupId);
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $member = User::where('id', $validated['user_id'])
+            ->where('zone_id', $zoneId)
+            ->firstOrFail();
+
+        // Check if already a leader of this or another homegroup
+        $existingLeader = HomeGroup::where('leader_id', $member->id)->first();
+        if ($existingLeader) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This member is already a leader of ' . $existingLeader->name,
+            ], 400);
+        }
+
+        // Check for existing pending promotion
+        $pendingPromotion = \App\Models\LeaderPromotionRequest::where('user_id', $member->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($pendingPromotion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This member already has a pending promotion request.',
+            ], 400);
+        }
+
+        // Auto-add member to homegroup if not already a member
+        if ($member->home_group_id !== $homeGroup->id) {
+            $member->update(['home_group_id' => $homeGroup->id]);
+        }
+
+        $promotion = \App\Models\LeaderPromotionRequest::create([
+            'user_id'     => $member->id,
+            'home_group_id' => $homeGroup->id,
+            'pastor_id'   => $user->id,
+            'status'      => 'pending',
+            'message'     => $request->input('message', ''),
+        ]);
+
+        // Send notification to member
+        NotificationService::createLeaderPromotionRequested($member, $homeGroup, $user);
+
+        Log::info('Leader promotion requested', [
+            'promotion_id' => $promotion->id,
+            'member_id'    => $member->id,
+            'home_group_id'=> $homeGroup->id,
+            'pastor_id'    => $user->id,
+        ]);
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Leader promotion request sent to member.',
+            'promotion'=> $promotion->load(['member', 'homeGroup', 'pastor']),
+        ]);
+    }
+
+    /**
+     * Member accepts or declines a leader promotion
+     */
+    public function respondToPromotion(Request $request, $promotionId): JsonResponse
+    {
+        $user = $request->user();
+
+        $promotion = \App\Models\LeaderPromotionRequest::where('id', $promotionId)
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $action = $request->input('action'); // 'accept' | 'decline'
+
+        if (!in_array($action, ['accept', 'decline'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid action. Use "accept" or "decline".',
+            ], 422);
+        }
+
+        $homeGroup = $promotion->homeGroup;
+        $pastor = $promotion->pastor;
+
+        if ($action === 'accept') {
+            // Update user role to HOD
+            $user->update(['role' => 'hod']);
+
+            // Invalidate all existing Sanctum tokens to force logout
+            $user->tokens()->delete();
+
+            // Set as homegroup leader
+            $homeGroup->update(['leader_id' => $user->id]);
+
+            // Ensure member belongs to this homegroup
+            if ($user->home_group_id !== $homeGroup->id) {
+                $user->update(['home_group_id' => $homeGroup->id]);
+            }
+
+            $promotion->update([
+                'status'       => 'accepted',
+                'responded_at' => now(),
+                'responded_by' => $user->id,
+            ]);
+
+            // Notify pastor
+            NotificationService::createLeaderPromotionAccepted($pastor, $homeGroup, $user);
+
+            Log::info('Leader promotion accepted', [
+                'promotion_id' => $promotion->id,
+                'user_id'      => $user->id,
+                'home_group_id'=> $homeGroup->id,
+            ]);
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'You are now a Homegroup Leader.',
+                'new_role'   => 'hod',
+                'home_group' => $homeGroup->fresh('leader'),
+                'user'       => $user->fresh(['zone', 'homeGroup']),
+            ]);
+        }
+
+        // Decline
+        $promotion->update([
+            'status'       => 'declined',
+            'responded_at' => now(),
+            'responded_by' => $user->id,
+        ]);
+
+        NotificationService::createLeaderPromotionDeclined($pastor, $homeGroup, $user);
+
+        Log::info('Leader promotion declined', [
+            'promotion_id' => $promotion->id,
+            'user_id'      => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Promotion request declined.',
+            'promotion' => $promotion->fresh(['member', 'homeGroup', 'pastor']),
+        ]);
+    }
+
+    /**
+     * Get current user's pending leader promotion (if any)
+     */
+    public function myPromotion(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $promotion = \App\Models\LeaderPromotionRequest::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->with(['homeGroup', 'pastor'])
+            ->first();
+
+        return response()->json([
+            'success'   => true,
+            'promotion' => $promotion,
+        ]);
+    }
 }

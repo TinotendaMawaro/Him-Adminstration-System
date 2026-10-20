@@ -205,6 +205,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/home-group/approve-request/{id}', [HomeGroupMemberController::class, 'approveRequest']);
     Route::post('/home-group/reject-request/{id}', [HomeGroupMemberController::class, 'rejectRequest']);
 
+    // Leader promotion workflow
+    Route::post('/home-group/{homeGroupId}/promote-leader', [HomeGroupMemberController::class, 'promoteLeader']);
+    Route::post('/home-group/promotion/{promotionId}/respond', [HomeGroupMemberController::class, 'respondToPromotion']);
+    Route::get('/home-group/my-promotion', [HomeGroupMemberController::class, 'myPromotion']);
+
     // Home group updates
     Route::get('/home-groups/{homeGroupId}/updates', [HomeGroupUpdateController::class, 'index']);
     Route::post('/home-groups/{homeGroupId}/updates', [HomeGroupUpdateController::class, 'store']);

@@ -178,7 +178,11 @@ const HomeGroupSelector = ({ user, onClose, onRequestLeave }) => {
                         <Icons.Calendar className="w-5 h-5 text-amber-600" />
                         <div>
                             <p className="text-sm text-gray-500">Requested On</p>
-                            <p className="font-semibold text-gray-900">{new Date(pendingRequest.requested_at).toLocaleDateString()}</p>
+                            <p className="font-semibold text-gray-900">
+                                {pendingRequest.created_at
+                                    ? new Date(pendingRequest.created_at).toLocaleDateString()
+                                    : "N/A"}
+                            </p>
                         </div>
                     </div>
                 </div>

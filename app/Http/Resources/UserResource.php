@@ -30,7 +30,7 @@ class UserResource extends JsonResource
             'hod_code'       => $this->when($role === UserRole::HOD, $this->hod_code),
 
             'zone_id'        => $this->zone_id,
-            'zone'           => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () use ($role) {
+            'zone'           => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner, UserRole::HOD]), function () use ($role) {
                 // Build zone data array - pastor info requires pastors to be loaded
                 $buildZone = function ($zone) {
                     $pastors = $zone->pastors ?? collect();
@@ -57,7 +57,7 @@ class UserResource extends JsonResource
                     ];
                 };
 
-                if ($role === UserRole::Member && $this->member?->zone) {
+                if (in_array($role, [UserRole::Member, UserRole::HOD]) && $this->member?->zone) {
                     return $buildZone($this->member->zone);
                 }
                 if ($this->relationLoaded('zone') && $this->zone) {
@@ -66,8 +66,8 @@ class UserResource extends JsonResource
                 return null;
             }),
 
-            'home_group_id'  => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner]), function () use ($role) {
-                return $role === UserRole::Member && $this->member?->home_group_id
+            'home_group_id'  => $this->when(in_array($role, [UserRole::Pastor, UserRole::Member, UserRole::Partner, UserRole::HOD]), function () use ($role) {
+                return in_array($role, [UserRole::Member, UserRole::HOD]) && $this->member?->home_group_id
                     ? $this->member->home_group_id
                     : $this->home_group_id;
             }),
@@ -95,6 +95,25 @@ class UserResource extends JsonResource
             'member'  => $this->whenLoaded('member', fn () => new MemberResource($this->member)),
             'partner' => $this->whenLoaded('partner', fn () => new PartnerResource($this->partner)),
             'contact' => $this->whenLoaded('contact', fn () => new ContactResource($this->contact)),
+
+            'pending_leader_promotion' => $this->when($role === UserRole::Member, function () {
+                $promotion = \App\Models\LeaderPromotionRequest::where('user_id', $this->id)
+                    ->where('status', 'pending')
+                    ->with(['homeGroup', 'pastor'])
+                    ->first();
+                return $promotion ? [
+                    'id'         => $promotion->id,
+                    'home_group' => $promotion->homeGroup ? [
+                        'id'   => $promotion->homeGroup->id,
+                        'name' => $promotion->homeGroup->name,
+                    ] : null,
+                    'pastor'     => $promotion->pastor ? [
+                        'id'   => $promotion->pastor->id,
+                        'name' => $promotion->pastor->name,
+                    ] : null,
+                    'created_at' => $promotion->created_at?->toISOString(),
+                ] : null;
+            }),
         ];
     }
 }
