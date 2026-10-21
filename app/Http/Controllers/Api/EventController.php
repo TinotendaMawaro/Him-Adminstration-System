@@ -220,6 +220,14 @@ class EventController extends Controller
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
+        // Money already paid cannot simply disappear: refunds are handled by the events team and Finance.
+        if ((float) $registration->amount_paid > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already paid for this registration. Please contact the events team to cancel it and arrange a refund.',
+            ], 422);
+        }
+
         $registration->update(['status' => 'cancelled']);
 
         return response()->json(['success' => true, 'message' => 'Registration cancelled.']);
@@ -325,13 +333,20 @@ class EventController extends Controller
     {
         $user = $request->user();
 
+        $payable = app(\App\Services\Payments\OnlinePaymentService::class)->payableRegistrations($user)->pluck('id')->all();
+        $online  = ! blank(config('payme.accounts.events.public_id'));
+
         $registrations = EventRegistration::where('user_id', $user->id)
             ->with(['event' => fn ($q) => $q->select('id', 'title', 'starts_at', 'ends_at', 'venue_name', 'status', 'is_livestream', 'livestream_url')])
             ->orderByDesc('created_at')
             ->get()
-            ->map(function ($registration) {
+            ->map(function ($registration) use ($payable, $online) {
                 $event = $registration->event;
                 return [
+                    'amount_due'          => (float) $registration->amount_due,
+                    'amount_paid'         => (float) $registration->amount_paid,
+                    'balance_due'         => max(0, round((float) $registration->amount_due - (float) $registration->amount_paid, 2)),
+                    'can_pay_online'      => $online && in_array($registration->id, $payable, true),
                     'id'                  => $registration->id,
                     'registration_number' => 'HIM-2026-' . str_pad($registration->id, 6, '0', STR_PAD_LEFT),
                     'event_id'            => $event?->id,

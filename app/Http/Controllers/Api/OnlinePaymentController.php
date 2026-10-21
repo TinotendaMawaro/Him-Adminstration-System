@@ -27,11 +27,24 @@ class OnlinePaymentController extends Controller
         $options = collect($this->online->optionsFor($request->user()))
             ->map(fn ($o, $type) => ['value' => $type, 'label' => $o['label']])->values();
 
+        // What this person owes for events: shown so they can pick one; the amount is always computed server-side.
+        $registrations = collect($this->online->optionsFor($request->user()))->has('event_registration')
+            ? $this->online->payableRegistrations($request->user())->map(fn ($r) => [
+                'id'          => $r->id,
+                'event_title' => $r->event->title,
+                'starts_at'   => $r->event->starts_at?->toIso8601String(),
+                'balance'     => OnlinePaymentService::balanceOf($r),
+                'amount_due'  => (float) $r->amount_due,
+                'amount_paid' => (float) $r->amount_paid,
+            ])->values()
+            : [];
+
         return response()->json(['success' => true, 'data' => [
-            'types'    => $options,
-            'currency' => config('payme.currency'),
-            'min'      => (float) config('payme.min_amount'),
-            'max'      => (float) config('payme.max_amount'),
+            'types'         => $options,
+            'registrations' => $registrations,
+            'currency'      => config('payme.currency'),
+            'min'           => (float) config('payme.min_amount'),
+            'max'           => (float) config('payme.max_amount'),
         ]]);
     }
 
@@ -41,14 +54,16 @@ class OnlinePaymentController extends Controller
 
         // `type` is required and has no default: the giver must say what the gift is for.
         $validated = $request->validate([
-            'type'   => ['required', 'string', Rule::in($allowed)],
-            'amount' => ['required', 'numeric', 'decimal:0,2'],
-            'note'   => ['nullable', 'string', 'max:500'],
+            'type'            => ['required', 'string', Rule::in($allowed)],
+            // Event fees are always the registration's balance, so no amount is accepted for them.
+            'amount'          => ['required_unless:type,event_registration', 'nullable', 'numeric', 'decimal:0,2'],
+            'registration_id' => ['required_if:type,event_registration', 'nullable', 'integer'],
+            'note'            => ['nullable', 'string', 'max:500'],
         ], ['type.required' => 'Please choose what you are giving: tithe, offering or seed.', 'type.in' => 'Please choose a valid contribution type.']);
 
         try {
-            $payment = $this->online->start($request->user(), $validated['type'], (float) $validated['amount'], $validated['note'] ?? null,
-                fn (string $reference) => route('pay.return', ['reference' => $reference]));
+            $payment = $this->online->start($request->user(), $validated['type'], isset($validated['amount']) ? (float) $validated['amount'] : null, $validated['note'] ?? null,
+                fn (string $reference) => route('pay.return', ['reference' => $reference]), isset($validated['registration_id']) ? (int) $validated['registration_id'] : null);
         } catch (RuntimeException) {
             return response()->json(['success' => false, 'message' => 'We could not start the payment right now. Please try again in a moment.'], 502);
         }

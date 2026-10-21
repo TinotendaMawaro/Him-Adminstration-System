@@ -55,7 +55,7 @@ class EventRegistrationMail extends BrandedMail
             'facts'     => in_array($this->kind, ['attended'], true) ? [] : $facts,
             'cta'       => $cta,
             'notice'    => ($balance > 0 && in_array($this->kind, ['registered', 'confirmed'], true))
-                ? 'A balance of $' . number_format($balance, 2) . ' is still due. Please settle it before the event.'
+                ? 'A balance of $' . number_format($balance, 2) . ' is still due. You can pay it online any time from your portal using the Give button (choose Events & conferences), or at the event desk.'
                 : null,
             'outro'     => in_array($this->kind, ['registered', 'confirmed'], true) ? ['A calendar invite is attached so you can add it to your phone in one tap.'] : [],
         ];

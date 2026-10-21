@@ -32,7 +32,9 @@ the web server and Vite together.
 Every email starts with the ministry logo (`public/images/logo.jpeg`) on a white header with a navy and gold rule. It is **embedded in each message**
 as an inline image, so it shows in the inbox with no hosting and no "load images" prompt. To use a hosted image instead set
 `MAIL_LOGO_URL=https://...`; to change the logo replace the file (or edit `config/mailing.php` -> `logo`). If the file is missing the
-header falls back to the ministry name, never a broken image. The receipt page and the password/preference pages carry the same logo.
+header falls back to the ministry name, never a broken image.
+The embedded picture is sent to Resend with a proper name (`img1.jpg`), type (`image/jpeg`) and `content_id`; without those, mail clients show it as an
+attached file (a thumbnail under the email) instead of in the header. For the most universal result in production, host the logo and set `MAIL_LOGO_URL`. The receipt page and the password/preference pages carry the same logo.
 
 ## What gets emailed
 

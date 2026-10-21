@@ -8,6 +8,7 @@ through the floating **Give** button. Finance and Master see the results in the 
 ```
 PAYME_GIVING_ID=<public unique id for tithes / offerings / seeds>
 PAYME_PARTNER_ID=<public unique id for partnership>
+PAYME_EVENTS_ID=<public unique id for events & conferences>
 PAYME_BASE_URL=https://backendservices.clicknpay.africa:2081   # default
 PAYME_CUSTOMER_CHARGED=true      # true = customer pays the gateway fee on top; false = the church absorbs it
 PAYME_MIN_AMOUNT=1  PAYME_MAX_AMOUNT=20000
@@ -16,7 +17,20 @@ PAYME_PORTAL_URL=                # where "Back to my portal" points (blank = sit
 
 Settings live in `config/payme.php`. The mapping *contribution type → ClicknPay account* is enforced on the server;
 the browser can only say *what* it is giving and *how much*. If an account ID is blank, its types are simply not offered.
-Event registrations have no online account yet, so they remain a counter payment.
+Event and conference fees use their own account (`PAYME_EVENTS_ID`), see below.
+
+## Events & conferences
+
+A member with an unpaid registration sees **Events & conferences** in the Give dialog (or **Pay online** on the registration card). They pick
+the registration and pay its **balance**; the browser never sends an amount, so it cannot be altered. When ClicknPay confirms:
+
+* the payment is completed with a receipt, the registration's paid amount is updated and a pending registration becomes **confirmed**
+  (which also sends the "You're confirmed" email);
+* clicking Pay twice reuses the same payment link, so no second order is created;
+* a registration paid in part (e.g. at the counter) only pays the remainder;
+* a **paid registration cannot be cancelled by the member** (the money would stay with the church): the events team cancels and refunds it.
+
+A registration is payable while it is pending/confirmed, has a balance, and its event is published and has not ended.
 
 ## The flow
 

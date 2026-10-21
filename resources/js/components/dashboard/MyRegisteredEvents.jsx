@@ -131,6 +131,14 @@ export default function MyRegisteredEvents({ registrations, onCancel, onBrowse }
               <button className="lux-btn px-3 py-1.5 text-[10px] bg-white/5 ring-1 ring-white/10 text-gray-200">
                 <Icons.DocumentDownload className="w-3 h-3" /> Image
               </button>
+              {reg.can_pay_online && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent("him:give", { detail: { type: "event_registration", registrationId: reg.id } }))}
+                  className="lux-btn px-3 py-1.5 text-[10px] bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-200 hover:bg-amber-500/25 font-semibold"
+                >
+                  Pay ${Number(reg.balance_due).toFixed(2)} online
+                </button>
+              )}
               {activeTab === "upcoming" && (
                 <button
                   onClick={() => onCancel?.(reg.event_id)}

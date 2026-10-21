@@ -35,7 +35,7 @@ return [
 
     /*
      * account key => ClicknPay public unique id + the contribution types it accepts.
-     * Event registrations and other types have no online account, so they are not offered online.
+     * Types without a configured account (or without anything payable) are simply not offered online.
      */
     'accounts' => [
         'giving' => [
@@ -45,6 +45,11 @@ return [
         'partners' => [
             'public_id' => env('PAYME_PARTNER_ID'),
             'types'     => ['partnership'],
+        ],
+        // Event and conference registration fees: the amount is always the registration's balance, computed on the server.
+        'events' => [
+            'public_id' => env('PAYME_EVENTS_ID'),
+            'types'     => ['event_registration'],
         ],
     ],
 ];

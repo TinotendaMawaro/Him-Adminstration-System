@@ -6,11 +6,13 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Mail\StaffAlertMail;
+use App\Models\EventRegistration;
 use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\AuditTrail;
 use App\Support\Mailing;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -46,11 +48,35 @@ class OnlinePaymentService
                 if ($type === PaymentType::Partnership->value && !$this->isPartner($user)) {
                     continue;
                 }
+                if ($type === PaymentType::EventRegistration->value && $this->payableRegistrations($user)->isEmpty()) {
+                    continue;   // nothing owing for any event
+                }
                 $options[$type] = ['label' => PaymentType::from($type)->getLabel(), 'account' => $account];
             }
         }
 
         return $options;
+    }
+
+    /**
+     * Registrations this person still owes money on: not cancelled, a real balance, for an event that has not finished.
+     * @return Collection<int, EventRegistration>
+     */
+    public function payableRegistrations(User $user): Collection
+    {
+        return EventRegistration::with('event')
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereColumn('amount_paid', '<', 'amount_due')
+            ->whereHas('event', fn ($q) => $q->where('status', 'published')
+                ->where(fn ($w) => $w->where('ends_at', '>', now())->orWhere(fn ($x) => $x->whereNull('ends_at')->where('starts_at', '>', now()->subHours(12)))))
+            ->get()
+            ->values();
+    }
+
+    public static function balanceOf(EventRegistration $registration): float
+    {
+        return round(max(0, (float) $registration->amount_due - (float) $registration->amount_paid), 2);
     }
 
     private function isPartner(User $user): bool
@@ -63,19 +89,41 @@ class OnlinePaymentService
     /**
      * Create the pending payment, open the order at the gateway and return the payment
      * (with gateway_url set). On gateway failure the payment is closed as failed.
+     *
+     * For event registrations the amount is NEVER taken from the browser: it is the registration's outstanding balance.
      */
-    public function start(User $user, string $type, float $amount, ?string $note, callable $returnUrlFor): Payment
+    public function start(User $user, string $type, ?float $amount, ?string $note, callable $returnUrlFor, ?int $registrationId = null): Payment
     {
         $options = $this->optionsFor($user);
         if (!isset($options[$type])) {
             throw ValidationException::withMessages(['type' => 'This contribution cannot be paid online.']);
         }
 
-        $amount = round($amount, 2);
-        $min = (float) config('payme.min_amount');
-        $max = (float) config('payme.max_amount');
-        if ($amount < $min || $amount > $max) {
-            throw ValidationException::withMessages(['amount' => sprintf('Enter an amount between %s and %s.', number_format($min, 2), number_format($max, 2))]);
+        $registration = null;
+        $productName  = $options[$type]['label'];
+
+        if ($type === PaymentType::EventRegistration->value) {
+            $registration = $this->payableRegistrations($user)->firstWhere('id', $registrationId);
+            if (!$registration) {
+                throw ValidationException::withMessages(['registration_id' => 'That registration has nothing left to pay, or is not yours.']);
+            }
+
+            // Already started and still waiting? Hand back the same payment link instead of opening a second order.
+            $open = Payment::online()->where('event_registration_id', $registration->id)->where('status', PaymentStatus::Pending->value)
+                ->whereNotNull('gateway_url')->where('created_at', '>=', now()->subDay())->latest('id')->first();
+            if ($open && (float) $open->amount === self::balanceOf($registration)) {
+                return $open;
+            }
+
+            $amount      = self::balanceOf($registration);
+            $productName = Str::limit('Registration: ' . $registration->event->title, 80, '');
+        } else {
+            $amount = round((float) $amount, 2);
+            $min = (float) config('payme.min_amount');
+            $max = (float) config('payme.max_amount');
+            if ($amount < $min || $amount > $max) {
+                throw ValidationException::withMessages(['amount' => sprintf('Enter an amount between %s and %s.', number_format($min, 2), number_format($max, 2))]);
+            }
         }
 
         $recent = Payment::online()->where('user_id', $user->id)->where('status', PaymentStatus::Pending->value)
@@ -85,22 +133,22 @@ class OnlinePaymentService
         }
 
         $publicId = config("payme.accounts.{$options[$type]['account']}.public_id");
-        $label    = $options[$type]['label'];
 
         $payment = Payment::create([
-            'user_id'          => $user->id,
-            'type'             => $type,
-            'amount'           => $amount,
-            'currency'         => config('payme.currency'),
-            'status'           => PaymentStatus::Pending,
-            'method'           => PaymentMethod::Online,
-            'notes'            => $note ? Str::limit(strip_tags($note), 500, '') : null,
-            'gateway'          => 'payme',
-            'client_reference' => $this->newReference(),
+            'user_id'               => $user->id,
+            'event_registration_id' => $registration?->id,
+            'type'                  => $type,
+            'amount'                => $amount,
+            'currency'              => config('payme.currency'),
+            'status'                => PaymentStatus::Pending,
+            'method'                => PaymentMethod::Online,
+            'notes'                 => $note ? Str::limit(strip_tags($note), 500, '') : null,
+            'gateway'               => 'payme',
+            'client_reference'      => $this->newReference(),
         ]);
 
         try {
-            $order = $this->gateway->createOrder($this->orderPayload($payment, $user, $publicId, $label, $returnUrlFor($payment->client_reference)));
+            $order = $this->gateway->createOrder($this->orderPayload($payment, $user, $publicId, $productName, $returnUrlFor($payment->client_reference)));
         } catch (RuntimeException $e) {
             $payment->forceFill(['status' => PaymentStatus::Failed, 'gateway_status' => 'CREATE_FAILED'])->save();
             throw $e;
@@ -113,12 +161,14 @@ class OnlinePaymentService
             'gateway_payload'  => $this->snapshot($order),
         ])->save();
 
-        AuditTrail::record('payment.online_started', $user, $payment, ['type' => $type, 'amount' => (string) $amount, 'ref' => $payment->client_reference]);
+        AuditTrail::record('payment.online_started', $user, $payment, [
+            'type' => $type, 'amount' => (string) $amount, 'ref' => $payment->client_reference, 'registration' => $registration?->id,
+        ]);
 
         return $payment;
     }
 
-    private function orderPayload(Payment $payment, User $user, string $publicId, string $label, string $returnUrl): array
+    private function orderPayload(Payment $payment, User $user, string $publicId, string $productName, string $returnUrl): array
     {
         return array_filter([
             'channel'             => 'AUTOMATED',
@@ -127,15 +177,15 @@ class OnlinePaymentService
             'customerCharged'     => (bool) config('payme.customer_charged'),
             'customerPhoneNumber' => $user->phone ?: null,
             'customerEmail'       => $user->email,
-            'description'         => "{$label} - {$user->name}",
+            'description'         => "{$productName} - {$user->name}",
             'multiplePayments'    => false,
             // "orderYpe" is spelled exactly as the ClicknPay API documents it.
             'orderYpe'            => 'DYNAMIC',
             'productsList'        => [[
-                'description' => $label,
+                'description' => $productName,
                 'id'          => 0,
                 'price'       => (float) $payment->amount,
-                'productName' => $label,
+                'productName' => $productName,
                 'quantity'    => 1,
             ]],
             'publicUniqueId'      => $publicId,
@@ -278,14 +328,19 @@ class OnlinePaymentService
                 'transaction_id' => (string) ($order['correlator'] ?? $locked->gateway_order_id),
             ])->save();   // the saving hook issues the receipt number
 
+            // An event fee: bring the registration's paid amount up to date (confirms it once fully paid).
+            $locked->syncEventRegistration();
+
             AuditTrail::record('payment.online_confirmed', null, $locked, [
                 'receipt' => $locked->receipt_number, 'amount' => (string) $locked->amount, 'gateway_paid' => $paid, 'ref' => $locked->client_reference,
             ], $locked->user_id);
 
             Notification::create([
                 'user_id'  => $locked->user_id,
-                'title'    => 'Thank you for your gift',
-                'message'  => sprintf('Your %s of %s %s was received. Receipt %s.', strtolower($locked->type->getLabel()), $locked->currency, number_format((float) $locked->amount, 2), $locked->receipt_number),
+                'title'    => $locked->event_registration_id ? 'Registration payment received' : 'Thank you for your gift',
+                'message'  => $locked->event_registration_id
+                    ? sprintf('Your event payment of %s %s was received. Receipt %s.', $locked->currency, number_format((float) $locked->amount, 2), $locked->receipt_number)
+                    : sprintf('Your %s of %s %s was received. Receipt %s.', strtolower($locked->type->getLabel()), $locked->currency, number_format((float) $locked->amount, 2), $locked->receipt_number),
                 'type'     => 'success',
                 'category' => 'finance',
                 'is_read'  => false,

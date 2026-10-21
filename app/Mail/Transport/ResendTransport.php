@@ -65,9 +65,11 @@ class ResendTransport extends AbstractTransport
 
         $inline = 0;
         foreach ($email->getAttachments() as $attachment) {
+            $mime = strtolower($attachment->getMediaType() . '/' . $attachment->getMediaSubtype());
             $item = [
-                'filename' => $attachment->getFilename() ?: 'attachment',
-                'content'  => base64_encode($attachment->getBody()),
+                'filename'     => $attachment->getFilename() ?: 'attachment',
+                'content'      => base64_encode($attachment->getBody()),
+                'content_type' => $mime,
             ];
 
             // Embedded image (e.g. the logo): Symfony references it as cid:<random>@symfony. Give Resend a simple,
@@ -80,6 +82,9 @@ class ResendTransport extends AbstractTransport
                     if (str_contains($payload['html'], 'cid:' . $reference)) {
                         $cid                = 'img' . (++$inline);
                         $item['content_id'] = $cid;
+                        // Laravel names an embedded image with a random string. Without an extension the mail client cannot tell it is a
+                        // picture, shows it as an attached file (a thumbnail under the email) and leaves the header empty.
+                        $item['filename']   = "{$cid}." . (['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'][$mime] ?? 'img');
                         $payload['html']    = str_replace('cid:' . $reference, 'cid:' . $cid, $payload['html']);
                         break;
                     }
