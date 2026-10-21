@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
@@ -71,7 +72,10 @@ abstract class BrandedMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->data()['subject']);
+        return new Envelope(
+            subject: $this->data()['subject'],
+            replyTo: [new Address((string) config('mailing.support_email'), (string) config('mailing.brand.name'))],
+        );
     }
 
     public function content(): Content
@@ -84,6 +88,7 @@ abstract class BrandedMail extends Mailable implements ShouldQueue
         $view = [
             'm'              => $this->data(),
             'brand'          => config('mailing.brand'),
+            'logo'           => config('mailing.logo'),
             'portalUrl'      => self::portalUrl(),
             'supportEmail'   => config('mailing.support_email'),
             'unsubscribeUrl' => $unsubscribe,

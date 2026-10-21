@@ -8,7 +8,7 @@ a queue, a delivery log and safety rules. Nothing blocks a web request: a slow m
 ```
 MAIL_MAILER=resend
 RESEND_API_KEY=re_...                       # never commit this; .env is git-ignored
-MAIL_FROM_ADDRESS="onboarding@resend.dev"   # see "Going live" below
+MAIL_FROM_ADDRESS="no-reply@heartfeltonline.org"   # heartfeltonline.org is verified in Resend
 MAIL_FROM_NAME="Heartfelt International Ministries"
 APP_URL=https://your-domain                 # links inside emails are built from this: it must be the real site address
 PORTAL_URL=https://your-portal-domain       # where "Open my portal" buttons go (blank = APP_URL)
@@ -18,13 +18,21 @@ MAIL_TIMEZONE=Africa/Harare                 # times shown in emails (server runs
 Run the queue worker (it actually sends): `php artisan queue:work --tries=3`. `start-dev.bat` starts it, the scheduler,
 the web server and Vite together.
 
-### Going live (one-time, in the Resend dashboard)
+### Domain and delivery tracking
 
-1. **Verify your domain** (Domains → Add) and set `MAIL_FROM_ADDRESS` to an address on it, e.g. `no-reply@yourdomain.org`.
-   Until then Resend only delivers to your own Resend account email, so real members will not receive anything.
+1. **Sending domain:** `heartfeltonline.org` is verified in Resend, so email goes out as `no-reply@heartfeltonline.org` to anyone.
+   Replies go to `support@heartfeltonline.org` (`MAIL_SUPPORT_ADDRESS`). Any other domain must be verified in Resend (Domains → Add) first;
+   until then only `onboarding@resend.dev` works, and only to your own Resend account email.
 2. **Delivery tracking (optional but recommended):** Webhooks → add `https://YOUR-DOMAIN/api/webhooks/resend`, subscribe to
    `email.delivered`, `email.bounced`, `email.complained`, `email.failed`, then put the signing secret in `RESEND_WEBHOOK_SECRET`.
    Hard bounces and spam complaints then stop us emailing that address automatically (protecting your sender reputation).
+
+### Logo
+
+Every email starts with the ministry logo (`public/images/logo.jpeg`) on a white header with a navy and gold rule. It is **embedded in each message**
+as an inline image, so it shows in the inbox with no hosting and no "load images" prompt. To use a hosted image instead set
+`MAIL_LOGO_URL=https://...`; to change the logo replace the file (or edit `config/mailing.php` -> `logo`). If the file is missing the
+header falls back to the ministry name, never a broken image. The receipt page and the password/preference pages carry the same logo.
 
 ## What gets emailed
 
@@ -45,7 +53,7 @@ Routine profile edits (phone, address, photo, tour) send nothing.
 
 ## Safety rules
 
-* **Seeders and demo data never email.** Seeders run silenced, and reserved domains (`.test`, `.invalid`, `.example`, `example.com`…) are never emailed.
+* **Seeders and demo data never email.** Seeders run silenced, and reserved domains (`.test`, `.invalid`, `.example`, `example.com`, and `heartfelt.church`, the placeholder domain on the seeded demo accounts) are never emailed.
 * **Notification copies are rate-limited:** the same title to the same person is sent once per 12 hours and at most 20 a day, so an
   hourly reminder job can never flood an inbox. Prayer-centre notifications are sent **without their text** (the content stays in the portal).
   Categories that already have their own email (event registrations, "Thank you for your gift") are not duplicated.

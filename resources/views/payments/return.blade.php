@@ -15,7 +15,8 @@
         body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:linear-gradient(160deg,#eef2f7,#f8f5ec);
                color:var(--ink); font:16px/1.55 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
         .card { width:100%; max-width:460px; background:#fff; border-radius:18px; box-shadow:0 20px 50px -20px rgba(30,58,95,.35); overflow:hidden; text-align:center; }
-        .top { background:var(--navy); color:#fff; padding:18px; font-size:13px; letter-spacing:.12em; border-bottom:4px solid var(--gold); }
+        .top { background:#fff; padding:22px 18px 16px; border-bottom:4px solid var(--navy); box-shadow:0 3px 0 var(--gold); }
+        .top img { display:block; margin:0 auto; width:150px; max-width:60%; height:auto; }
         .body { padding:34px 30px 28px; }
         .icon { width:72px; height:72px; border-radius:50%; margin:0 auto 18px; display:grid; place-items:center; font-size:34px; color:#fff; }
         .ok { background:var(--ok); } .bad { background:var(--bad); } .wait { background:var(--warn); }
@@ -33,7 +34,7 @@
 </head>
 <body>
 <main class="card" role="status" aria-live="polite">
-    <div class="top">HEARTFELT INTERNATIONAL MINISTRIES</div>
+    <div class="top"><img src="{{ asset('images/logo.jpeg') }}" alt="Heartfelt International Ministries"></div>
     <div class="body">
         @if($state === 'success')
             <div class="icon ok">✓</div>

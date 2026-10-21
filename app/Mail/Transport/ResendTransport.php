@@ -63,11 +63,30 @@ class ResendTransport extends AbstractTransport
             $payload['tags'] = [['name' => 'template', 'value' => preg_replace('/[^A-Za-z0-9_-]/', '_', $headers->get('X-HIM-Template')->getBodyAsString())]];
         }
 
+        $inline = 0;
         foreach ($email->getAttachments() as $attachment) {
-            $payload['attachments'][] = [
+            $item = [
                 'filename' => $attachment->getFilename() ?: 'attachment',
                 'content'  => base64_encode($attachment->getBody()),
             ];
+
+            // Embedded image (e.g. the logo): Symfony references it as cid:<random>@symfony. Give Resend a simple,
+            // safe content_id and point the HTML at it, so the picture shows inline in every mail client.
+            // The HTML refers to the part either by an explicit Content-ID or (as Laravel's $message->embed() does) by its
+            // file name, so match whichever one the HTML actually uses.
+            if ($attachment->getDisposition() === 'inline' && isset($payload['html'])) {
+                $candidates = array_filter([$attachment->hasContentId() ? $attachment->getContentId() : null, $attachment->getFilename()]);
+                foreach ($candidates as $reference) {
+                    if (str_contains($payload['html'], 'cid:' . $reference)) {
+                        $cid                = 'img' . (++$inline);
+                        $item['content_id'] = $cid;
+                        $payload['html']    = str_replace('cid:' . $reference, 'cid:' . $cid, $payload['html']);
+                        break;
+                    }
+                }
+            }
+
+            $payload['attachments'][] = $item;
         }
 
         $request = Http::withToken($this->apiKey)->acceptJson()->asJson()->timeout(20)->connectTimeout(8);

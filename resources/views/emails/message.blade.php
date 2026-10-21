@@ -8,6 +8,18 @@
     [$accent, $tint, $glyph] = $tones[$m['tone']] ?? $tones['info'];
     $navy = $brand['navy']; $gold = $brand['gold'];
     $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
+
+    // Logo: hosted URL if configured; else embedded in the real message ($message exists when sending);
+    // else (browser previews) a data URI so previews look identical.
+    $logoPath = $logo['path'] ?? null;
+    $logoSrc  = null;
+    if (!empty($logo['url'])) {
+        $logoSrc = $logo['url'];
+    } elseif ($logoPath && is_file($logoPath)) {
+        $logoSrc = (isset($message) && is_object($message) && method_exists($message, 'embed'))
+            ? $message->embed($logoPath)
+            : 'data:' . (mime_content_type($logoPath) ?: 'image/jpeg') . ';base64,' . base64_encode(file_get_contents($logoPath));
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -41,17 +53,18 @@
         <tr><td align="center" style="padding:28px 12px;">
 
             <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
-                {{-- Header --}}
+                {{-- Header: the ministry logo on white, then a navy + gold rule --}}
                 <tr>
-                    <td class="px" style="background:{{ $navy }};padding:26px 36px 22px;border-radius:16px 16px 0 0;border-bottom:4px solid {{ $gold }};">
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-                            <td style="font-family:{{ $font }};color:#ffffff;">
-                                <div style="font-size:11px;letter-spacing:3px;color:{{ $gold }};font-weight:700;text-transform:uppercase;">Heartfelt</div>
-                                <div style="font-size:19px;font-weight:700;letter-spacing:.2px;margin-top:3px;">{{ $brand['name'] }}</div>
-                            </td>
-                        </tr></table>
+                    <td class="px" align="center" style="background:#ffffff;padding:28px 36px 20px;border-radius:16px 16px 0 0;">
+                        @if($logoSrc)
+                            <img src="{{ $logoSrc }}" alt="{{ $logo['alt'] ?? $brand['name'] }}" width="150" style="display:block;margin:0 auto;width:150px;max-width:150px;height:auto;border:0;outline:none;font-family:{{ $font }};font-size:18px;font-weight:700;color:{{ $navy }};">
+                        @else
+                            <div style="font-family:{{ $font }};font-size:20px;font-weight:800;color:{{ $navy }};letter-spacing:.3px;">{{ $brand['name'] }}</div>
+                        @endif
                     </td>
                 </tr>
+                <tr><td style="background:{{ $navy }};height:6px;line-height:6px;font-size:0;">&nbsp;</td></tr>
+                <tr><td style="background:{{ $gold }};height:3px;line-height:3px;font-size:0;">&nbsp;</td></tr>
 
                 {{-- Card --}}
                 <tr>

@@ -10,10 +10,10 @@
         * { box-sizing: border-box; }
         body { margin:0; background:#f3f4f6; color:var(--ink); font:15px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
         .sheet { max-width:720px; margin:32px auto; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.08); overflow:hidden; }
-        header { background:var(--navy); color:#fff; padding:28px 36px; display:flex; justify-content:space-between; align-items:flex-end; border-bottom:4px solid var(--gold); }
-        header h1 { margin:0; font-size:20px; letter-spacing:.04em; }
-        header small { color:#cbd5e1; display:block; margin-top:4px; }
-        .no { text-align:right; } .no strong { display:block; font-size:18px; color:var(--gold); }
+        header { background:#fff; padding:24px 36px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:4px solid var(--navy); box-shadow:0 3px 0 var(--gold); }
+        header img { width:130px; height:auto; display:block; }
+        header small { color:var(--muted); display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+        .no { text-align:right; } .no strong { display:block; font-size:20px; color:var(--navy); }
         .body { padding:32px 36px; }
         .amount { text-align:center; padding:22px; background:#f9fafb; border:1px dashed var(--gold); border-radius:10px; margin-bottom:28px; }
         .amount span { display:block; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.1em; }
@@ -30,7 +30,7 @@
 <body>
 <div class="sheet">
     <header>
-        <div><h1>HEARTFELT INTERNATIONAL MINISTRIES</h1><small>Official payment receipt</small></div>
+        <div><img src="{{ asset('images/logo.jpeg') }}" alt="Heartfelt International Ministries"><small style="margin-top:6px">Official payment receipt</small></div>
         <div class="no"><small>Receipt no.</small><strong>{{ $payment->receipt_number }}</strong></div>
     </header>
     <div class="body">

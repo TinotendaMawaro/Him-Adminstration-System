@@ -15,6 +15,16 @@ return [
         'gold'    => '#c9a84c',
     ],
 
+    /*
+     * The logo shown at the top of every email. By default it is EMBEDDED in each message (shows in the
+     * inbox with no hosting and no "load images" prompt). Set MAIL_LOGO_URL to use a hosted https image instead.
+     */
+    'logo' => [
+        'path' => public_path('images/logo.jpeg'),
+        'url'  => env('MAIL_LOGO_URL'),
+        'alt'  => 'Heartfelt International Ministries',
+    ],
+
     // Times shown in emails (the server itself runs in UTC).
     'timezone' => env('MAIL_TIMEZONE', 'Africa/Harare'),
 
@@ -24,7 +34,8 @@ return [
 
     // Never email addresses on reserved/test domains (demo data, seeders, examples).
     'reserved_tlds'   => ['test', 'invalid', 'example', 'localhost', 'local'],
-    'reserved_domains' => ['example.com', 'example.org', 'example.net'],
+    // heartfelt.church is only the placeholder domain on the seeded demo accounts (the ministry's own domain is heartfeltonline.org).
+    'reserved_domains' => ['example.com', 'example.org', 'example.net', 'heartfelt.church'],
     // ...except Resend's own test inbox, which is safe by design.
     'always_allowed_domains' => ['resend.dev'],
 

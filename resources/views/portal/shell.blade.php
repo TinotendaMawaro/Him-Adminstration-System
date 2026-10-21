@@ -12,7 +12,8 @@
         body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:linear-gradient(160deg,#eef2f7,#f8f5ec);
                color:var(--ink); font:16px/1.55 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
         .card { width:100%; max-width:440px; background:#fff; border-radius:18px; box-shadow:0 20px 50px -20px rgba(30,58,95,.35); overflow:hidden; }
-        .top { background:var(--navy); color:#fff; padding:18px; font-size:13px; letter-spacing:.12em; text-align:center; border-bottom:4px solid var(--gold); }
+        .top { background:#fff; padding:22px 18px 16px; text-align:center; border-bottom:4px solid var(--navy); box-shadow:0 3px 0 var(--gold); }
+        .top img { display:block; margin:0 auto; width:150px; max-width:60%; height:auto; }
         .body { padding:32px 30px 28px; }
         h1 { margin:0 0 6px; font-size:22px; letter-spacing:-.01em; color:var(--navy); }
         p { margin:0 0 14px; color:var(--muted); }
@@ -30,7 +31,7 @@
 </head>
 <body>
 <main class="card">
-    <div class="top">HEARTFELT INTERNATIONAL MINISTRIES</div>
+    <div class="top"><img src="{{ asset('images/logo.jpeg') }}" alt="Heartfelt International Ministries"></div>
     <div class="body">@yield('content')</div>
 </main>
 @stack('scripts')
