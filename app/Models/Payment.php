@@ -23,6 +23,7 @@ class Payment extends Model
         'status', 'method', 'transaction_id',
         'notes', 'paid_at', 'recorded_by',
         'confirmed_at', 'confirmed_by', 'voided_at', 'voided_by', 'void_reason',
+        'client_reference', 'gateway', 'gateway_order_id', 'gateway_url', 'gateway_status', 'gateway_payload', 'gateway_checked_at',
     ];
 
     protected function casts(): array
@@ -35,6 +36,8 @@ class Payment extends Model
             'paid_at'      => 'datetime',
             'confirmed_at' => 'datetime',
             'voided_at'    => 'datetime',
+            'gateway_payload'    => 'array',
+            'gateway_checked_at' => 'datetime',
         ];
     }
 
@@ -81,6 +84,7 @@ class Payment extends Model
     // ─── Workflow ─────────────────────────────────────────────────────────────
 
     public function isPending(): bool   { return $this->status === PaymentStatus::Pending; }
+    public function isOnline(): bool    { return $this->gateway !== null && $this->client_reference !== null; }
     public function isFinal(): bool     { return in_array($this->status, [PaymentStatus::Completed, PaymentStatus::Voided, PaymentStatus::Refunded], true); }
 
     public function confirm(User $by): void
@@ -148,6 +152,18 @@ class Payment extends Model
     public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('payments.status', PaymentStatus::Completed->value);
+    }
+
+    /** Pending payments a person at the finance desk must act on (online attempts are settled by the gateway, not by hand). */
+    public function scopeNeedsManualVerification(Builder $query): Builder
+    {
+        return $query->where('payments.status', PaymentStatus::Pending->value)
+            ->where(fn ($q) => $q->whereNull('payments.gateway')->orWhere('payments.gateway_status', 'SUCCESS_MISMATCH'));
+    }
+
+    public function scopeOnline(Builder $query): Builder
+    {
+        return $query->whereNotNull('payments.gateway');
     }
 
     public function scopeByType(Builder $query, PaymentType|string $type): Builder

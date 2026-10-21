@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PartnerController;
 use App\Http\Controllers\Api\PartnershipPackageController;
 use App\Http\Controllers\Api\PastorController;
+use App\Http\Controllers\Api\OnlinePaymentController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\PrayerCenterController;
@@ -87,6 +88,13 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/assets/{id}', [AssetController::class, 'show']);
     Route::put('/assets/{id}', [AssetController::class, 'update']);
     Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
+
+    // ── Online giving (ClicknPay PayMe): tithes, offerings, seeds, partnership ─────
+    Route::prefix('online-payments')->middleware('role:member,partner,pastor,hod')->group(function () {
+        Route::get('/options', [OnlinePaymentController::class, 'options']);
+        Route::post('/', [OnlinePaymentController::class, 'store'])->middleware('throttle:10,1');
+        Route::get('/{reference}', [OnlinePaymentController::class, 'show'])->where('reference', 'HIM[A-Z0-9]+');
+    });
 
     // ── Payments ───────────────────────────────────────────────────────────────
     Route::get('/payments', [PaymentController::class, 'index']);

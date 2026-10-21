@@ -33,9 +33,17 @@ class PaymentPolicy
         return $user->hasAnyRole(['master', 'finance']) && $payment->isPending();
     }
 
+    /**
+     * Online payments are settled by the gateway, never by hand (a clerk cannot vouch for money the
+     * gateway has not reported). The only manual path is an amount/account mismatch flagged for review.
+     */
     public function confirm(User $user, Payment $payment): bool
     {
-        return $user->hasAnyRole(['master', 'finance']) && $payment->isPending();
+        if (!$user->hasAnyRole(['master', 'finance']) || !$payment->isPending()) {
+            return false;
+        }
+
+        return !$payment->isOnline() || $payment->gateway_status === 'SUCCESS_MISMATCH';
     }
 
     public function void(User $user, Payment $payment): bool

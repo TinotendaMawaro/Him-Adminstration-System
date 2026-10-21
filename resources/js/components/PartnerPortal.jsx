@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import PortalLayout from "./PortalLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../lib/api.js";
+
+// This portal's calls are written as "/api/…" against raw axios, which carries no login token (every call was a 401).
+// Route them through the shared authenticated client (its baseURL already supplies "/api").
+const axios = {
+    get: (url, config) => api.get(url.replace(/^\/api/, ""), config),
+    post: (url, data, config) => api.post(url.replace(/^\/api/, ""), data, config),
+    put: (url, data, config) => api.put(url.replace(/^\/api/, ""), data, config),
+};
 
 const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "—";

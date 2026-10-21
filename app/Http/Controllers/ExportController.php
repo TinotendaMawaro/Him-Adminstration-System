@@ -174,10 +174,11 @@ class ExportController extends Controller
             ->when($regionId, fn ($q) => $q->where('z.region_id', $regionId))
             ->orderByDesc('p.created_at')
             ->selectRaw("p.receipt_number, p.reference, u.name, COALESCE(z.name,'—') as zone, COALESCE(r.name,'—') as region,
-                p.type, p.amount, p.currency, p.method, p.status, p.paid_at, p.transaction_id")
+                p.type, p.amount, p.currency, p.method, p.status, p.paid_at, p.transaction_id,
+                IF(p.gateway IS NULL, 'counter', 'online') as source, p.client_reference")
             ->get();
 
-        return [['Receipt', 'Reference', 'Payer', 'Zone', 'Region', 'Type', 'Amount', 'Currency', 'Method', 'Status', 'Paid at', 'Transaction ID'], $rows->all()];
+        return [['Receipt', 'Reference', 'Payer', 'Zone', 'Region', 'Type', 'Amount', 'Currency', 'Method', 'Status', 'Paid at', 'Transaction ID', 'Source', 'Online reference'], $rows->all()];
     }
 
     private function registrations(?int $eventId): array

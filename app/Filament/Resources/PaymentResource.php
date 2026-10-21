@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\Region;
 use App\Models\User;
 use App\Models\Zone;
+use App\Services\Payments\OnlinePaymentService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -38,7 +39,7 @@ class PaymentResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $n = Payment::where('status', PaymentStatus::Pending->value)->count();
+        $n = Payment::needsManualVerification()->count();
 
         return $n ? (string) $n : null;
     }
@@ -75,7 +76,8 @@ class PaymentResource extends Resource
                     Forms\Components\TextInput::make('amount')
                         ->numeric()->required()->minValue(0.01)->maxValue(1000000)->prefix('$')->step(0.01),
                     Forms\Components\Select::make('method')
-                        ->options(PaymentMethod::class)
+                        ->options(fn () => collect(PaymentMethod::cases())->reject(fn ($c) => $c === PaymentMethod::Online)
+                            ->mapWithKeys(fn ($c) => [$c->value => $c->getLabel()])->all())
                         ->required()
                         ->live(),
                     Forms\Components\TextInput::make('transaction_id')
@@ -118,6 +120,15 @@ class PaymentResource extends Resource
                 Infolists\Components\TextEntry::make('zone.region.name')->label('Region')->placeholder('—'),
                 Infolists\Components\TextEntry::make('notes')->placeholder('—')->columnSpanFull(),
             ]),
+            Infolists\Components\Section::make('Online payment (PayMe)')->columns(3)->visible(fn (Payment $r) => $r->isOnline())->schema([
+                Infolists\Components\TextEntry::make('client_reference')->label('Our reference')->copyable(),
+                Infolists\Components\TextEntry::make('gateway_order_id')->label('PayMe order id')->copyable()->placeholder('—'),
+                Infolists\Components\TextEntry::make('gateway_status')->label('Gateway status')->badge()->placeholder('—')
+                    ->color(fn ($state) => match (true) { $state === 'SUCCESS' => 'success', in_array($state, ['FAILED', 'CREATE_FAILED', 'ABANDONED'], true) => 'danger', $state === 'SUCCESS_MISMATCH' => 'warning', default => 'gray' }),
+                Infolists\Components\TextEntry::make('gateway_checked_at')->label('Last checked')->since()->placeholder('Never'),
+                Infolists\Components\TextEntry::make('gateway_payload.totalPaid')->label('Gateway reports paid')->placeholder('—'),
+                Infolists\Components\TextEntry::make('gateway_payload.paymentChannel')->label('Channel')->placeholder('—'),
+            ]),
             Infolists\Components\Section::make('Audit trail')->columns(3)->collapsed()->schema([
                 Infolists\Components\TextEntry::make('recordedBy.name')->label('Recorded by')->placeholder('Self-submitted'),
                 Infolists\Components\TextEntry::make('confirmedBy.name')->label('Confirmed by')->placeholder('—'),
@@ -142,6 +153,9 @@ class PaymentResource extends Resource
                 Tables\Columns\TextColumn::make('zone.region.name')->label('Region')->placeholder('—')->toggleable(),
                 Tables\Columns\TextColumn::make('type')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('method')->badge()->color('gray')->toggleable(),
+                Tables\Columns\TextColumn::make('source')->label('Source')->badge()->toggleable()
+                    ->state(fn (Payment $r) => $r->isOnline() ? 'Online' : 'Counter')
+                    ->color(fn ($state) => $state === 'Online' ? 'info' : 'gray'),
                 Tables\Columns\TextColumn::make('amount')
                     ->formatStateUsing(fn ($state) => Money::fmt($state))->sortable()->alignEnd()
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total (filtered)')->formatStateUsing(fn ($state) => Money::fmt($state))),
@@ -152,6 +166,8 @@ class PaymentResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->options(PaymentStatus::class)->multiple(),
                 Tables\Filters\SelectFilter::make('type')->label('Contribution')->options(PaymentType::class)->multiple(),
                 Tables\Filters\SelectFilter::make('method')->options(PaymentMethod::class),
+                Tables\Filters\TernaryFilter::make('online')->label('Source')->trueLabel('Online (PayMe)')->falseLabel('Counter / manual')
+                    ->queries(true: fn (Builder $query) => $query->whereNotNull('gateway'), false: fn (Builder $query) => $query->whereNull('gateway'), blank: fn (Builder $query) => $query),
                 Tables\Filters\SelectFilter::make('region')->label('Region')
                     ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->all())
                     ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn ($query, $v) => $query->whereHas('zone', fn ($z) => $z->where('region_id', $v)))),
@@ -174,6 +190,15 @@ class PaymentResource extends Resource
                     ->action(function (Payment $r) {
                         $r->confirm(auth()->user());
                         Notification::make()->title("Receipt {$r->receipt_number} issued")->success()->send();
+                    }),
+                Tables\Actions\Action::make('recheck')
+                    ->label('Re-check')->icon('heroicon-o-arrow-path')->color('info')
+                    ->visible(fn (Payment $r) => $r->isOnline() && ($r->isPending() || $r->gateway_status === 'ABANDONED'))
+                    ->tooltip('Ask PayMe for the latest status of this payment')
+                    ->action(function (Payment $r) {
+                        $r = app(OnlinePaymentService::class)->verify($r, force: true);
+                        Notification::make()->title($r->status === PaymentStatus::Completed ? "Confirmed — receipt {$r->receipt_number}" : 'Gateway status: ' . ($r->gateway_status ?? 'unknown'))
+                            ->color($r->status === PaymentStatus::Completed ? 'success' : 'warning')->send();
                     }),
                 Tables\Actions\Action::make('receipt')
                     ->label('Receipt')->icon('heroicon-o-printer')->color('gray')

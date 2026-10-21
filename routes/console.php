@@ -15,5 +15,8 @@ Schedule::command('reports:check-reminders')->hourly();
 Schedule::command('notifications:send-smart')->mondays()->at('08:00');
 Schedule::command('notifications:send-smart')->monthlyOn(1, '09:00');
 
+// Settle online payments whose customer never came back to the site
+Schedule::command('payments:reconcile-online')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
+
 // Automated birthday greetings — daily at 07:00
 Schedule::command('greetings:send-automated')->dailyAt('07:00');

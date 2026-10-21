@@ -33,8 +33,15 @@ class FinanceStats extends StatsOverviewWidget
         $ytd       = $s->income(now()->startOfYear(), now()->endOfDay());
         $change    = StatsService::change($month, $prev);
 
+        // Only payments a person must act on: online attempts are settled by the gateway itself.
         $pending = DB::table('payments')->whereNull('deleted_at')->where('status', PaymentStatus::Pending->value)
+            ->where(fn ($q) => $q->whereNull('gateway')->orWhere('gateway_status', 'SUCCESS_MISMATCH'))
             ->selectRaw('COUNT(*) as c, COALESCE(SUM(amount),0) as t')->first();
+
+        $online     = (float) DB::table('payments')->whereNull('deleted_at')->whereNotNull('gateway')->where('status', PaymentStatus::Completed->value)
+            ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfDay()])->sum('amount');
+        $onlineOpen = DB::table('payments')->whereNull('deleted_at')->whereNotNull('gateway')->where('status', PaymentStatus::Pending->value)
+            ->where(fn ($q) => $q->whereNull('gateway_status')->orWhere('gateway_status', '!=', 'SUCCESS_MISMATCH'))->count();
 
         $outstanding = DB::table('reports')->where('status', 'submitted')->where('remittance_submitted', 0)->count();
 
@@ -54,6 +61,8 @@ class FinanceStats extends StatsOverviewWidget
             Stat::make('Tithes (month)', Money::fmt($tithes))->color('success'),
             Stat::make('Offerings (month)', Money::fmt($offerings))->color('info'),
             Stat::make('Seeds (month)', Money::fmt($seeds))->color('warning'),
+            Stat::make('Online giving (month)', Money::fmt($online))
+                ->description($onlineOpen . ' online payment' . ($onlineOpen === 1 ? '' : 's') . ' in progress')->descriptionIcon('heroicon-m-globe-alt')->color('info'),
             Stat::make('Remittances outstanding', (string) $outstanding)
                 ->description('Zone reports submitted, remittance not yet sent')->descriptionIcon('heroicon-m-exclamation-triangle')->color($outstanding ? 'danger' : 'gray'),
         ];

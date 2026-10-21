@@ -16,6 +16,7 @@ import HODPortal       from "./components/HODPortal.jsx";
 import MembersPortal   from "./components/MembersPortalWrapper.jsx";
 import PartnerPortal   from "./components/PartnerPortal.jsx";
 import PartnerEnrollmentPage from "./components/PartnerEnrollmentPage.jsx";
+import GiveOnline      from "./components/GiveOnline.jsx";
 import api             from "./lib/api.js";
 
 const queryClient = new QueryClient({
@@ -41,11 +42,19 @@ function PortalRouter({ onLogout }) {
         );
     }
 
+    // Online giving (ClicknPay PayMe) is offered from every portal.
+    const withGiving = (portal) => (
+        <>
+            {portal}
+            <GiveOnline />
+        </>
+    );
+
     switch (user.role) {
-        case "pastor":  return <PastorsPortal  onLogout={onLogout} />;
-        case "partner": return <PartnerPortal  onLogout={onLogout} />;
-        case "member":  return <MembersPortal  onLogout={onLogout} />;
-        case "hod":     return <HODPortal      onLogout={onLogout} />;
+        case "pastor":  return withGiving(<PastorsPortal  onLogout={onLogout} />);
+        case "partner": return withGiving(<PartnerPortal  onLogout={onLogout} />);
+        case "member":  return withGiving(<MembersPortal  onLogout={onLogout} />);
+        case "hod":     return withGiving(<HODPortal      onLogout={onLogout} />);
         default:
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">

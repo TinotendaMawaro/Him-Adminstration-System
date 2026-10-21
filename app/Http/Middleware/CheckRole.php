@@ -11,18 +11,12 @@ use Illuminate\Support\Facades\Auth;
  *
  * Verifies the authenticated user has one of the required roles.
  * Usage: Route::middleware(['role:pastor,hod'])->group(...)
+ *
+ * Laravel splits "role:pastor,hod" into separate arguments, so the roles arrive as a variadic list.
  */
 class CheckRole
 {
-    /**
-     * Handle incoming request
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @param  string|array  $roles  Comma-separated or array of allowed roles
-     * @return mixed
-     */
-    public function handle(Request $request, Closure $next, $roles): mixed
+    public function handle(Request $request, Closure $next, string ...$roles): mixed
     {
         $user = Auth::user();
 
@@ -33,28 +27,24 @@ class CheckRole
             ], 401);
         }
 
-        // Convert string to array if needed
-        $allowedRoles = is_array($roles) ? $roles : explode(',', $roles);
-        $allowedRoles = array_map('trim', $allowedRoles);
+        // Accept both "role:a,b" (variadic) and a single comma-joined string, trimmed.
+        $allowedRoles = collect($roles)
+            ->flatMap(fn ($r) => explode(',', $r))
+            ->map(fn ($r) => trim($r))
+            ->filter()
+            ->values()
+            ->all();
 
-        // Check user role - handle both enum and string
-        $userRole = $user->role ?? $user->getRole();
+        $userRole      = $user->role;
         $userRoleValue = $userRole instanceof \App\Enums\UserRole ? $userRole->value : $userRole;
 
-        $hasRole = in_array($userRoleValue, $allowedRoles, true);
-
-        // Also allow super-admin
-        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
-            $hasRole = true;
-        }
-
-        if (!$hasRole) {
+        if (!in_array($userRoleValue, $allowedRoles, true)) {
             \Log::warning('Role check failed', [
-                'user_id' => $user->id,
-                'user_role' => $userRole,
+                'user_id'        => $user->id,
+                'user_role'      => $userRoleValue,
                 'required_roles' => $allowedRoles,
-                'path' => $request->path(),
-                'ip' => $request->ip(),
+                'path'           => $request->path(),
+                'ip'             => $request->ip(),
             ]);
 
             return response()->json([

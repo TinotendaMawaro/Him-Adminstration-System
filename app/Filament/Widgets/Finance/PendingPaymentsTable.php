@@ -23,7 +23,7 @@ class PendingPaymentsTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(Payment::query()->with(['user', 'zone'])->where('status', PaymentStatus::Pending->value))
+            ->query(Payment::query()->with(['user', 'zone'])->needsManualVerification())
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')->label('Submitted')->since()->sortable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Payer')->searchable(),

@@ -73,7 +73,8 @@ class StatsService
             'income_month'     => $thisMonth,
             'income_prev'      => $lastMonth,
             'income_ytd'       => $this->income(now()->startOfYear(), now()->endOfDay()),
-            'pending_payments' => DB::table('payments')->whereNull('deleted_at')->where('status', PaymentStatus::Pending->value)->count(),
+            'pending_payments' => DB::table('payments')->whereNull('deleted_at')->where('status', PaymentStatus::Pending->value)
+                ->where(fn ($q) => $q->whereNull('gateway')->orWhere('gateway_status', 'SUCCESS_MISMATCH'))->count(),
         ];
     }
 
