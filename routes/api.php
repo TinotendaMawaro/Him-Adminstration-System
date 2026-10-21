@@ -20,7 +20,10 @@ use App\Http\Controllers\Api\PartnerController;
 use App\Http\Controllers\Api\PartnershipPackageController;
 use App\Http\Controllers\Api\PastorController;
 use App\Http\Controllers\Api\OnlinePaymentController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ResendWebhookController;
+use App\Http\Controllers\EmailPreferenceController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\Api\PrayerCenterController;
 use App\Http\Controllers\Api\RegisterController;
@@ -36,6 +39,16 @@ Route::post('/login/code', [AuthController::class, 'loginWithCode'])
 
 Route::post('/login', [AuthController::class, 'login'])
      ->middleware('throttle:5,1'); // 5 attempts per minute
+
+Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])
+     ->middleware('throttle:5,1');
+
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+     ->middleware('throttle:5,1');
+
+// Resend delivery webhooks (signature-verified inside the controller)
+Route::post('/webhooks/resend', ResendWebhookController::class)
+     ->middleware('throttle:120,1');
 
 Route::post('/register', RegisterController::class)
      ->middleware('throttle:3,1'); // 3 registrations per minute
@@ -88,6 +101,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/assets/{id}', [AssetController::class, 'show']);
     Route::put('/assets/{id}', [AssetController::class, 'update']);
     Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
+
+    // ── Email preferences (copies of notifications; receipts/security mail is never optional) ──
+    Route::get('/email-preferences', [EmailPreferenceController::class, 'show']);
+    Route::put('/email-preferences', [EmailPreferenceController::class, 'update']);
 
     // ── Online giving (ClicknPay PayMe): tithes, offerings, seeds, partnership ─────
     Route::prefix('online-payments')->middleware('role:member,partner,pastor,hod')->group(function () {

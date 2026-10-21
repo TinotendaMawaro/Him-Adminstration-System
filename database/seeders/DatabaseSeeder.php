@@ -23,7 +23,13 @@ use Database\Seeders\PrayerCenterCategorySeeder;
 
 class DatabaseSeeder extends Seeder
 {
+    /** Seeding creates hundreds of accounts and payments: none of them may trigger email. */
     public function run(): void
+    {
+        \App\Support\EmailGate::silence(fn () => $this->seed());
+    }
+
+    private function seed(): void
     {
         // ── Church Structure (zones, regions, countries, pastors) ─────────────────
         $this->call([

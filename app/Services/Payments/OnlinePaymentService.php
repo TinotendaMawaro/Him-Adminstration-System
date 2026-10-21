@@ -5,10 +5,12 @@ namespace App\Services\Payments;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
+use App\Mail\StaffAlertMail;
 use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\AuditTrail;
+use App\Support\Mailing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -181,15 +183,19 @@ class OnlinePaymentService
             || ($order['publicUniqueId'] ?? null) !== $this->expectedPublicId($payment)) {
             Log::alert('PayMe order does not match our payment', ['payment' => $payment->id]);
             AuditTrail::record('payment.online_mismatch', null, $payment, ['reason' => 'reference/account mismatch'], $payment->user_id);
-            $payment->forceFill(['gateway_status' => 'SUCCESS_MISMATCH', 'gateway_checked_at' => now()])->save();
+            $this->flagForReview($payment, 'The gateway returned an order that does not match ours (reference or account).');
 
             return $payment;
         }
 
         $state = PayMeGateway::interpret($order['status'] ?? null);
 
+        // Once held for review, a payment stays flagged (and Finance is not alerted again) until a person resolves it.
+        $held   = $payment->gateway_status === 'SUCCESS_MISMATCH' && $state === PayMeGateway::SUCCESS;
+        $status = $held ? 'SUCCESS_MISMATCH' : (string) ($order['status'] ?? $payment->gateway_status);
+
         $payment->forceFill([
-            'gateway_status'     => (string) ($order['status'] ?? $payment->gateway_status),
+            'gateway_status'     => $status,
             'gateway_payload'    => $this->snapshot($order),
             'gateway_checked_at' => now(),
         ])->save();
@@ -199,6 +205,31 @@ class OnlinePaymentService
             PayMeGateway::FAILED  => $this->fail($payment),
             default               => $payment,
         };
+    }
+
+    /** Hold a payment for a person to look at, and tell Finance once. */
+    private function flagForReview(Payment $payment, string $why): void
+    {
+        $already = $payment->gateway_status === 'SUCCESS_MISMATCH';
+
+        $payment->forceFill(['gateway_status' => 'SUCCESS_MISMATCH', 'gateway_checked_at' => now()])->save();
+
+        if ($already) {
+            return;
+        }
+
+        Mailing::toRoles(['finance', 'master'], fn () => new StaffAlertMail(
+            'An online payment needs your review',
+            ['PayMe reported a payment, but it could not be matched safely, so it was NOT credited. ' . $why],
+            [
+                'Payer'     => $payment->user?->name,
+                'Type'      => $payment->type?->getLabel(),
+                'Expected'  => $payment->currency . ' ' . number_format((float) $payment->amount, 2),
+                'Reference' => $payment->client_reference,
+                'PayMe id'  => $payment->gateway_order_id,
+            ],
+            ['label' => 'Review in the Finance portal', 'url' => \App\Mail\BrandedMail::portalUrl('/finance/payments/' . $payment->id)],
+        ));
     }
 
     /** Pending, or failed only because we gave up waiting (a late payment can still be recovered). */
@@ -228,7 +259,7 @@ class OnlinePaymentService
         if ($currency !== $payment->currency || ($paid !== null && $paid + 0.001 < (float) $payment->amount)) {
             Log::alert('PayMe success does not match expected amount', ['payment' => $payment->id, 'paid' => $paid, 'expected' => (string) $payment->amount]);
             AuditTrail::record('payment.online_mismatch', null, $payment, ['expected' => (string) $payment->amount, 'paid' => $paid, 'currency' => $currency], $payment->user_id);
-            $payment->forceFill(['gateway_status' => 'SUCCESS_MISMATCH'])->save();
+            $this->flagForReview($payment, sprintf('Expected %s %s but the gateway reported %s %s.', $payment->currency, number_format((float) $payment->amount, 2), $currency, $paid === null ? 'an unknown amount' : number_format($paid, 2)));
 
             return $payment;
         }

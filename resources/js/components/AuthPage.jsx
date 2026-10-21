@@ -288,6 +288,12 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                                                        className={`${inputBase} ${errors.emailLoginPassword ? "border-red-500" : ""}`} />
                                                 {errors.emailLoginPassword && <p className="text-red-400 text-xs mt-0.5" role="alert">{errors.emailLoginPassword}</p>}
                                             </div>
+                                            <div className="text-right -mt-1">
+                                                <a href={`/forgot-password${emailLogin.email ? `?email=${encodeURIComponent(emailLogin.email)}` : ""}`}
+                                                   className="text-xs text-white/60 hover:text-white underline underline-offset-2">
+                                                    Forgot password?
+                                                </a>
+                                            </div>
                                         </>
                                     )}
 

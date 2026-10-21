@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory;
+    use Notifiable { notify as protected laravelNotify; }
 
     protected $fillable = [
         'name', 'email', 'password',
@@ -39,9 +40,26 @@ class User extends Authenticatable
             'terms_accepted'    => 'boolean',
             'is_active'         => 'boolean',
             'completed_tour'    => 'boolean',
+            'email_notifications' => 'boolean',
+            'email_suppressed_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
             'first_login_at'    => 'datetime',
         ];
+    }
+
+    /**
+     * Filament's password-reset notification is intercepted so staff get the same branded,
+     * queued, logged email as everyone else. Any other notification behaves as normal.
+     */
+    public function notify($instance)
+    {
+        if ($instance instanceof \Filament\Notifications\Auth\ResetPassword) {
+            \App\Support\Mailing::to($this, new \App\Mail\ResetPasswordMail($this, $instance->url, (int) config('auth.passwords.users.expire', 60)));
+
+            return;
+        }
+
+        $this->laravelNotify($instance);
     }
 
     // ─── Role helpers ─────────────────────────────────────────────────────────

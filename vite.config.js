@@ -34,12 +34,11 @@ export default defineConfig({
         hmr: {
             protocol: 'ws',
         },
-        proxy: {
-            '/api': {
-                target: 'http://127.0.0.1:8000',
-                changeOrigin: true,
-                secure: false,
-            },
-        },
+        proxy: Object.fromEntries(
+            ['/api', '/forgot-password', '/reset-password', '/email', '/receipts', '/pay'].map((path) => [
+                path,
+                { target: 'http://127.0.0.1:8000', changeOrigin: true, secure: false },
+            ]),
+        ),
     },
 });

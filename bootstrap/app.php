@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: ['email/unsubscribe/*']);
 
         $middleware->api(append: [
             \App\Http\Middleware\SecureApiMiddleware::class,

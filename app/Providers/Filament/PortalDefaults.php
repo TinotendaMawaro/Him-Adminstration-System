@@ -43,6 +43,7 @@ class PortalDefaults
 
         return $panel
             ->login()
+            ->passwordReset()
             ->brandName($brand)
             ->favicon(asset('images/favicon.ico'))
             ->font('Inter')

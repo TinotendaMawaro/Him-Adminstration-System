@@ -11,3 +11,20 @@
     .fi-topbar { backdrop-filter: saturate(180%) blur(10px); }
     @media print { .fi-sidebar, .fi-topbar { display: none !important; } }
 </style>
+<script>
+    /*
+     * Browser autofill / password managers can fill a field without firing an input event, so Livewire never
+     * learns about the value and the form is submitted empty ("The email address field is required").
+     * Re-announce every filled field just before the form submits (capture phase, so we run first).
+     */
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form || !form.querySelectorAll) return;
+        form.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea').forEach(function (el) {
+            if (el.value !== '') {
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }, true);
+</script>
