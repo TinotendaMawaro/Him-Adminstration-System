@@ -28,6 +28,18 @@ class SecurityAlertMail extends BrandedMail
         $facts = array_filter(['When' => $when, 'IP address' => $this->ip, 'Device' => $this->device]);
 
         return match ($this->kind) {
+            'failed_logins' => [
+                'subject'   => 'Someone is trying to sign in to your account',
+                'preheader' => 'Several failed sign-in attempts were made.',
+                'tone'      => 'warning',
+                'title'     => 'Failed sign-in attempts',
+                'greeting'  => "Hello {$first},",
+                'intro'     => ['There were several failed attempts to sign in to your account. Your account is safe: nobody got in.'],
+                'facts'     => $facts,
+                'cta'       => null,
+                'notice'    => 'If this was not you, nothing more is needed, but you can choose a new password with "Forgot password?" on the sign-in page.',
+                'outro'     => [],
+            ],
             'email_changed_old' => [
                 'subject'   => 'Your sign-in email was changed',
                 'preheader' => 'The email address on your account was changed.',

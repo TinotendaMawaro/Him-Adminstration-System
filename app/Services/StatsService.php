@@ -253,6 +253,46 @@ class StatsService
                 COUNT(*) as payments, SUM(p.amount) as total, MAX(p.paid_at) as last_paid")->get();
     }
 
+    /**
+     * The monthly ministry report: one row per zone for the month containing $month, combining what the zone's pastor
+     * REPORTED (weekly reports: attendance, first-timers, conversions, reported income) with what the SYSTEM recorded
+     * (completed payments, new member records), so the master can compare the two.
+     */
+    public function monthlyZoneReport(CarbonInterface $month): Collection
+    {
+        $from = $month->copy()->startOfMonth();
+        $to   = $month->copy()->endOfMonth();
+
+        return DB::table('zones as z')
+            ->leftJoin('regions as r', 'r.id', '=', 'z.region_id')
+            ->orderBy('r.name')->orderBy('z.code')
+            ->selectRaw("
+                COALESCE(r.name, '—') as region, z.code as zone_code, z.name as zone,
+                (SELECT CONCAT(pa.name, ' ', pa.surname) FROM pastors pa WHERE pa.zone_id = z.id AND pa.deleted_at IS NULL ORDER BY pa.is_zone_pastor DESC, pa.id LIMIT 1) as pastor,
+                (SELECT COUNT(*) FROM members m WHERE m.zone_id = z.id AND m.deleted_at IS NULL AND m.status = 'active' AND m.created_at <= ?) as active_members,
+                (SELECT COUNT(*) FROM members m WHERE m.zone_id = z.id AND m.deleted_at IS NULL AND m.created_at BETWEEN ? AND ?) as new_members,
+                (SELECT COUNT(*) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft') as reports_submitted,
+                (SELECT COUNT(*) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft' AND rp.is_late = 1) as reports_late,
+                (SELECT COALESCE(ROUND(AVG(rp.attendance)), 0) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft') as avg_attendance,
+                (SELECT COALESCE(SUM(rp.first_timers), 0) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft') as first_timers,
+                (SELECT COALESCE(SUM(rp.conversions), 0) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft') as conversions,
+                (SELECT COALESCE(SUM(rp.total_income), 0) FROM reports rp WHERE rp.zone_id = z.id AND rp.report_date BETWEEN ? AND ? AND rp.status <> 'draft') as reported_income,
+                (SELECT COALESCE(SUM(p.amount), 0) FROM payments p WHERE p.zone_id = z.id AND p.deleted_at IS NULL AND p.status = 'completed' AND p.paid_at BETWEEN ? AND ?) as recorded_income
+            ", [$to, $from, $to, $from, $to, $from, $to, $from, $to, $from, $to, $from, $to, $from, $to, $from, $to])
+            ->get();
+    }
+
+    /** Sundays in the month = the weekly reports a zone is expected to file. */
+    public function expectedWeeklyReports(CarbonInterface $month): int
+    {
+        $count = 0;
+        for ($d = $month->copy()->startOfMonth(); $d->lte($month->copy()->endOfMonth()); $d->addDay()) {
+            $count += $d->isSunday() ? 1 : 0;
+        }
+
+        return $count;
+    }
+
     /** Zone / region directory used by the master export. */
     public function zoneSummary(): Collection
     {

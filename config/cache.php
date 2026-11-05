@@ -47,8 +47,10 @@ return [
 
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
-            'lock_path' => storage_path('framework/cache/data'),
+            // Point CACHE_FILE_PATH outside any OneDrive/Dropbox-synced folder: sync clients lock files mid-write and
+            // cause random "fopen" errors under load.
+            'path' => env('CACHE_FILE_PATH', storage_path('framework/cache/data')),
+            'lock_path' => env('CACHE_FILE_PATH', storage_path('framework/cache/data')),
         ],
 
         'memcached' => [

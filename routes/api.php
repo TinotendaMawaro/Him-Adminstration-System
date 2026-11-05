@@ -34,6 +34,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Cache;
 
 // ─── PUBLIC ──────────────────────────────────────────────────────────────────
+Route::get('/auth/policy', [AuthController::class, 'policy'])
+     ->middleware('throttle:60,1');
+
 Route::post('/login/code', [AuthController::class, 'loginWithCode'])
      ->middleware('throttle:10,1'); // 10 attempts per minute
 
@@ -67,10 +70,11 @@ Route::prefix('partnership-packages')->group(function () {
 });
 
 // ─── AUTHENTICATED ───────────────────────────────────────────────────────────
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function () {
      // ── Auth ───────────────────────────────────────────────────────────────────
       Route::get('/me', [AuthController::class, 'me']);
       Route::post('/logout', [AuthController::class, 'logout']);
+      Route::post('/logout-all', [AuthController::class, 'logoutAll']);
       Route::put('/profile', [AuthController::class, 'updateProfile']);
       Route::post('/profile/photo', [AuthController::class, 'uploadProfilePhoto']);
       Route::post('/user/profile-picture', [ProfilePictureController::class, 'upload']);
@@ -143,8 +147,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/badges', [MemberController::class, 'badges']);
 
     // ── Pastor Portal ────────────────────────────────────────────────────────────
-    Route::prefix('pastors')->group(function () {
+    Route::prefix('pastors')->middleware('role:pastor')->group(function () {
         Route::get('/me', [PastorController::class, 'me']);
+        Route::get('/zones', [PastorController::class, 'zones']);
+        Route::post('/members/{member}/transfer', [PastorController::class, 'transferMember'])->middleware('throttle:20,1');
         Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
         Route::get('/dashboard', [PastorController::class, 'dashboard']);
         Route::get('/members', [PastorController::class, 'members'])
@@ -163,6 +169,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
 
     // ── Dashboard Metrics ──────────────────────────────────────────────────────
+    Route::get('/id-card', [\App\Http\Controllers\Api\IdCardController::class, 'show'])->middleware('throttle:30,1');
+
     Route::get('/dashboard/metrics', [DashboardController::class, 'metrics']);
 
     Route::get('/hod/dashboard', [DashboardController::class, 'hodDashboard']);
@@ -280,25 +288,36 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 
     // ── Messages ───────────────────────────────────────────────────────────────
-    Route::get('/messages', [MessageController::class, 'index']);
-    Route::get('/messages/{id}', [MessageController::class, 'show']);
-    Route::post('/messages', [MessageController::class, 'store']);
-    Route::delete('/messages/{id}', [MessageController::class, 'destroy']);
+    Route::prefix('messages')->group(function () {
+        Route::get('/', [MessageController::class, 'index']);                       // HOD portal: thread with the zone pastor
+        Route::post('/', [MessageController::class, 'store'])->middleware('throttle:30,1');
+        Route::get('/conversations', [MessageController::class, 'conversations']);
+        Route::get('/conversation/{contactId}', [MessageController::class, 'conversation'])->whereNumber('contactId');
+        Route::get('/unread-count', [MessageController::class, 'unreadCount']);
+        Route::get('/pastor', [MessageController::class, 'pastorMessages']);
+        Route::get('/department-members', [MessageController::class, 'departmentMembers']);
+        Route::post('/direct', [MessageController::class, 'sendDirect'])->middleware('throttle:30,1');
+        Route::post('/announcement', [MessageController::class, 'sendAnnouncement'])->middleware('throttle:10,1');
+        Route::post('/notice', [MessageController::class, 'sendNotice'])->middleware('throttle:10,1');
+        Route::match(['put', 'patch', 'post'], '/{id}/read', [MessageController::class, 'markAsRead'])->whereNumber('id');
+    });
 
     // ── Prayer Center ──────────────────────────────────────────────────────────
     Route::prefix('prayer-center')->group(function () {
         Route::get('/categories', [PrayerCenterController::class, 'categories']);
-        Route::get('/messages', [PrayerCenterController::class, 'index']);
-        Route::post('/messages', [PrayerCenterController::class, 'store']);
-        Route::get('/messages/{id}', [PrayerCenterController::class, 'show']);
-        Route::post('/messages/{id}/reply', [PrayerCenterController::class, 'reply']);
-        Route::post('/messages/{id}/status', [PrayerCenterController::class, 'updateStatus']);
-        Route::get('/notifications', [PrayerCenterController::class, 'notifications']);
 
+        // Fixed paths first: otherwise /messages/{id} would capture "flagged".
         Route::middleware('role:pastor')->group(function () {
             Route::get('/messages/flagged', [PrayerCenterController::class, 'flagged']);
             Route::get('/stats', [PrayerCenterController::class, 'stats']);
         });
+
+        Route::get('/messages', [PrayerCenterController::class, 'index']);
+        Route::post('/messages', [PrayerCenterController::class, 'store']);
+        Route::get('/messages/{id}', [PrayerCenterController::class, 'show'])->whereNumber('id');
+        Route::post('/messages/{id}/reply', [PrayerCenterController::class, 'reply'])->whereNumber('id');
+        Route::post('/messages/{id}/status', [PrayerCenterController::class, 'updateStatus'])->whereNumber('id');
+        Route::get('/notifications', [PrayerCenterController::class, 'notifications']);
     });
 
     // ── Department Requests ────────────────────────────────────────────────────

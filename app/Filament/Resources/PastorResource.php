@@ -52,6 +52,10 @@ class PastorResource extends Resource
                 Forms\Components\TextInput::make('surname')->required()->maxLength(120),
                 Forms\Components\DatePicker::make('ordained_date')->maxDate(now()),
             ]),
+            Forms\Components\Section::make('Account')->columns(2)->relationship('user')->schema([
+                Forms\Components\DatePicker::make('date_of_birth')->label('Date of birth')->maxDate(now()->subYear())->native(false),
+                Forms\Components\TextInput::make('phone')->tel()->maxLength(20),
+            ]),
             Forms\Components\Section::make('Responsibilities')->columns(3)->schema([
                 Forms\Components\Toggle::make('is_zone_pastor')->label('Zone pastor'),
                 Forms\Components\Toggle::make('is_regional_leader')->label('Regional leader'),
@@ -131,6 +135,13 @@ class PastorResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('remove')->label('Remove')->icon('heroicon-o-trash')->color('danger')
+                    ->requiresConfirmation()->modalHeading(fn (Pastor $r) => "Remove {$r->name} {$r->surname}?")
+                    ->modalDescription('Their login stops working immediately; their history is kept. If they led their zone, the zone will need a new lead pastor.')
+                    ->action(function (Pastor $r) {
+                        app(\App\Services\PeopleProvisioner::class)->removePastor($r, auth()->user());
+                        Notification::make()->title('Pastor removed')->success()->send();
+                    }),
                 Tables\Actions\Action::make('transfer')->label('Transfer')->icon('heroicon-o-arrows-right-left')->color('warning')
                     ->modalHeading(fn (Pastor $r) => "Transfer {$r->name} {$r->surname}")
                     ->modalDescription('Moves the pastor (and their login) to another zone and its region. History, audit trail and a notification to the pastor are recorded.')

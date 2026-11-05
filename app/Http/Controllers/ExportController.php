@@ -21,6 +21,7 @@ class ExportController extends Controller
         'zones'          => [['master'], 'zones-summary'],
         'members'        => [['master'], 'members'],
         'member-growth'  => [['master'], 'member-growth'],
+        'monthly'        => [['master'], 'monthly-ministry-report'],
         'financial'      => [['master', 'finance'], 'financial-summary'],
         'contributions'  => [['master', 'finance'], 'contributions-by-zone'],
         'tithers'        => [['master', 'finance'], 'tithers'],
@@ -44,6 +45,7 @@ class ExportController extends Controller
             'period' => ['nullable', 'in:' . implode(',', array_keys(StatsService::periodOptions()))],
             'region' => ['nullable', 'integer', 'exists:regions,id'],
             'event'  => ['nullable', 'integer', 'exists:events,id'],
+            'month'  => ['nullable', 'date_format:Y-m'],
         ]);
 
         [$from, $to] = $stats->periodBounds($validated['period'] ?? 'this_year');
@@ -54,6 +56,7 @@ class ExportController extends Controller
             'zones'         => $this->zones($stats),
             'members'       => $this->members(),
             'member-growth' => $this->memberGrowth($stats),
+            'monthly'       => $this->monthly($stats, $validated['month'] ?? now()->format('Y-m')),
             'financial'     => $this->financial($stats, $from, $to),
             'contributions' => $this->contributions($stats, $from, $to, $regionId),
             'tithers'       => $this->contributors($stats, 'tithe', $from, $to, $regionId),
@@ -96,6 +99,16 @@ class ExportController extends Controller
     }
 
     // ─── Report builders: [headers, rows] ─────────────────────────────────────
+
+    private function monthly(StatsService $stats, string $month): array
+    {
+        $rows = $stats->monthlyZoneReport(\Carbon\Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay())->map(fn ($r) => [
+            $r->region, $r->zone_code, $r->zone, $r->pastor ?? '—', $r->active_members, $r->new_members, $r->reports_submitted, $r->reports_late,
+            $r->avg_attendance, $r->first_timers, $r->conversions, round((float) $r->reported_income, 2), round((float) $r->recorded_income, 2),
+        ])->all();
+
+        return [['Region', 'Zone code', 'Zone', 'Pastor', 'Active members', 'New members', 'Weekly reports filed', 'Late reports', 'Avg attendance', 'First-timers', 'Conversions', 'Income reported by pastor', 'Income recorded in system'], $rows];
+    }
 
     private function pastors(): array
     {

@@ -34,6 +34,9 @@ abstract class BrandedMail extends Mailable implements ShouldQueue
     public int $tries = 4;
     public array $backoff = [20, 60, 180];
 
+    /** Set by Mailing::to() when MAIL_REDIRECT_TO diverted this email: who it was really meant for. */
+    public ?string $redirectedFrom = null;
+
     /** Set by Mailing::to(). */
     public ?int $logId = null;
     public ?int $recipientUserId = null;
@@ -73,7 +76,7 @@ abstract class BrandedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->data()['subject'],
+            subject: ($this->redirectedFrom ? "[for {$this->redirectedFrom}] " : '') . $this->data()['subject'],
             replyTo: [new Address((string) config('mailing.support_email'), (string) config('mailing.brand.name'))],
         );
     }

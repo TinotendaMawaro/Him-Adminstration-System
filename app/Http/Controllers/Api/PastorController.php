@@ -217,9 +217,7 @@ class PastorController extends Controller
 
          $query = Partner::whereHas('user', fn ($q) => $q->where('zone_id', $zoneId))
              ->with(['user:id,name,email,phone', 'zone:id,name'])
-             ->withSum('payments as total_giving', function ($q) {
-                 $q->where('status', \App\Enums\PaymentStatus::Completed);
-             });
+             ->withSum(['payments as total_giving' => fn ($q) => $q->where('status', \App\Enums\PaymentStatus::Completed->value)], 'amount');
 
          $search = $request->query('search');
          if ($search && strlen($search) > 100) {
@@ -265,120 +263,69 @@ class PastorController extends Controller
          ]);
      }
 
-     /** GET /api/pastors/members — List members in pastor's zone
-      *  SECURITY:
-      *  - Role & zone-based access control
-      *  - Rate limiting (60 requests/minute per user)
-      *  - Input validation & sanitization
-      *  - Audit logging of all access
-      *  - Pagination enforced (max 100 per page)
-      *  - Selective field exposure via Resource
-      */
-     public function members(Request $request): JsonResponse
-     {
-         $user = $request->user();
+    /**
+     * GET /api/pastors/members — the members of the pastor's own zone.
+     *
+     * Access: pastors with a zone only (rate limiting comes from the route's throttle middleware).
+     * Filters: search (name, member code/number, email), status (active|inactive|transferred|deceased), home_group_id.
+     * Sorting is whitelisted. Fields exposed are the MemberResource only.
+     */
+    public function members(Request $request): JsonResponse
+    {
+        $user = $request->user();
 
-         // 1️⃣ AUTH: Verify pastor role and zone assignment
-         if (!$user->isPastor() || !$user->zone_id) {
-             \Log::warning('Unauthorized members access attempt', [
-                 'user_id' => $user->id,
-                 'role' => $user->role,
-                 'zone_id' => $user->zone_id,
-                 'ip' => $request->ip(),
-                 'user_agent' => $request->userAgent(),
-             ]);
-             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-         }
+        if (!$user->isPastor() || !$user->zone_id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
 
-// 2️⃣ RATE LIMITING: Atomic increment to avoid race conditions
-          $cacheKey = 'pastor_members_rate:' . $user->id;
-          $attempts = \Cache::increment($cacheKey, 1);
-          if ($attempts === 1) {
-              \Cache::expire($cacheKey, 60);
-          }
-          if ($attempts > 60) {
-              \Log::notice('Rate limit exceeded for members API', ['user_id' => $user->id]);
-              return response()->json([
-                  'success' => false,
-                  'message' => 'Too many requests. Please try again later.'
-              ], 429);
-          }
+        $validated = $request->validate([
+            'search'        => ['nullable', 'string', 'max:100'],
+            'status'        => ['nullable', Rule::in(\App\Enums\MemberStatus::values())],
+            'home_group_id' => ['nullable', 'integer'],
+            'sort'          => ['nullable', Rule::in(['name', 'member_number', 'membership_date', 'created_at'])],
+            'dir'           => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page'      => ['nullable', 'integer'],
+        ]);
 
-         // 3️⃣ INPUT VALIDATION: Strict allowlist for filters
-         $perPage = (int) $request->query('per_page', 20);
-         $perPage = \Illuminate\Support\Collection::make([10, 20, 50, 100])
-             ->filter()
-             ->contains($perPage) ? $perPage : 20; // Cap at 100
+        $requested = (int) ($validated['per_page'] ?? 20);
+        $perPage   = in_array($requested, [10, 20, 50, 100], true) ? $requested : 20;
 
-         $search = $request->query('search');
-         if ($search && strlen($search) > 100) {
-             return response()->json([
-                 'success' => false,
-                 'message' => 'Search term too long'
-             ], 422);
-         }
+        $query = Member::where('zone_id', $user->zone_id)
+            ->with(['user:id,name,email,phone', 'homeGroup:id,name', 'department:id,name', 'zone:id,name,code']);
 
-         // 4️⃣ SECURE QUERY: Parameter binding via Eloquent prevents SQL injection
-          $query = Member::where('zone_id', $user->zone_id)
-              ->active()
-              ->with(['user:id,name,email,phone,title', 'homeGroup:id,name', 'department:id,name', 'gender:id,name']);
+        // "active" is the default view; any explicit status (including inactive) is honoured.
+        $query->where('status', $validated['status'] ?? \App\Enums\MemberStatus::Active->value);
 
-         // 5️⃣ FILTERING: Server-side only - client filters are secondary
-         if (!empty($search)) {
-             $query->where(function ($q) use ($search) {
-                 $q->where('name', 'LIKE', '%' . $search . '%')
-                   ->orWhere('member_number', 'LIKE', '%' . $search . '%')
-                   ->orWhere('email', 'LIKE', '%' . $search . '%');
-             });
-         }
+        if (!empty($validated['search'])) {
+            $term = '%' . addcslashes($validated['search'], '%_\\') . '%';
+            $query->where(fn ($q) => $q->where('name', 'LIKE', $term)
+                ->orWhere('surname', 'LIKE', $term)
+                ->orWhere('member_number', 'LIKE', $term)
+                ->orWhere('member_code', 'LIKE', $term)
+                ->orWhereHas('user', fn ($u) => $u->where('email', 'LIKE', $term)));
+        }
 
-         if ($request->has('status') && in_array($request->status, ['active', 'inactive'])) {
-             $query->where('is_active', $request->status === 'active');
-         }
+        if (!empty($validated['home_group_id'])) {
+            $query->where('home_group_id', (int) $validated['home_group_id']);
+        }
 
-         if ($request->has('home_group_id') && is_numeric($request->home_group_id)) {
-             $query->where('home_group_id', (int) $request->home_group_id);
-         }
+        $members = $query
+            ->orderBy($validated['sort'] ?? 'name', $validated['dir'] ?? 'asc')
+            ->paginate($perPage)
+            ->withQueryString();
 
-         // 6️⃣ ORDERING: Whitelist columns only
-         $sortColumn = $request->query('sort', 'name');
-         $allowedSorts = ['name', 'member_number', 'created_at', 'email'];
-         if (!in_array($sortColumn, $allowedSorts)) {
-             $sortColumn = 'name';
-         }
-         $sortDir = $request->query('dir', 'asc') === 'desc' ? 'desc' : 'asc';
-
-         $members = $query->orderBy($sortColumn, $sortDir)
-             ->paginate($perPage)
-             ->withQueryString();
-
-         // 7️⃣ AUDIT LOG: Record access (without PII)
-         \Log::info('Pastor accessed members list', [
-             'user_id' => $user->id,
-             'zone_id' => $user->zone_id,
-             'total_records' => $members->total(),
-             'page' => $members->currentPage(),
-             'filters' => [
-                 'search' => $search ? 'present' : 'none',
-                 'status' => $request->status,
-                 'home_group' => $request->home_group_id,
-             ],
-             'ip' => $request->ip(),
-         ]);
-
-         // 8️⃣ RESPONSE: Structured data, never expose internal columns
-         return response()->json([
-             'success' => true,
-             'data' => $members->items(),
-             'meta' => [
-                 'current_page' => $members->currentPage(),
-                 'last_page' => $members->lastPage(),
-                 'total' => $members->total(),
-                 'per_page' => $members->perPage(),
-                 'has_more' => $members->hasMorePages(),
-             ],
-         ]);
-     }
+        return response()->json([
+            'success' => true,
+            'data'    => MemberResource::collection($members->items()),
+            'meta'    => [
+                'current_page' => $members->currentPage(),
+                'last_page'    => $members->lastPage(),
+                'total'        => $members->total(),
+                'per_page'     => $members->perPage(),
+                'has_more'     => $members->hasMorePages(),
+            ],
+        ]);
+    }
 
     /** GET /api/pastors/home-groups — List home groups in pastor's zone */
     public function homeGroups(Request $request): JsonResponse
@@ -711,6 +658,38 @@ class PastorController extends Controller
            ]);
        }
 
+    /** GET /api/pastors/zones — the zones a member can be moved to (every zone except the pastor's own). */
+    public function zones(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $zones = Zone::with('region:id,name')
+            ->when($user->zone_id, fn ($q) => $q->where('id', '!=', $user->zone_id))
+            ->orderBy('code')
+            ->get(['id', 'code', 'name', 'region_id'])
+            ->map(fn (Zone $z) => ['id' => $z->id, 'code' => $z->code, 'name' => $z->name, 'region' => $z->region?->name]);
+
+        return response()->json(['success' => true, 'data' => $zones]);
+    }
+
+    /** POST /api/pastors/members/{member}/transfer — move a member of this zone to another zone. */
+    public function transferMember(Request $request, Member $member): JsonResponse
+    {
+        $validated = $request->validate([
+            'zone_id' => ['required', 'integer', 'exists:zones,id'],
+            'reason'  => ['required', 'string', 'min:3', 'max:300'],
+        ]);
+
+        $moved = app(\App\Services\MemberTransferService::class)
+            ->transfer($member, Zone::findOrFail($validated['zone_id']), $request->user(), trim($validated['reason']));
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$moved->name} {$moved->surname} has been moved to the new zone.",
+            'data'    => new MemberResource($moved->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
+        ]);
+    }
+
     /** GET /api/pastors/members/{member}/360 — 360-degree member view */
     public function member360(Request $request, Member $member): JsonResponse
     {
@@ -742,7 +721,7 @@ class PastorController extends Controller
 
         $events = $memberUser->eventRegistrations()
             ->with('event')
-            ->orderByDesc('registered_at')
+            ->orderByDesc('created_at')
             ->limit(10)
             ->get()
             ->pluck('event')

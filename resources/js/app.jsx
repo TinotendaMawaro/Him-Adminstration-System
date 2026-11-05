@@ -20,7 +20,8 @@ import GiveOnline      from "./components/GiveOnline.jsx";
 import api             from "./lib/api.js";
 
 const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
+    // 30s of freshness: switching tabs re-uses what was just loaded instead of hitting the server again.
+    defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30 * 1000 } },
 });
 
 // ─── Portal router — reads user from context internally ──────────────────────
@@ -60,9 +61,9 @@ function PortalRouter({ onLogout }) {
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">
                     <div className="text-center p-8">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Admin Access</h2>
-                        <p className="text-gray-500 mb-4">Your account uses the admin panel.</p>
-                        <a href="/admin" className="inline-block px-6 py-3 bg-blue-900 text-white rounded-xl font-semibold">
-                            Go to Admin Panel →
+                        <p className="text-gray-500 mb-4">Your account uses the staff portal.</p>
+                        <a href={{ master: "/admin", finance: "/finance", event: "/events" }[user.role] || "/admin"} className="inline-block px-6 py-3 bg-blue-900 text-white rounded-xl font-semibold">
+                            Go to {{ master: "the Master console", finance: "the Finance portal", event: "the Events portal" }[user.role] || "the staff portal"} →
                         </a>
                     </div>
                 </div>
@@ -157,8 +158,9 @@ function AppInner() {
             }
         }
 
-        localStorage.removeItem("him_user");
-        localStorage.removeItem("him_token");
+        // Leave nothing of this person behind on a shared browser: tokens, cached lists (members, departments,
+        // reports...) and any per-user UI state all go.
+        try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable (private mode) */ }
         queryClient.clear();
         clearUser();
         // No need to set appState; component will unmount via RequireAuth redirect

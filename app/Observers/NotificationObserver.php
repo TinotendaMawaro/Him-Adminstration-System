@@ -14,8 +14,26 @@ use App\Support\Mailing;
  */
 class NotificationObserver
 {
+    private static bool $emailOff = false;
+
+    /** Create notifications inside the callback WITHOUT their email copy (in-app only). */
+    public static function withoutEmail(callable $callback): mixed
+    {
+        $previous = self::$emailOff;
+        self::$emailOff = true;
+        try {
+            return $callback();
+        } finally {
+            self::$emailOff = $previous;
+        }
+    }
+
     public function created(Notification $notification): void
     {
+        if (self::$emailOff) {
+            return;
+        }
+
         $cfg = config('mailing.notifications');
 
         if (!$cfg['mirror'] || !$notification->user || !$notification->user->is_active) {

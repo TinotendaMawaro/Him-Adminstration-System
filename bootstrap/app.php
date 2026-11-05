@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: ['email/unsubscribe/*']);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\BaselineHeaders::class,
+        ]);
+
         $middleware->api(append: [
             \App\Http\Middleware\SecureApiMiddleware::class,
         ]);
@@ -25,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'secure.api' => \App\Http\Middleware\SecureApiMiddleware::class,
         ]);
     })

@@ -44,6 +44,37 @@ class MemberResource extends Resource
         return ['name', 'surname', 'member_code', 'member_number', 'user.email'];
     }
 
+    /** The details head office can set. The zone is chosen when adding; to change it later use "Move zone" (it needs a reason). */
+    public static function personForm(bool $creating, ?Member $member = null): array
+    {
+        $emailRule = \Illuminate\Validation\Rule::unique('users', 'email')->ignore($member?->user_id);
+
+        return [
+            Forms\Components\Grid::make(2)->schema([
+                Forms\Components\TextInput::make('name')->label('First name')->required()->maxLength(120),
+                Forms\Components\TextInput::make('surname')->required()->maxLength(120),
+                Forms\Components\TextInput::make('email')->email()->required()->maxLength(190)->rules([$emailRule]),
+                Forms\Components\TextInput::make('phone')->tel()->maxLength(20),
+                Forms\Components\DatePicker::make('date_of_birth')->label('Date of birth')->maxDate(now()->subYear())->native(false),
+                Forms\Components\Select::make('gender_id')->label('Gender')->options(fn () => \App\Models\Gender::orderBy('name')->pluck('name', 'id')->all())->native(false),
+                Forms\Components\Select::make('zone_id')->label('Zone')->required()->searchable()->visible($creating)
+                    ->options(fn () => Zone::orderBy('code')->get()->mapWithKeys(fn ($z) => [$z->id => "{$z->code} · {$z->name}"])->all()),
+                Forms\Components\Select::make('status')->options(MemberStatus::class)->default('active')->required()->native(false),
+                Forms\Components\Toggle::make('is_baptised')->label('Baptised'),
+                Forms\Components\Toggle::make('can_be_partner')->label('Can be a partner'),
+            ]),
+        ];
+    }
+
+    private static function mapValidation(\Closure $do): void
+    {
+        try {
+            $do();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Notification::make()->title('Not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
+        }
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -74,6 +105,23 @@ class MemberResource extends Resource
                     ->trueLabel('Not in a home group')->falseLabel('In a home group'),
             ], layout: Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
+                Tables\Actions\Action::make('edit')->label('Edit')->icon('heroicon-o-pencil-square')->color('gray')
+                    ->modalHeading(fn (Member $r) => "Edit {$r->name} {$r->surname}")->modalWidth('3xl')
+                    ->form(fn (Member $r) => self::personForm(false, $r))
+                    ->fillForm(fn (Member $r) => $r->only(['name', 'surname', 'date_of_birth', 'gender_id', 'is_baptised', 'can_be_partner']) + ['email' => $r->user?->email, 'phone' => $r->user?->phone, 'status' => $r->status?->value])
+                    ->action(function (Member $r, array $data) {
+                        app(\App\Services\PeopleProvisioner::class)->updateMember($r, $data, auth()->user());
+                        Notification::make()->title('Member updated')->success()->send();
+                    }),
+                Tables\Actions\Action::make('remove')->label('Remove')->icon('heroicon-o-trash')->color('danger')
+                    ->requiresConfirmation()->modalHeading(fn (Member $r) => "Remove {$r->name} {$r->surname}?")
+                    ->modalDescription('Their login stops working immediately. Their history, giving and receipts are kept.')
+                    ->action(function (Member $r) {
+                        self::mapValidation(function () use ($r) {
+                            app(\App\Services\PeopleProvisioner::class)->removeMember($r, auth()->user());
+                            Notification::make()->title('Member removed')->success()->send();
+                        });
+                    }),
                 Tables\Actions\Action::make('status')->label('Status')->icon('heroicon-o-flag')->color('gray')
                     ->form([Forms\Components\Select::make('status')->options(MemberStatus::class)->required()])
                     ->fillForm(fn (Member $r) => ['status' => $r->status?->value])
@@ -87,18 +135,16 @@ class MemberResource extends Resource
                     ->form([
                         Forms\Components\Select::make('zone_id')->label('New zone')->required()->searchable()
                             ->options(fn (Member $r) => Zone::where('id', '!=', $r->zone_id)->orderBy('code')->get()->mapWithKeys(fn ($z) => [$z->id => "{$z->code} · {$z->name}"])->all()),
-                        Forms\Components\Textarea::make('reason')->maxLength(300)->rows(2),
+                        Forms\Components\Textarea::make('reason')->required()->minLength(3)->maxLength(300)->rows(2),
                     ])
-                    ->modalDescription('Moves the member and their login to the new zone. They leave their current home group.')
+                    ->modalDescription('Moves the member and their login to the new zone. They leave their current home group and keep their member number.')
                     ->action(function (Member $r, array $data) {
-                        DB::transaction(function () use ($r, $data) {
-                            $from = $r->zone_id;
-                            $r->update(['zone_id' => $data['zone_id'], 'home_group_id' => null]);
-                            if ($r->user_id) {
-                                User::whereKey($r->user_id)->update(['zone_id' => $data['zone_id'], 'home_group_id' => null]);
-                            }
-                            AuditTrail::record('member.transferred', auth()->user(), $r, ['from_zone' => $from, 'to_zone' => (int) $data['zone_id'], 'reason' => $data['reason'] ?? null], $r->user_id);
-                        });
+                        try {
+                            app(\App\Services\MemberTransferService::class)->transfer($r, Zone::findOrFail($data['zone_id']), auth()->user(), $data['reason']);
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            Notification::make()->title('Move not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
+                            return;
+                        }
                         Notification::make()->title('Member moved')->success()->send();
                     }),
             ])

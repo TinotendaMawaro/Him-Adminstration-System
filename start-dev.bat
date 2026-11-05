@@ -23,8 +23,9 @@ echo Make sure XAMPP MySQL is running first.
 echo.
 
 REM ── Everything the system needs, each in its own window ──────────────────────────────
-echo [1/4] Web server      http://localhost:8000   (API + Master/Finance/Events portals)
-start "HIM - Laravel server" "%PHP%" artisan serve --host=127.0.0.1 --port=8000
+echo [1/4] Web server      http://localhost:8000   (API + Master/Finance/Events portals, 4 PHP workers)
+set "PHP_BIN=%PHP%"
+start "HIM - Laravel server" node scripts\dev-server.mjs
 
 echo [2/4] Scheduler       report reminders, greetings, online-payment reconciliation
 start "HIM - Scheduler" "%PHP%" artisan schedule:work

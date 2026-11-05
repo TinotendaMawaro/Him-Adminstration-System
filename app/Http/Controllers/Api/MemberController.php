@@ -15,6 +15,7 @@ use App\Services\ProfileCompletenessService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -40,17 +41,19 @@ class MemberController extends Controller
             return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
         }
 
-        // Input validation & sanitization
-        $perPage = (int) $request->query('per_page', 25);
-        $perPage = in_array($perPage, [10, 20, 25, 50]) ? $perPage : 25;
+        $validated = $request->validate([
+            'search'        => ['nullable', 'string', 'max:100'],
+            'status'        => ['nullable', 'string', Rule::in(array_merge(array_column(\App\Enums\MemberStatus::cases(), 'value'), ['true', 'false', '1', '0']))],
+            'ministry'      => ['nullable', 'string', Rule::in(['R', 'M', 'H', 'P'])],
+            'home_group_id' => ['nullable', 'integer'],
+            'sort'          => ['nullable', Rule::in(['surname', 'name', 'member_number', 'created_at'])],
+            'dir'           => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page'      => ['nullable', 'integer'],
+        ]);
 
-        $search = $request->query('search');
-        if ($search && strlen($search) > 100) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Search term exceeds maximum length'
-            ], 422);
-        }
+        $requested = (int) ($validated['per_page'] ?? 25);
+        $perPage   = in_array($requested, [10, 20, 25, 50, 100], true) ? $requested : 25;
+        $search    = trim((string) ($validated['search'] ?? ''));
 
         $query = Member::with([
             'user:id,name,email,phone,role,unique_code',
@@ -67,48 +70,46 @@ class MemberController extends Controller
                 \Log::warning('HOD missing department', ['user_id' => $user->id]);
                 return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
             }
-            $query->where('department_id', $user->department_id);
+            // Department membership is kept on the member record and on the user account; honour either.
+            $departmentId = $user->department_id;
+            $query->where(fn ($q) => $q->where('department_id', $departmentId)
+                ->orWhereHas('user', fn ($u) => $u->where('department_id', $departmentId)));
         } elseif ($user->isPastor()) {
             if (!$user->zone_id) {
                 \Log::warning('Pastor missing zone', ['user_id' => $user->id]);
                 return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
             }
             $query->where('zone_id', $user->zone_id);
-        }
-        // Members can see all members in their zone if assigned, otherwise just themselves
-        elseif ($user->isMember()) {
-            if ($user->zone_id) {
-                $query->where('zone_id', $user->zone_id);
-            } else {
-                $query->where('user_id', $user->id);
-            }
+        } elseif ($user->isMember()) {
+            // A member is not a directory: other people's email and phone stay private. (zone-summary gives zone totals.)
+            $query->where('user_id', $user->id);
         }
 
-        // Status filter - boolean only
-        if ($request->has('status')) {
-            $status = filter_var($request->status, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if ($status !== null) {
-                $query->where('is_active', $status);
-            }
+        // Status: 'active' / 'inactive' / ... (the old true/false still works and means active / inactive)
+        if (($status = $validated['status'] ?? null) !== null && $status !== '') {
+            $status = match ($status) { 'true', '1' => 'active', 'false', '0' => 'inactive', default => $status };
+            $query->where('status', $status);
         }
 
-        // Search with explicit column whitelist
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', '%' . $search . '%')
-                  ->orWhere('member_number', 'LIKE', '%' . $search . '%')
-                  ->orWhere('email', 'LIKE', '%' . $search . '%');
+        // Ministry = the letter the member code starts with (R, M, H, P)
+        if (!empty($validated['ministry'])) {
+            $query->where(fn ($q) => $q->where('member_code', 'LIKE', $validated['ministry'] . '%')->orWhere('member_number', 'LIKE', $validated['ministry'] . '%'));
+        }
+
+        if (!empty($validated['home_group_id'])) {
+            $query->where('home_group_id', (int) $validated['home_group_id']);
+        }
+
+        if ($search !== '') {
+            $like = '%' . addcslashes($search, '%_\\') . '%';
+            $query->where(function ($q) use ($like) {
+                $q->where('name', 'LIKE', $like)->orWhere('surname', 'LIKE', $like)
+                  ->orWhere('member_number', 'LIKE', $like)->orWhere('member_code', 'LIKE', $like)
+                  ->orWhereHas('user', fn ($u) => $u->where('email', 'LIKE', $like));
             });
         }
 
-        // Sort column whitelist
-        $sort = $request->query('sort', 'surname');
-        $allowedSorts = ['surname', 'name', 'member_number', 'created_at', 'email'];
-        if (!in_array($sort, $allowedSorts)) {
-            $sort = 'surname';
-        }
-
-        $members = $query->orderBy($sort, 'asc')
+        $members = $query->orderBy($validated['sort'] ?? 'surname', $validated['dir'] ?? 'asc')
             ->paginate($perPage)
             ->withQueryString();
 
@@ -117,7 +118,7 @@ class MemberController extends Controller
             'user_id' => $user->id,
             'role' => $user->role,
             'filters' => [
-                'status' => $request->status,
+                'status' => $validated['status'] ?? null,
                 'has_search' => !empty($search),
                 'department_id' => $user->isHOD() ? $user->department_id : null,
                 'zone_id' => $user->isPastor() ? $user->zone_id : null,

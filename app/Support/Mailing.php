@@ -23,6 +23,15 @@ class Mailing
         $user  = $recipient instanceof User ? $recipient : null;
         $email = $user ? (string) $user->email : $recipient;
 
+        // Developer / test mode: every email goes to ONE inbox (MAIL_REDIRECT_TO) instead of its real recipient, with the
+        // intended recipient shown in the subject. Demo and test addresses can then be exercised for real, safely.
+        $redirect = config('mailing.redirect_to');
+        if ($redirect) {
+            $mail->redirectedFrom = $email;
+            $email = (string) $redirect;
+            $user  = null;   // opt-outs and bounces belong to the real person, not to the test inbox
+        }
+
         $skip = EmailGate::check($user, $email, $mail->optional());
         if ($skip) {
             // Worth recording when a person's own choice or a bounce blocked a real email; routine skips are not.

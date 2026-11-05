@@ -35,6 +35,8 @@ class UserObserver
 
     public function updated(User $user): void
     {
+        \App\Support\PeopleSync::fromUser($user);
+
         $changes = $user->getChanges();
         unset($changes['updated_at']);
 

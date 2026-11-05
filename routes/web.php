@@ -39,6 +39,12 @@ Route::get('/pay/return/{reference}', PayReturnController::class)
     ->middleware('throttle:60,1')
     ->name('pay.return');
 
+// What an ID-card QR code opens. Public by design: the token is signed, and the page shows only name, number, zone and status.
+Route::get('/verify/{token}', \App\Http\Controllers\CardVerifyController::class)
+    ->where('token', '[A-Za-z0-9_\-]+\.[a-f0-9]{16}')
+    ->middleware('throttle:60,1')
+    ->name('card.verify');
+
 // SPA catch-all
 Route::get('/{any}', function () {
     return view('welcome');

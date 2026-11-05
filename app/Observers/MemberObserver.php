@@ -16,6 +16,8 @@ class MemberObserver
 
     public function saved(Member $member): void
     {
+        \App\Support\PeopleSync::fromMember($member);
+
         // Track membership milestone
         if ($member->wasRecentlyCreated && $member->membership_date) {
             $this->milestones->dispatch('membership', $member->user, [

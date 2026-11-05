@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import PortalLayout from "./PortalLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api.js";
+import IdCardPanel from "./IdCardPanel.jsx";
 
 // This portal's calls are written as "/api/…" against raw axios, which carries no login token (every call was a 401).
 // Route them through the shared authenticated client (its baseURL already supplies "/api").
@@ -327,7 +328,10 @@ function PartnerDashboard({ user }) {
                     </div>
                 </div>
             ) : (
-                renderPage()
+                <>
+                    {renderPage()}
+                    {activePage !== "give" && activePage !== "payments" && <div className="mt-6"><IdCardPanel /></div>}
+                </>
             )}
         </PortalLayout>
     );

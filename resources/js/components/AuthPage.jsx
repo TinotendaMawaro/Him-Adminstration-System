@@ -7,7 +7,7 @@ import api from "../lib/api";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const validateEmail    = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-const validatePassword = (v) => v.length >= 6;
+const validatePassword = (v) => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v);
 
 const LoadingSpinner = () => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -37,6 +37,15 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
     }, []);
 
     const [code, setCode]               = useState("");
+    const [pastorPassword, setPastorPassword] = useState("");
+    const [pastorPasswordRequired, setPastorPasswordRequired] = useState(false);
+
+    // Ask the server what the pastor sign-in needs (a code alone is a weak credential, so it can also require a password).
+    useEffect(() => {
+        let cancelled = false;
+        api.get("/auth/policy").then(({ data }) => !cancelled && setPastorPasswordRequired(!!data?.data?.pastor_password_required)).catch(() => {});
+        return () => { cancelled = true; };
+    }, []);
     const [emailLogin, setEmailLogin]   = useState({ email: "", password: "" });
     const [formData, setFormData]       = useState({
         firstName: "", lastName: "", email: "",
@@ -66,6 +75,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
         const e = {};
         if (mode === "code") {
             if (!code.trim()) e.code = "Code is required";
+            if (pastorPasswordRequired && !pastorPassword) e.pastorPassword = "Password is required";
         }
         if (mode === "email") {
             if (!emailLogin.email || !validateEmail(emailLogin.email)) e.emailLoginEmail = "Valid email is required";
@@ -78,7 +88,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
             if (!formData.phoneNumber || formData.phoneNumber.length < 7) e.phoneNumber = "Valid phone number is required";
             if (!formData.physicalAddress) e.physicalAddress = "Physical address is required";
             if (!formData.zoneCode || !(/^\d{4}$/.test(formData.zoneCode) || /^R\d{4}$/.test(formData.zoneCode))) e.zoneCode = "Invalid Zone Code. Please contact your Zone Pastor or Administrator for assistance.";
-            if (!formData.password || !validatePassword(formData.password)) e.password = "Password must be at least 6 characters";
+            if (!formData.password || !validatePassword(formData.password)) e.password = "Use at least 8 characters, with letters and numbers";
             if (formData.password !== formData.confirmPassword) e.confirmPassword = "Passwords do not match";
             if (!acceptTerms) e.acceptTerms = "You must accept the terms and conditions";
         }
@@ -145,7 +155,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
 
         try {
             if (mode === "code") {
-                const { data } = await api.post("/login/code", { unique_code: code.trim() });
+                const { data } = await api.post("/login/code", { unique_code: code.trim(), ...(pastorPassword ? { password: pastorPassword } : {}) });
                 if (data.success) {
                     handleLoginResponse(data);
                 } else {
@@ -204,8 +214,13 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                 if (apiErrors.name)        mapped.firstName = apiErrors.name[0];
                 if (apiErrors.unique_code) mapped.code     = apiErrors.unique_code[0];
                 setErrors(Object.keys(mapped).length ? mapped : { submit: err.response.data?.message || "Validation failed." });
-            } else if (err.response?.status === 401) {
-                setErrors({ submit: mode === "code" ? "Invalid code. Please check and try again." : "Invalid email or password." });
+            } else if (err.response?.data?.requires_password) {
+                setPastorPasswordRequired(true);
+                setErrors({ pastorPassword: "Please enter your password as well." });
+            } else if (err.response?.data?.staff) {
+                setErrors({ submit: err.response.data.message, staffLink: err.response.data.redirect });
+            } else if ([401, 403, 429].includes(err.response?.status)) {
+                setErrors({ submit: err.response.data?.message || (mode === "code" ? "Invalid code. Please check and try again." : "Invalid email or password.") });
             } else {
                 setErrors({ submit: "Unable to connect. Please check your connection and try again." });
             }
@@ -271,6 +286,17 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                                                 className={`${inputBase} text-center tracking-widest text-base font-mono ${errors.code ? "border-red-500" : code ? "border-yellow-500/50" : ""}`}
                                             />
                                             {errors.code && <p className="text-red-400 text-xs text-center" role="alert">{errors.code}</p>}
+                                            {pastorPasswordRequired && (
+                                                <>
+                                                    <input type="password" placeholder="Password" autoComplete="current-password" value={pastorPassword}
+                                                           onChange={(e) => { setPastorPassword(e.target.value); if (errors.pastorPassword) setErrors((p) => ({ ...p, pastorPassword: "" })); }}
+                                                           className={`${inputBase} ${errors.pastorPassword ? "border-red-500" : ""}`} />
+                                                    {errors.pastorPassword && <p className="text-red-400 text-xs text-center" role="alert">{errors.pastorPassword}</p>}
+                                                    <div className="text-right -mt-1">
+                                                        <a href="/forgot-password" className="text-xs text-white/60 hover:text-white underline underline-offset-2">Forgot password?</a>
+                                                    </div>
+                                                </>
+                                            )}
                                         </>
                                     )}
 
@@ -417,6 +443,9 @@ onBlur={() => {
                                     {errors.submit && (
                                         <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-2">
                                             <p className="text-red-300 text-xs text-center" role="alert">{errors.submit}</p>
+                                            {errors.staffLink && (
+                                                <p className="text-center mt-1"><a href={errors.staffLink} className="text-amber-300 text-xs font-semibold underline">Go to the staff portal →</a></p>
+                                            )}
                                         </div>
                                     )}
 

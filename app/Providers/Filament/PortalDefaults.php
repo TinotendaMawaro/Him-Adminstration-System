@@ -51,6 +51,7 @@ class PortalDefaults
             ->sidebarCollapsibleOnDesktop()
             ->unsavedChangesAlerts()
             ->databaseTransactions()
+            ->pages([\App\Filament\Pages\Shared\MyIdCard::class])
             ->userMenuItems($switch)
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('filament.partials.premium-head', ['accent' => $accentCss]))
             ->middleware([

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
 import Member360View from "../pastors/Member360View.jsx";
+import TransferMemberModal from "../pastors/TransferMemberModal.jsx";
 import Pagination from "../Pagination.jsx";
 
 const ROW_CLASS = "h-11";
@@ -12,6 +13,9 @@ const INPUT_CLASS = "h-9 rounded-lg border border-gray-200 bg-white/70 px-2 text
 export default function MembersTab() {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [transferMember, setTransferMember] = useState(null);
+    const [flash, setFlash] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
     const [filterHomeGroup, setFilterHomeGroup] = useState("");
     const [filterMinistry, setFilterMinistry] = useState("");
@@ -29,24 +33,20 @@ export default function MembersTab() {
            refetch: refetchMembers,
            isFetching: membersFetching,
          } = useQuery({
-           queryKey: ["pastor-members", currentPage, perPage, searchTerm, filterStatus, filterHomeGroup, filterMinistry],
+           queryKey: ["pastor-members", currentPage, perPage, debouncedSearch, filterStatus, filterHomeGroup, filterMinistry],
            queryFn: async () => {
              try {
                const params = new URLSearchParams({ page: currentPage, per_page: perPage });
-               if (searchTerm) params.append('search', searchTerm);
+               if (debouncedSearch) params.append('search', debouncedSearch);
                if (filterStatus) params.append('status', filterStatus);
                if (filterHomeGroup) params.append('home_group_id', filterHomeGroup);
                if (filterMinistry) params.append('ministry', filterMinistry);
 
                const res = await api.get(`/members?${params}`);
                if (!res.data.success) throw new Error(res.data.message || "Failed to fetch members");
-               localStorage.setItem('members-data', JSON.stringify(res.data));
                return res.data;
              } catch (err) {
-               if ((err.response && err.response.status === 403) || (err.response && err.response.status === 401)) {
-                 localStorage.removeItem("him_token");
-                 window.location.href = "/login";
-               }
+               // 401 is handled globally by the api client (sign-out); a 403 is shown as an error, not a forced logout.
                throw err;
              }
            },
@@ -54,12 +54,14 @@ export default function MembersTab() {
            gcTime: 300000,
            refetchOnWindowFocus: false,
            retry: 1,
-           keepPreviousData: true,
-           initialData: () => {
-             const cached = localStorage.getItem('members-data');
-             return cached ? JSON.parse(cached) : undefined;
-           },
+           placeholderData: (previous) => previous,
          });
+
+    // Wait for a pause in typing before asking the server (one request instead of one per keystroke).
+    useEffect(() => {
+      const id = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+      return () => clearTimeout(id);
+    }, [searchTerm]);
 
     const membersData = membersResponse?.data || [];
     const paginationMeta = membersResponse?.meta || { current_page: 1, last_page: 1, per_page: perPage, total: 0 };
@@ -84,7 +86,7 @@ export default function MembersTab() {
     useEffect(() => {
       setCurrentPage(1);
       setSelectedIds([]);
-    }, [searchTerm, filterStatus, filterHomeGroup, filterMinistry]);
+    }, [debouncedSearch, filterStatus, filterHomeGroup, filterMinistry]);
 
     const filteredMembers = useMemo(() => Array.isArray(membersData) ? membersData : [], [membersData]);
 
@@ -227,7 +229,7 @@ export default function MembersTab() {
                 <th className={`${TH_CLASS} w-20`}>Status</th>
                 <th className={`${TH_CLASS} w-24`}>Title</th>
                 <th className={`${TH_CLASS} w-28`}>Department</th>
-                <th className={`${TH_CLASS} w-28`}>Actions</th>
+                <th className={`${TH_CLASS} w-40`}>Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -254,6 +256,7 @@ export default function MembersTab() {
                   <td className={`${TD_CLASS}`}>
                     <div className="flex items-center gap-2">
                       <button onClick={() => handleViewMember(member)} className="text-[#dfb15b] hover:text-amber-900">View</button>
+                      <button onClick={() => setTransferMember(member)} className="text-sky-600 hover:text-sky-800">Move zone</button>
                       <button onClick={() => handleStatusToggle(member)} className="text-emerald-600 hover:text-emerald-800">
                         {member.status === 'active' ? 'Deactivate' : 'Activate'}
                       </button>
@@ -269,6 +272,18 @@ export default function MembersTab() {
             </div>
           )}
         </div>
+
+        {transferMember && (
+          <TransferMemberModal
+            member={transferMember}
+            onClose={() => setTransferMember(null)}
+            onDone={async (message) => { setTransferMember(null); setFlash(message); setTimeout(() => setFlash(""), 6000); await handleRefresh(); }}
+          />
+        )}
+
+        {flash && (
+          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white shadow-lg" role="status">{flash}</div>
+        )}
 
         {showDrawer && selectedMember && (
           <Member360View memberId={selectedMember?.member?.id || selectedMember?.id} onClose={() => setShowDrawer(false)} />

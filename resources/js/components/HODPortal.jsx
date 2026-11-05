@@ -16,6 +16,7 @@ import HODActivitiesPage from "./dashboard/hod/HODActivities";
 import HODAchievementsPage from "./dashboard/hod/HODAchievements";
 import DepartmentReportsPage from "./dashboard/hod/DepartmentReports";
 import DepartmentProfilePage from "./dashboard/hod/DepartmentProfile";
+import IdCardPanel from "./IdCardPanel.jsx";
 import DepartmentMembersPage from "./dashboard/hod/DepartmentMembers";
 import DepartmentWorkspace from "./dashboard/hod/DepartmentWorkspace";
 
@@ -847,7 +848,12 @@ export default function HODPortal({ user: initialUser, onLogout }) {
             case "reports":
                 return <DepartmentReportsPage user={user} />;
             case "profile":
-                return <DepartmentProfilePage user={user} onUpdate={setUser} />;
+                return (
+                    <>
+                        <DepartmentProfilePage user={user} onUpdate={setUser} />
+                        <div className="mt-6"><IdCardPanel /></div>
+                    </>
+                );
             default:
                 return <HODHomeTab user={user} onLogout={onLogout} />;
         }

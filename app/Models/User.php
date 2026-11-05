@@ -22,7 +22,7 @@ class User extends Authenticatable
         'role', 'unique_code', 'hod_code',
         'is_active', 'terms_accepted', 'terms_accepted_at',
         'first_login_at', 'completed_tour', 'profile_photo',
-        'zone_id', 'phone', 'address',
+        'zone_id', 'phone', 'address', 'date_of_birth',
         'home_group_id', 'department_id',
         'address_line_1', 'address_line_2', 'city', 'province', 'country', 'postal_code',
         'latitude', 'longitude', 'location_captured', 'location_captured_at',

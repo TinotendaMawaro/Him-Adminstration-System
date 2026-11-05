@@ -28,6 +28,7 @@ class WelcomeMail extends BrandedMail
             'Email'       => $u->email,
             'Account'     => $u->role->getLabel(),
             'Member code' => $u->member?->member_code,
+            'Your sign-in code' => $role === 'pastor' ? $u->unique_code : null,
             'Zone'        => $u->zone ? "{$u->zone->name} ({$u->zone->code})" : null,
             'Region'      => $u->zone?->region?->name,
             'Zone pastor' => $leadPastor?->full_name,

@@ -32,6 +32,10 @@ return [
     'portal_url'    => env('PORTAL_URL'),
     'support_email' => env('MAIL_SUPPORT_ADDRESS', 'support@heartfeltonline.org'),
 
+    // Test mode: when set, EVERY email is delivered to this one address instead of its real recipient (the intended
+    // recipient is shown in the subject). Leave blank in production.
+    'redirect_to' => env('MAIL_REDIRECT_TO'),
+
     // Never email addresses on reserved/test domains (demo data, seeders, examples).
     'reserved_tlds'   => ['test', 'invalid', 'example', 'localhost', 'local'],
     // heartfelt.church is only the placeholder domain on the seeded demo accounts (the ministry's own domain is heartfeltonline.org).
