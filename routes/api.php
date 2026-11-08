@@ -53,6 +53,16 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])
 Route::post('/webhooks/resend', ResendWebhookController::class)
      ->middleware('throttle:120,1');
 
+// Serverless hosting has no always-on scheduler: the platform's cron calls this once a day to run the due jobs.
+Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
+    $secret = (string) config('portal.cron_secret');
+    abort_unless($secret !== '' && hash_equals("Bearer {$secret}", (string) $request->header('Authorization')), 403);
+
+    \Illuminate\Support\Facades\Artisan::call('schedule:run');
+
+    return response()->json(['success' => true, 'ran_at' => now()->toIso8601String()]);
+})->middleware('throttle:10,1');
+
 Route::post('/register', RegisterController::class)
      ->middleware('throttle:3,1'); // 3 registrations per minute
 

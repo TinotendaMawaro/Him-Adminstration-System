@@ -20,6 +20,9 @@ return [
     // A person keeps at most this many signed-in devices; the oldest sessions are signed out.
     'max_tokens_per_user' => 5,
 
+    // Secret the hosting platform's cron sends (Authorization: Bearer ...) to run the scheduled jobs on serverless hosting.
+    'cron_secret' => env('CRON_SECRET'),
+
     // Where staff are sent if they try the member sign-in by mistake.
     'staff_portals' => [
         'master'  => '/admin',

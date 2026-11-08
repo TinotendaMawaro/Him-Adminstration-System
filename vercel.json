@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": null,
+  "buildCommand": "npm run build && node -e \"require('fs').rmSync('dist/index.php',{force:true})\"",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.php": { "runtime": "vercel-php@0.7.3", "maxDuration": 30 }
+  },
+  "routes": [
+    { "handle": "filesystem" },
+    {
+      "src": "^/(api|admin|finance|events|livewire|forgot-password|reset-password|email|receipts|pay|verify|exports|up)(/.*)?$",
+      "dest": "/api/index.php"
+    },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/cron/run", "schedule": "0 6 * * *" }
+  ],
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "APP_CONFIG_CACHE": "/tmp/config.php",
+    "APP_EVENTS_CACHE": "/tmp/events.php",
+    "APP_PACKAGES_CACHE": "/tmp/packages.php",
+    "APP_ROUTES_CACHE": "/tmp/routes.php",
+    "APP_SERVICES_CACHE": "/tmp/services.php",
+    "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
+    "LOG_CHANNEL": "stderr",
+    "LOG_LEVEL": "warning",
+    "SESSION_DRIVER": "database",
+    "SESSION_SECURE_COOKIE": "true",
+    "CACHE_STORE": "database",
+    "QUEUE_CONNECTION": "sync",
+    "FILESYSTEM_DISK": "local"
+  }
+}

@@ -36,3 +36,5 @@ localhost_test.json
 auth_test.json
 plainTextToken
 *.msi
+
+.vercel

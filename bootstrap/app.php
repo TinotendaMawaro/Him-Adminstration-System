@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Behind Vercel's (or any) HTTPS proxy: trust the forwarded scheme/host so links, cookies and redirects use https.
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: ['email/unsubscribe/*']);
 
