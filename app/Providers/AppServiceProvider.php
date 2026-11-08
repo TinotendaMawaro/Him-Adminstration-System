@@ -33,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Behind a TLS-terminating proxy (Vercel) every generated link, asset and redirect must be https.
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         Member::observe(MemberObserver::class);
         User::observe(UserObserver::class);
         Payment::observe(PaymentObserver::class);

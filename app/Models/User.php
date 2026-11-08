@@ -12,7 +12,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Storage;
 
-class User extends Authenticatable
+// FilamentUser is REQUIRED: outside APP_ENV=local Filament refuses (403) every user whose model does not implement it.
+class User extends Authenticatable implements \Filament\Models\Contracts\FilamentUser
 {
     use HasApiTokens, HasFactory;
     use Notifiable { notify as protected laravelNotify; }
