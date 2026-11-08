@@ -113,6 +113,16 @@ class MemberResource extends Resource
                         app(\App\Services\PeopleProvisioner::class)->updateMember($r, $data, auth()->user());
                         Notification::make()->title('Member updated')->success()->send();
                     }),
+                Tables\Actions\Action::make('passwordLink')->label('Send password link')->icon('heroicon-o-key')->color('info')
+                    ->requiresConfirmation()->modalHeading(fn (Member $r) => "Email a password link to {$r->name} {$r->surname}?")
+                    ->modalDescription(fn (Member $r) => 'The link goes to ' . ($r->user?->email ?? 'no email on file') . ' and lets them choose their own password. Correct the email first (Edit) if it is wrong.')
+                    ->visible(fn (Member $r) => (bool) $r->user)
+                    ->action(function (Member $r) {
+                        self::mapValidation(function () use ($r) {
+                            app(\App\Services\PeopleProvisioner::class)->sendPasswordLink($r->user, auth()->user());
+                            Notification::make()->title('Password link sent')->body("Sent to {$r->user->email}")->success()->send();
+                        });
+                    }),
                 Tables\Actions\Action::make('remove')->label('Remove')->icon('heroicon-o-trash')->color('danger')
                     ->requiresConfirmation()->modalHeading(fn (Member $r) => "Remove {$r->name} {$r->surname}?")
                     ->modalDescription('Their login stops working immediately. Their history, giving and receipts are kept.')

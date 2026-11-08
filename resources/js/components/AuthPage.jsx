@@ -499,6 +499,23 @@ onBlur={() => {
                         {mode === "email"    && <p className="text-white/30 text-[10px] leading-relaxed">Use your registered<br />email and password</p>}
                         {mode === "register" && <p className="text-white/30 text-[10px] leading-relaxed">After registering you can<br />request to join a department</p>}
                     </div>
+
+                    {/* Head-office staff sign in to their own portals (separate from the member / pastor sign-in above). */}
+                    <div className="mt-5 w-full border-t border-white/10 pt-4" aria-label="Staff portals">
+                        <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Staff portals</p>
+                        <div className="grid grid-cols-1 gap-1.5">
+                            {[
+                                { href: "/admin/login",   label: "Master",  sub: "Head office console" },
+                                { href: "/finance/login", label: "Finance", sub: "Payments & receipts" },
+                                { href: "/events/login",  label: "Events",  sub: "Events & registrations" },
+                            ].map(({ href, label, sub }) => (
+                                <a key={href} href={href} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/15 hover:text-white">
+                                    <span>{label}</span>
+                                    <span className="text-[10px] font-normal text-white/40">{sub}</span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
             </div>

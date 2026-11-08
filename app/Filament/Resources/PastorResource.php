@@ -53,6 +53,8 @@ class PastorResource extends Resource
                 Forms\Components\DatePicker::make('ordained_date')->maxDate(now()),
             ]),
             Forms\Components\Section::make('Account')->columns(2)->relationship('user')->schema([
+                Forms\Components\TextInput::make('email')->label('Email (where the password link is sent)')->email()->required()->maxLength(190)
+                    ->unique(ignoreRecord: true)->columnSpanFull(),
                 Forms\Components\DatePicker::make('date_of_birth')->label('Date of birth')->maxDate(now()->subYear())->native(false),
                 Forms\Components\TextInput::make('phone')->tel()->maxLength(20),
             ]),
@@ -135,6 +137,19 @@ class PastorResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('passwordLink')->label('Send password link')->icon('heroicon-o-key')->color('info')
+                    ->requiresConfirmation()->modalHeading(fn (Pastor $r) => "Email a password link to {$r->name} {$r->surname}?")
+                    ->modalDescription(fn (Pastor $r) => 'The link goes to ' . ($r->user?->email ?? 'no email on file') . ' and lets them choose their own password. Correct the email first (Edit) if it is wrong.')
+                    ->visible(fn (Pastor $r) => (bool) $r->user)
+                    ->action(function (Pastor $r) {
+                        try {
+                            app(\App\Services\PeopleProvisioner::class)->sendPasswordLink($r->user, auth()->user());
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            Notification::make()->title('Not sent')->body(collect($e->errors())->flatten()->first())->danger()->send();
+                            return;
+                        }
+                        Notification::make()->title('Password link sent')->body("Sent to {$r->user->email}")->success()->send();
+                    }),
                 Tables\Actions\Action::make('remove')->label('Remove')->icon('heroicon-o-trash')->color('danger')
                     ->requiresConfirmation()->modalHeading(fn (Pastor $r) => "Remove {$r->name} {$r->surname}?")
                     ->modalDescription('Their login stops working immediately; their history is kept. If they led their zone, the zone will need a new lead pastor.')

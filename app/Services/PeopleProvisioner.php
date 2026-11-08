@@ -163,13 +163,29 @@ class PeopleProvisioner
         return $prefix . str_pad((string) $next, 2, '0', STR_PAD_LEFT);
     }
 
-    private function inviteToSetPassword(User $user): void
+    /** Email an existing person a secure link to choose (or reset) their own password. */
+    public function sendPasswordLink(User $user, User $actor): void
+    {
+        $this->master($actor);
+
+        if (!$user->is_active) {
+            throw ValidationException::withMessages(['user' => 'This account is deactivated.']);
+        }
+
+        if (!$this->inviteToSetPassword($user)) {
+            throw ValidationException::withMessages(['user' => "No email was sent: {$user->email} cannot receive email (a demo or invalid address, or the person opted out). Correct the address first."]);
+        }
+
+        AuditTrail::record('user.password_link_sent', $actor, $user, ['email' => $user->email], $user->id);
+    }
+
+    /** @return bool whether an email was actually queued (false when the address cannot receive email) */
+    private function inviteToSetPassword(User $user): bool
     {
         $token = Password::broker()->createToken($user);
         $url   = route('password.reset.form', ['token' => $token, 'email' => $user->email]);
 
-        // Longer than a normal reset: this is the person's first sign-in link.
-        Mailing::to($user, new ResetPasswordMail($user, $url, (int) config('auth.passwords.users.expire', 60)));
+        return Mailing::to($user, new ResetPasswordMail($user, $url, (int) config('auth.passwords.users.expire', 60))) !== null;
     }
 
     private function retireAccount(?User $user): void

@@ -35,7 +35,7 @@ export default defineConfig({
             protocol: 'ws',
         },
         proxy: Object.fromEntries(
-            ['/api', '/forgot-password', '/reset-password', '/email', '/receipts', '/pay', '/verify', '/storage', '/images', '/js/him-idcard.js'].map((path) => [
+            ['/api', '/forgot-password', '/reset-password', '/email', '/receipts', '/pay', '/verify', '/storage', '/images', '/js/him-idcard.js', '/admin', '/finance', '/events', '/livewire'].map((path) => [
                 path,
                 { target: 'http://127.0.0.1:8000', changeOrigin: true, secure: false },
             ]),
