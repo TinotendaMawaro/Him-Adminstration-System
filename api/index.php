@@ -11,6 +11,12 @@ foreach (['storage/framework/views', 'storage/framework/cache/data', 'storage/fr
     }
 }
 
+// The function file lives at /api/index.php, which would make Laravel believe its base path is "/api" and strip it from
+// every API URL. Present it as the usual public/index.php instead.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['PHP_SELF'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = dirname(__DIR__) . '/public/index.php';
+
 define('LARAVEL_START', microtime(true));
 
 require __DIR__ . '/../vendor/autoload.php';
