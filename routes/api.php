@@ -350,3 +350,100 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
     Route::get('/departments/{id}/members', [DepartmentController::class, 'members']);
     Route::get('/departments/{id}/activities', [DepartmentController::class, 'activities']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Community (feed, short videos, stories), channels, watch (teachings + live) and the partners-only marketplace.
+| Everything requires a signed-in, active account; writes are rate-limited per action. Same login, same database
+| as the rest of the system: the mobile app talks to exactly these endpoints.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'active', 'throttle:300,1'])->group(function () {
+    $community = \App\Http\Controllers\Api\Community\CommunityController::class;
+    $channels  = \App\Http\Controllers\Api\Community\ChannelController::class;
+    $market    = \App\Http\Controllers\Api\Market\MarketController::class;
+
+    Route::prefix('community')->group(function () use ($community) {
+        Route::get('/bootstrap', [$community, 'bootstrap']);
+        Route::get('/feed', [$community, 'feed']);
+        Route::get('/shorts', [$community, 'shorts']);
+        Route::get('/bookmarks', [$community, 'bookmarks']);
+        Route::get('/explore', [$community, 'explore']);
+        Route::get('/search', [$community, 'search'])->middleware('throttle:60,1');
+
+        Route::post('/posts', [$community, 'store'])->middleware('throttle:30,60');
+        Route::get('/posts/{id}', [$community, 'show'])->whereNumber('id');
+        Route::delete('/posts/{id}', [$community, 'destroy'])->whereNumber('id');
+        Route::post('/posts/{id}/view', [$community, 'view'])->whereNumber('id')->middleware('throttle:120,1');
+        Route::post('/posts/{id}/like', [$community, 'like'])->whereNumber('id')->middleware('throttle:240,60');
+        Route::post('/posts/{id}/bookmark', [$community, 'bookmark'])->whereNumber('id');
+        Route::post('/posts/{id}/repost', [$community, 'repost'])->whereNumber('id')->middleware('throttle:60,60');
+        Route::post('/posts/{id}/vote', [$community, 'vote'])->whereNumber('id');
+        Route::post('/posts/{id}/pin', [$community, 'pin'])->whereNumber('id');
+        Route::get('/posts/{id}/comments', [$community, 'comments'])->whereNumber('id');
+        Route::post('/posts/{id}/comments', [$community, 'addComment'])->whereNumber('id')->middleware('throttle:90,60');
+        Route::delete('/comments/{id}', [$community, 'deleteComment'])->whereNumber('id');
+        Route::post('/comments/{id}/like', [$community, 'likeComment'])->whereNumber('id')->middleware('throttle:240,60');
+
+        Route::get('/stories', [$community, 'stories']);
+        Route::post('/stories', [$community, 'createStory'])->middleware('throttle:20,60');
+        Route::post('/stories/{id}/view', [$community, 'viewStory'])->whereNumber('id');
+        Route::delete('/stories/{id}', [$community, 'deleteStory'])->whereNumber('id');
+
+        Route::get('/me', [$community, 'me']);
+        Route::put('/me', [$community, 'updateProfile'])->middleware('throttle:20,60');
+        Route::get('/users/{id}', [$community, 'profile'])->whereNumber('id');
+        Route::get('/users/{id}/people', [$community, 'followers'])->whereNumber('id');
+        Route::post('/users/{id}/follow', [$community, 'follow'])->whereNumber('id')->middleware('throttle:120,60');
+        Route::post('/users/{id}/block', [$community, 'block'])->whereNumber('id');
+        Route::post('/report', [$community, 'report'])->middleware('throttle:30,60');
+        Route::post('/media', [$community, 'upload'])->middleware('throttle:40,60');
+    });
+
+    Route::prefix('channels')->group(function () use ($channels) {
+        Route::get('/', [$channels, 'index']);
+        Route::post('/', [$channels, 'store'])->middleware('throttle:10,60');
+        Route::get('/{id}', [$channels, 'show'])->whereNumber('id');
+        Route::put('/{id}', [$channels, 'update'])->whereNumber('id');
+        Route::delete('/{id}', [$channels, 'destroy'])->whereNumber('id');
+        Route::post('/{id}/join', [$channels, 'join'])->whereNumber('id')->middleware('throttle:60,60');
+        Route::post('/{id}/leave', [$channels, 'leave'])->whereNumber('id');
+        Route::get('/{id}/members', [$channels, 'members'])->whereNumber('id');
+        Route::post('/{id}/members/{userId}', [$channels, 'decide'])->whereNumber(['id', 'userId']);
+        Route::get('/{id}/posts', [$channels, 'posts'])->whereNumber('id');
+        Route::get('/{id}/messages', [$channels, 'messages'])->whereNumber('id')->middleware('throttle:240,1');
+        Route::post('/{id}/messages', [$channels, 'say'])->whereNumber('id')->middleware('throttle:90,1');
+        Route::get('/{id}/goals', [$channels, 'goals'])->whereNumber('id');
+        Route::post('/{id}/goals', [$channels, 'createGoal'])->whereNumber('id')->middleware('throttle:30,60');
+        Route::get('/{id}/meetings', [$channels, 'meetings'])->whereNumber('id');
+        Route::post('/{id}/meetings', [$channels, 'createMeeting'])->whereNumber('id')->middleware('throttle:30,60');
+    });
+    Route::put('/goals/{goalId}', [$channels, 'updateGoal'])->whereNumber('goalId');
+    Route::post('/meetings/{meetingId}/rsvp', [$channels, 'rsvp'])->whereNumber('meetingId');
+    Route::delete('/meetings/{meetingId}', [$channels, 'cancelMeeting'])->whereNumber('meetingId');
+
+    Route::prefix('watch')->group(function () use ($channels) {
+        Route::get('/teachings', [$channels, 'teachings']);
+        Route::post('/teachings/{id}/view', [$channels, 'viewTeaching'])->whereNumber('id')->middleware('throttle:120,1');
+        Route::get('/live', [$channels, 'lives']);
+        Route::post('/live', [$channels, 'scheduleLive'])->middleware('throttle:20,60');
+        Route::post('/live/{id}/remind', [$channels, 'remindLive'])->whereNumber('id');
+        Route::put('/live/{id}/status', [$channels, 'liveStatus'])->whereNumber('id');
+    });
+
+    Route::prefix('market')->group(function () use ($market) {
+        Route::get('/meta', [$market, 'meta']);
+        Route::get('/listings', [$market, 'index']);
+        Route::get('/listings/mine', [$market, 'mine']);
+        Route::post('/listings', [$market, 'store'])->middleware('throttle:30,60');
+        Route::get('/listings/{id}', [$market, 'show'])->whereNumber('id');
+        Route::put('/listings/{id}', [$market, 'update'])->whereNumber('id');
+        Route::delete('/listings/{id}', [$market, 'destroy'])->whereNumber('id');
+        Route::post('/listings/{id}/order', [$market, 'order'])->whereNumber('id')->middleware('throttle:30,60');
+        Route::post('/listings/{id}/quote', [$market, 'requestQuote'])->whereNumber('id')->middleware('throttle:30,60');
+        Route::get('/orders', [$market, 'orders']);
+        Route::put('/orders/{id}', [$market, 'updateOrder'])->whereNumber('id');
+        Route::get('/quotes', [$market, 'quotes']);
+        Route::put('/quotes/{id}', [$market, 'respondQuote'])->whereNumber('id');
+    });
+});

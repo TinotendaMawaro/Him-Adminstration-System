@@ -36,7 +36,7 @@ function HeartIcon({ className = "h-5 w-5" }) {
     );
 }
 
-export default function GiveOnline() {
+export default function GiveOnline({ hideLauncher = false }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [opts, setOpts] = useState(null); // { types, registrations, currency, min, max }
@@ -146,7 +146,7 @@ export default function GiveOnline() {
 
     return (
         <>
-            <button
+            {!hideLauncher && <button
                 type="button"
                 onClick={() => setOpen(true)}
                 className="fixed bottom-24 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-900/30 ring-1 ring-white/30 transition hover:scale-105 hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-300 md:bottom-6 md:right-6"
@@ -154,7 +154,7 @@ export default function GiveOnline() {
             >
                 <HeartIcon />
                 <span>Give</span>
-            </button>
+            </button>}
 
             {open && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && close()}>

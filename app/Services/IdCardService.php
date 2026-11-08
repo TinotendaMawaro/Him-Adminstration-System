@@ -47,7 +47,7 @@ class IdCardService
             'status'        => $user->is_active ? 'active' : 'inactive',
             'issued'        => now()->format('M Y'),
             'verify_url'    => url('/verify/' . $this->token($user)),
-            'photo_url'     => $user->profile_photo ? '/storage/' . ltrim($user->profile_photo, '/') : null,
+            'photo_url'     => $user->profile_photo ? url('/storage/' . ltrim($user->profile_photo, '/')) : null,
             'support_email' => config('mailing.support_email'),
         ];
     }

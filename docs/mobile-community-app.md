@@ -1,0 +1,53 @@
+# Heartfelt Community: the mobile app
+
+Members and partners sign in once (same login, same database as every other portal) and land in the mobile app. It also runs as an
+installable web app (PWA) and is packaged as a native Android/iOS app with Capacitor. Pastors, HODs and head office keep their own portals.
+
+## What members get
+
+| Tab | What it does |
+|---|---|
+| **Home** | Stories, posts (text, photos, YouTube/Vimeo videos, polls), For you / Following / My zone feeds, likes, comments, reposts, bookmarks, share, `#hashtags` and `@mentions` |
+| **Watch** | The Apostle's **teachings library**, **live sessions** with reminders and countdowns, and vertical **Shorts** |
+| **Channels** | Members create channels (public or private). Each has live **chat**, a **discussion board**, shared **goals** with progress, **meetings** with RSVP and calendar export, **live** sessions and member management |
+| **Market** | Partners-only shops: list products/services, take **orders** or answer **quote requests**. Every member can buy or ask for a quote |
+| **Me** | Profile, saved posts, notifications, orders, events, giving, ID card, dark mode, classic portal |
+
+Rules that are enforced on the server (not just in the app): only **active partners** can sell; only **moderators** schedule a channel's live
+sessions; private channels are invisible to outsiders; blocked people never see each other; muted or suspended people can read but not post;
+media links must be YouTube/Vimeo or https images (nothing else can be embedded); photos are checked by content, not file name.
+
+## Head office (Master console, "Community" group)
+
+Reports queue (act or dismiss), Posts (hide / restore / pin / remove / mute author), People & access (verify, mute, suspend, restore),
+Channels (suspend / official badge / delete), **Teachings** (paste a YouTube link to add a message to everyone's Watch tab),
+**Live sessions** (official services), Marketplace listings (suspend / reinstate) and Orders (read-only), plus a Community widget on the dashboard.
+Several independent reports auto-hide a post until a moderator reviews it. Every moderation action is audited and the person affected is told.
+
+## Running it
+
+- Web: `npm run dev` (members/partners get the app at `/login`; add `?classic=1` for the old portals).
+- Install on a phone: open the site in Chrome/Safari and choose "Add to Home screen". Needs HTTPS (any real deployment).
+- Reminders for live sessions and meetings: `php artisan community:maintain` runs every 5 minutes through the scheduler.
+- Existing users get a community profile with `php artisan community:maintain --profiles` (new users get one automatically).
+
+## Photos
+
+Uploads go to **Vercel Blob** in production (set `BLOB_READ_WRITE_TOKEN`) and to `storage/app/public/community` locally.
+Videos are never uploaded: they are YouTube/Vimeo links, which is why the Apostle's messages should be uploaded to YouTube first.
+
+## Native apps (Capacitor)
+
+```
+npm run build:app          # builds the web bundle for the app and syncs it into android/
+npm run android:open       # opens Android Studio to run on a device / emulator
+cd android && gradlew assembleDebug     # debug APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+The native build calls the live server: set `VITE_API_BASE` and `VITE_ASSET_ORIGIN` (see `package.json` script / this repo's deployment notes).
+For the Play Store you need a signing key and `assembleRelease` (or "Generate Signed Bundle" in Android Studio). iOS needs a Mac: `npx cap add ios`.
+
+## Tests (kept in the repo's scratch scripts, run before each release)
+
+`community_verify` (57 checks: feed, polls, stories, follows/blocks, reports, channels, live, marketplace, security),
+`community_admin_verify` (17: every console action), `pastor_scope_verify` (9: a pastor sees only their zone).

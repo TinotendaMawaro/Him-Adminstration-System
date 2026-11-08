@@ -50,7 +50,7 @@ return [
         'mirror'             => (bool) env('MAIL_MIRROR_NOTIFICATIONS', true),
         // Categories that are never emailed.
         // event_registration: EventRegistrationMail already covers it. 'Thank you for your gift': the receipt email does.
-        'exclude_categories' => ['event_registration'],
+        'exclude_categories' => ['event_registration', 'community'],   // community = likes, follows, replies...: in-app only
         'exclude_titles'     => ['Thank you for your gift', 'Registration payment received'],
         // Emailed without the message body (content stays inside the portal).
         'private_categories' => ['prayer_center'],

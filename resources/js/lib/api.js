@@ -3,7 +3,8 @@ import axios from 'axios';
 // Use relative URL - works with Vite's proxy (localhost:5173 → localhost:8000)
 // or when frontend and backend are on same origins
 const api = axios.create({
-    baseURL: '/api',
+    // On the web the API is on the same origin ('/api'). A native app (Capacitor) is built with VITE_API_BASE=https://your-server/api.
+    baseURL: import.meta.env.VITE_API_BASE || '/api',
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',

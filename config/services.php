@@ -31,4 +31,10 @@ return [
         ],
     ],
 
+
+    // Photo storage for the community (Vercel Blob). Leave unset to store on the local public disk.
+    'blob' => [
+        'token' => env('BLOB_READ_WRITE_TOKEN'),
+    ],
+
 ];

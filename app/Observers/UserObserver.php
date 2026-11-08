@@ -26,6 +26,13 @@ class UserObserver
 
     public function created(User $user): void
     {
+        // Everyone gets a community identity (handle) the moment they have an account.
+        try {
+            app(\App\Services\Community\CommunityService::class)->profile($user);
+        } catch (\Throwable) {
+            // never block account creation on this; the profile is also created lazily on first use
+        }
+
         if ($user->is_active === false) {
             return;
         }

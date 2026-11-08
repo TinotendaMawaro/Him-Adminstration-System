@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Heartfelt</string>
+    <string name="title_activity_main">Heartfelt</string>
+    <string name="package_name">org.heartfeltonline.community</string>
+    <string name="custom_url_scheme">org.heartfeltonline.community</string>
+</resources>

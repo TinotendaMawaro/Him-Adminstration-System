@@ -20,3 +20,6 @@ Schedule::command('payments:reconcile-online')->everyFiveMinutes()->withoutOverl
 
 // Automated birthday greetings — daily at 07:00
 Schedule::command('greetings:send-automated')->dailyAt('07:00');
+
+// Community: live-session and meeting reminders, expired stories
+Schedule::command('community:maintain')->everyFiveMinutes()->withoutOverlapping();

@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make('Church Management'),
+                NavigationGroup::make('Community'),
                 NavigationGroup::make('Finance')->collapsed(),
                 NavigationGroup::make('Events')->collapsed(),
                 NavigationGroup::make('Reports'),
@@ -45,6 +46,7 @@ class AdminPanelProvider extends PanelProvider
                 Master\PastorsByRegionChart::class,
                 Master\AttendanceTrendChart::class,
                 Master\ZoneLeaderboard::class,
+                Master\CommunityStats::class,
             ]);
 
         return PortalDefaults::apply($panel, 'Heartfelt · Master', '#c9a84c');

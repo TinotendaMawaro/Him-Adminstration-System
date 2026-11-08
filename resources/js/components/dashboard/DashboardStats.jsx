@@ -4,274 +4,117 @@ import api from "../../lib/api.js";
 import PremiumCard from "./PremiumCard";
 
 // ============================================================================
-// ICON LIBRARY — thin-stroke, consistent 20×20px
+// The pastor's dashboard statistics: THEIR ZONE only, real numbers.
+// Trends and the little history charts come from the server (month on month, last 7 months).
+// Nothing is estimated and no church-wide totals are shown.
 // ============================================================================
 
-const Icons = {
-  zones: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-    </svg>
-  ),
-  pastors: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  ),
-  regions: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-    </svg>
-  ),
+const Icon = ({ d }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
+);
+
+const ICONS = {
+  members: "M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z",
+  joined: "M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z",
+  groups: "M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25",
+  pastors: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+  reports: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
+  giving: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
 
-// ============================================================================
-// DESIGN TOKENS — color variant mapping
-// ============================================================================
+const money = (n) => `$${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
-const variantMap = {
-  sky: "sky",
-  emerald: "emerald",
-  amber: "amber",
-  violet: "violet",
-};
-
-// ============================================================================
-// MOCK SPARKLINE DATA — replace with real historical API when available
-// Generates 7-day trend data for each metric (smooth curve simulation)
-// ============================================================================
-
-function generateSparkline(baseValue, volatility = 0.15) {
-  const data = [];
-  let current = baseValue * (1 - volatility);
-  for (let i = 0; i < 7; i++) {
-    const change = (Math.random() - 0.5) * 2 * volatility * baseValue;
-    current = Math.max(baseValue * 0.7, Math.min(baseValue * 1.3, current + change));
-    data.push(Math.round(current));
-  }
-  // Ensure last value equals base (trend-end anchored)
-  data[6] = baseValue;
-  return data;
-}
-
-// ============================================================================
-// METRIC DEFINITIONS — with color, navigation, and sparkline generator
-// ============================================================================
-
-const metricDefinitions = [
-  {
-    key: "total_zones",
-    label: "Total Zones",
-    icon: Icons.zones,
-    color: "sky",
-    variant: "sky",
-    navigateTo: "zones",
-    sparklineBase: 83,      // current count
-    sparklineVolatility: 0.08,
-  },
-  {
-    key: "total_pastors",
-    label: "Total Pastors",
-    icon: Icons.pastors,
-    color: "emerald",
-    variant: "emerald",
-    navigateTo: "pastors",
-    sparklineBase: 139,
-    sparklineVolatility: 0.05,
-  },
-  {
-    key: "total_regions",
-    label: "Total Regions",
-    icon: Icons.regions,
-    color: "amber",
-    variant: "amber",
-    navigateTo: "regions",
-    sparklineBase: 22,
-    sparklineVolatility: 0.02,
-  },
+/** key = field in /dashboard/metrics; navigateTo = pastor portal tab */
+const METRICS = [
+  { key: "total_active_members", label: "Active members", icon: "members", variant: "sky", navigateTo: "members" },
+  { key: "new_members_this_month", label: "New this month", icon: "joined", variant: "emerald", navigateTo: "members" },
+  { key: "total_home_groups", label: "Home groups", icon: "groups", variant: "violet", navigateTo: "homegroups" },
+  { key: "zone_pastors", label: "Pastors in my zone", icon: "pastors", variant: "amber", navigateTo: "zone" },
+  { key: "reports_this_month", label: "Reports this month", icon: "reports", variant: "sky", navigateTo: "reports" },
+  { key: "zone_giving_month", label: "Giving this month", icon: "giving", variant: "emerald", navigateTo: "reports", format: money },
 ];
-
-// ============================================================================
-// MAIN DASHBOARD STATS COMPONENT
-// ============================================================================
 
 export default function DashboardStats({ onNavigate }) {
   const queryClient = useQueryClient();
 
-   const {
-     data,
-     isLoading,
-     error,
-     isError,
-     refetch,
-   } = useQuery({
-     queryKey: ["dashboard-metrics"],
-     queryFn: async () => {
-       try {
-         const res = await api.get("/dashboard/metrics");
-         console.log('[DashboardStats] API response:', res);
-         console.log('[DashboardStats] Response status:', res.status);
-         console.log('[DashboardStats] Response data:', res.data);
-         if (!res.data.success) {
-           throw new Error(res.data.message || "Failed to fetch metrics");
-         }
-
-         // Enrich with trend + sparkline data
-         const enriched = enrichWithTrendsAndSparklines(res.data.data);
-         return enriched;
-       } catch (err) {
-         console.error('[DashboardStats] API error details:', err);
-         console.error('[DashboardStats] Error response:', err.response);
-         console.error('[DashboardStats] Error request:', err.request);
-         const message = (err.response && err.response.data && err.response.data.message) || err.message || "Network error";
-         throw new Error(message);
-       }
-     },
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["dashboard-metrics"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/dashboard/metrics");
+        if (!res.data.success) throw new Error(res.data.message || "Failed to fetch metrics");
+        return res.data.data;
+      } catch (err) {
+        throw new Error(err?.response?.data?.message || err.message || "Network error");
+      }
+    },
     staleTime: 30000,
-    cacheTime: 300000,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     retry: 2,
     retryDelay: 1000,
   });
 
-  // ==========================================================================
-  // ENRICHMENT: Add mock trends + deterministic sparklines
-  // In production, trends & sparklines will come from the backend
-  // ==========================================================================
-  function enrichWithTrendsAndSparklines(metrics) {
-    return {
-      ...metrics,
-      trends: {
-        total_zones: { value: 5.2, direction: "up" },
-        total_pastors: { value: 3.1, direction: "up" },
-        total_regions: { value: 0, direction: "neutral" },
-      },
-      sparklines: {
-        total_zones: generateSparkline(83, 0.08),
-        total_pastors: generateSparkline(139, 0.05),
-        total_regions: generateSparkline(22, 0.02),
-      },
-    };
-  }
+  const grid = "grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5";
 
-   // ==========================================================================
-   // LOADING STATE
-   // ==========================================================================
-   if (isLoading && !data) {
-     return (
-        <div
-          className="flex flex-nowrap gap-2 sm:gap-4 md:gap-5 overflow-visible"
-          role="status"
-          aria-label="Loading dashboard statistics"
-        >
-          {metricDefinitions.map((metric, index) => (
-            <div
-              key={metric.key}
-              className="flex-1 min-w-0 opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards]"
-              style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
-            >
-              <PremiumCard
-                title={metric.label}
-                value={0}
-                icon={metric.icon}
-                variant={metric.variant}
-                loading={true}
-              />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-  // ==========================================================================
-  // ERROR STATE
-  // ==========================================================================
-  if (isError) {
+  if (isLoading && !data) {
     return (
-      <div
-        className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-700"
-        role="alert"
-        aria-live="polite"
-      >
-        <div className="flex items-start gap-4">
-          <svg
-            className="w-6 h-6 flex-shrink-0 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-base">Unable to load statistics</p>
-            <p className="text-sm mt-1 text-rose-600 break-words">
-              {error.message}
-            </p>
-            <button
-              onClick={() => {
-                queryClient.invalidateQueries(["dashboard-metrics"]);
-                refetch();
-              }}
-              className="mt-4 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-colors"
-              aria-label="Retry loading dashboard statistics"
-            >
-              Retry
-            </button>
+      <div className={grid} role="status" aria-label="Loading dashboard statistics">
+        {METRICS.map((m, i) => (
+          <div key={m.key} className="min-w-0 opacity-0 animate-[fade-in-up_0.5s_ease-out_forwards]" style={{ animationDelay: `${i * 80}ms`, animationFillMode: "forwards" }}>
+            <PremiumCard title={m.label} value={0} icon={<Icon d={ICONS[m.icon]} />} variant={m.variant} loading />
           </div>
-        </div>
+        ))}
       </div>
     );
   }
 
-   // ==========================================================================
-   // SUCCESS STATE — render premium cards in a single responsive horizontal row
-   // ==========================================================================
-   return (
-     <div
-       className="flex flex-nowrap gap-2 sm:gap-4 md:gap-5 overflow-visible"
-       role="group"
-       aria-label="Dashboard statistics"
-     >
-       {metricDefinitions.map((metric, index) => {
-         const metricData = (data && data[metric.key]) || 0;
-         const trendData = data && data.trends && data.trends[metric.key];
-         const sparklineData = (data && data.sparklines && data.sparklines[metric.key]) || [];
+  if (isError) {
+    return (
+      <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-700" role="alert" aria-live="polite">
+        <p className="font-semibold text-base">Unable to load statistics</p>
+        <p className="text-sm mt-1 text-rose-600 break-words">{error.message}</p>
+        <button onClick={() => { queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] }); refetch(); }} className="mt-4 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-colors">Retry</button>
+      </div>
+    );
+  }
 
-         return (
-           <div
-             key={metric.key}
-             className="flex-1 min-w-0 opacity-0 animate-[fade-in-up_0.6s_ease-out_forwards]"
-             style={{
-               animationDelay: `${150 + index * 100}ms`,
-               animationFillMode: "forwards",
-             }}
-             role="group"
-             aria-label={`${metric.label} card`}
-           >
-             <PremiumCard
-               id={metric.key}
-               title={metric.label}
-               value={metricData}
-               icon={metric.icon}
-               variant={metric.variant}
-               trend={trendData && trendData.value}
-               trendDirection={trendData && trendData.direction ? trendData.direction : "up"}
-               onClick={() => onNavigate && onNavigate(metric.navigateTo)}
-               animateValue={true}
-               aria-label={`${metric.label}: ${metricData.toLocaleString()}`}
-             />
-           </div>
-         );
-       })}
-     </div>
-   );
+  const zone = data?.zone;
+  const visible = METRICS.filter((m) => data && data[m.key] !== null && data[m.key] !== undefined);
+
+  return (
+    <div>
+      {zone && (
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
+          {zone.name} <span className="font-normal normal-case tracking-normal">({zone.code}{zone.region ? ` · ${zone.region}` : ""})</span>: statistics for your zone only
+        </p>
+      )}
+      <div className={grid} role="group" aria-label="Zone statistics">
+        {visible.map((m, i) => {
+          const value = data[m.key];
+          const trend = data.trends?.[m.key];
+          const spark = data.sparklines?.[m.key] || [];
+          const text = m.format ? m.format(value) : value;
+          return (
+            <div key={m.key} className="min-w-0 opacity-0 animate-[fade-in-up_0.6s_ease-out_forwards]" style={{ animationDelay: `${120 + i * 80}ms`, animationFillMode: "forwards" }} role="group" aria-label={`${m.label} card`}>
+              <PremiumCard
+                id={m.key}
+                title={m.label}
+                value={m.format ? text : value}
+                icon={<Icon d={ICONS[m.icon]} />}
+                variant={m.variant}
+                trend={trend ? trend.value : undefined}
+                trendDirection={trend?.direction || "neutral"}
+                sparklineData={spark}
+                onClick={() => onNavigate && onNavigate(m.navigateTo)}
+                animateValue={!m.format}
+                aria-label={`${m.label}: ${m.format ? text : Number(value).toLocaleString()}`}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
-

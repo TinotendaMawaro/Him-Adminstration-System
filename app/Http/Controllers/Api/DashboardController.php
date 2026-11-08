@@ -8,6 +8,7 @@ use App\Models\HomeGroup;
 use App\Models\Member;
 use App\Models\Pastor;
 use App\Models\Region;
+use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Http\JsonResponse;
@@ -119,6 +120,11 @@ class DashboardController extends Controller
                 'last_updated' => now()->toISOString(),
             ];
 
+            // A pastor sees THEIR zone only: no church-wide totals, real month-on-month trends and history.
+            if ($role === 'pastor' && $zoneId) {
+                $data = array_merge($data, $this->pastorZoneMetrics((int) $zoneId));
+            }
+
             // Cache for 60 seconds
             Cache::put($cacheKey, $data, 60);
 
@@ -138,6 +144,50 @@ class DashboardController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    /**
+     * Everything the pastor's dashboard shows, for ONE zone: counts, this month vs last month, and the last 7 months of
+     * history for the little charts. Nothing here is estimated or invented.
+     */
+    private function pastorZoneMetrics(int $zoneId): array
+    {
+        $zone = Zone::with('region:id,name')->find($zoneId);
+        $start = now()->startOfMonth();
+        $monthly = function (callable $count) {
+            return collect(range(6, 0))->map(function ($ago) use ($count) {
+                $from = now()->startOfMonth()->subMonthsNoOverflow($ago);
+
+                return $count($from, $from->copy()->endOfMonth());
+            })->values()->all();
+        };
+        $trend = function (array $series) {
+            [$prev, $cur] = [$series[5] ?? 0, $series[6] ?? 0];
+            if ($prev <= 0) {
+                return null;                       // no earlier month to compare with: show no arrow rather than a made-up one
+            }
+            $pct = round(100 * ($cur - $prev) / $prev, 1);
+
+            return ['value' => abs($pct), 'direction' => $pct > 0 ? 'up' : ($pct < 0 ? 'down' : 'neutral')];
+        };
+
+        $joined = $monthly(fn ($f, $t) => Member::where('zone_id', $zoneId)->whereBetween('created_at', [$f, $t])->count());
+        $giving = $monthly(fn ($f, $t) => (float) DB::table('payments')->where('zone_id', $zoneId)->whereNull('deleted_at')->where('status', 'completed')->whereBetween('paid_at', [$f, $t])->sum('amount'));
+        $reports = $monthly(fn ($f, $t) => Report::where('zone_id', $zoneId)->whereBetween('report_date', [$f->toDateString(), $t->toDateString()])->count());
+
+        return [
+            'zone'               => $zone ? ['id' => $zone->id, 'name' => $zone->name, 'code' => $zone->code, 'region' => $zone->region?->name] : null,
+            'zone_pastors'       => (int) Pastor::where('zone_id', $zoneId)->count(),
+            'reports_this_month' => (int) end($reports),
+            'zone_giving_month'  => round((float) end($giving), 2),
+            'zone_giving_year'   => round((float) DB::table('payments')->where('zone_id', $zoneId)->whereNull('deleted_at')->where('status', 'completed')->where('paid_at', '>=', now()->startOfYear())->sum('amount'), 2),
+            'trends'             => array_filter(['new_members_this_month' => $trend($joined), 'zone_giving_month' => $trend($giving), 'reports_this_month' => $trend($reports)]),
+            'sparklines'         => ['new_members_this_month' => $joined, 'zone_giving_month' => $giving, 'reports_this_month' => $reports],
+            // Church-wide totals are not a pastor's business.
+            'total_zones'        => null,
+            'total_pastors'      => null,
+            'total_regions'      => null,
+        ];
     }
 
     /**
