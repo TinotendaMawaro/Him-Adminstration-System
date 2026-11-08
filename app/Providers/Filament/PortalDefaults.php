@@ -45,7 +45,7 @@ class PortalDefaults
             ->login()
             ->passwordReset()
             ->brandName($brand)
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon('/images/favicon.ico')
             ->font('Inter')
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
