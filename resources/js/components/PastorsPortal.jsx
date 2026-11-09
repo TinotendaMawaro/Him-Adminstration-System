@@ -777,10 +777,10 @@ const Header = ({ title, user, onLogout, onOpenProfile, onNavigate }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     return (
-        <header className="relative flex items-center justify-between px-8 py-5 border-b border-gray-100/50 bg-white/40 backdrop-blur-xl">
+        <header className="relative flex items-center justify-between gap-2 px-3 py-2.5 sm:px-6 lg:px-8 lg:py-5 border-b border-gray-100/50 bg-white/40 backdrop-blur-xl">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400/30 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-400/20 to-transparent"></div>
-            <div className="flex items-center gap-4 ml-12">
+            <div className="flex items-center gap-2 sm:gap-4 lg:ml-12 min-w-0">
                 {title !== "Dashboard" && (
                     <button
                         onClick={() => onNavigate && onNavigate("dashboard")}
@@ -802,23 +802,23 @@ const Header = ({ title, user, onLogout, onOpenProfile, onNavigate }) => {
                         </svg>
                     </button>
                 )}
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 capitalize tracking-tight">
+                <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-bold text-gray-900 capitalize tracking-tight truncate">
                         {title}
                     </h2>
-                    <p className="text-gray-500 text-sm mt-0.5">
+                    <p className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">
                         Welcome back, {user?.name || "Pastor"}
                     </p>
                 </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
                 <NotificationBell userId={user?.id} onNavigate={onNavigate} />
                 <div className="relative">
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center gap-3 pl-4 border-l border-gray-200 hover:bg-white/50 rounded-xl p-1 transition-all duration-300"
+                        className="flex items-center gap-1.5 sm:gap-3 sm:pl-4 sm:border-l border-gray-200 hover:bg-white/50 rounded-xl p-1 transition-all duration-300"
                     >
-                        <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg shadow-gold-500/20">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-lg shadow-gold-500/20">
                             {user?.profile_photo ? (
                                 <img
                                     src={user.profile_photo}
@@ -3237,7 +3237,7 @@ export default function PastorsPortal({ onLogout }) {
                 className={`pl-0 lg:pl-64 flex flex-col min-h-screen w-full ${isMobile ? "pb-20" : ""}`}
             >
                 {/* Mobile top bar */}
-                <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30">
+                <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-xl border-b border-gray-100 relative z-30">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
@@ -3266,35 +3266,6 @@ export default function PastorsPortal({ onLogout }) {
                         <p className="text-xs text-gray-500">Pastoral Portal</p>
                     </div>
 
-                    <div className="mt-4">
-                        <ProfilePictureUpload
-                            currentPic={user?.profile_photo}
-                            onUpdate={(newPic) =>
-                                updateUser({ profile_photo: newPic })
-                            }
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto">
-                        <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors relative">
-                            <Icons.Bell className="w-5 h-5 text-gray-600" />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
-                        </button>
-                        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg">
-                            {user?.profile_photo ? (
-                                <img
-                                    src={user.profile_photo}
-                                    alt={user.name}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
-                                    <span className="text-white font-semibold text-sm">
-                                        {user?.name?.charAt(0) || "P"}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
 
                 <div className="flex flex-col flex-1 overflow-hidden">

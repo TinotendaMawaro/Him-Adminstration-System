@@ -10,7 +10,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "build:app": "vite build --outDir dist-app --emptyOutDir && cap sync android",
+        "build:app": "vite build --mode app --outDir dist-app --emptyOutDir && cap sync android",
         "android:open": "cap open android"
     },
     "dependencies": {

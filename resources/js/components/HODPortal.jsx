@@ -671,7 +671,8 @@ const HODLayout = ({ user, activeTab, setActivePage, onLogout, children }) => {
                 .mpm-mobile-tab { position: relative; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; height: 100%; }
                 .mpm-mobile-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
                 .mpm-mobile-icon.is-active { color: #fff; background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.1)); transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 18px -8px rgba(212,175,55,0.5); }
-                .mpm-mobile-label { font-size: 9px; font-weight: 500; color: #94a3b8; transition: color 0.2s; }
+                .mpm-mobile-label { font-size: 9px; font-weight: 500; color: #94a3b8; transition: color 0.2s; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+                .mpm-mobile-tab { min-width: 0; flex: 1 1 0; }
                 .mpm-mobile-label.is-active { color: #fff; font-weight: 600; }
                 .mpm-mobile-dot { position: absolute; top: 4px; width: 4px; height: 4px; border-radius: 50%; background: #d4af37; }
                 .mpm-mobile-badge { position: absolute; top: -2px; right: -2px; min-width: 14px; height: 14px; padding: 0 3px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ef4444, #e11d48); color: #fff; font-size: 8px; font-weight: 700; border-radius: 999px; }

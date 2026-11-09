@@ -239,16 +239,16 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
     // ─── JSX ──────────────────────────────────────────────────────────────────
 
     const transitionRef = useRef(null);
-    const inputBase = "px-2 py-1.5 rounded text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
+    const inputBase = "px-3 py-2.5 md:px-2 md:py-1.5 rounded text-base md:text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
 
     return (
-        <div className="relative flex justify-center items-center min-h-screen font-sans bg-slate-900 overflow-hidden" role="main" aria-label="Authentication Page">
+        <div className="relative flex justify-center items-center min-h-screen p-3 md:p-0 font-sans bg-slate-900 overflow-hidden" role="main" aria-label="Authentication Page">
             <AnimatedBackground />
 
-            <div className="relative w-full max-w-4xl flex rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative w-full max-w-4xl flex flex-col md:flex-row gap-3 md:gap-0 rounded-2xl md:overflow-hidden shadow-2xl">
 
                 {/* ── Left panel ────────────────────────────────────────────── */}
-                <div className="w-2/3 p-4 flex flex-col justify-between backdrop-blur-md bg-white/10 border border-white/10 rounded-l-2xl shadow-2xl relative overflow-hidden h-[570px] md:h-[530px] transition-all duration-500">
+                <div className="order-2 md:order-none w-full md:w-2/3 p-4 flex flex-col justify-between gap-3 backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl md:rounded-r-none shadow-2xl relative overflow-hidden min-h-[460px] md:h-[530px] transition-all duration-500">
 
                     {/* Header */}
                     <div className="text-center mb-3">
@@ -269,7 +269,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                     </div>
 
                     {/* Forms */}
-                    <div className="flex-1 flex flex-col justify-center overflow-y-auto">
+                    <div className="flex-1 flex flex-col justify-center md:overflow-y-auto py-2">
                         <SwitchTransition mode="out-in">
                         <CSSTransition key={mode} nodeRef={transitionRef} timeout={300} classNames="fade" unmountOnExit>
                             <form ref={transitionRef} onSubmit={handleSubmit} className="flex flex-col space-y-2 px-1" noValidate>
@@ -471,37 +471,37 @@ onBlur={() => {
                 </div>
 
                 {/* ── Right panel ───────────────────────────────────────────── */}
-                <div className="w-1/3 p-4 md:p-8 flex flex-col justify-center items-center backdrop-blur-md bg-white/10 border border-white/10 rounded-r-2xl shadow-2xl" role="navigation">
-                    <h3 className="font-bold text-base md:text-lg mb-4 tracking-wide text-white/80">Quick Access</h3>
-                    <div className="space-y-2 md:space-y-3 w-full">
+                <div className="order-1 md:order-none w-full md:w-1/3 p-3 md:p-8 flex flex-col justify-center items-center backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl md:rounded-l-none shadow-2xl" role="navigation">
+                    <h3 className="hidden md:block font-bold text-base md:text-lg mb-4 tracking-wide text-white/80">Quick Access</h3>
+                    <div className="grid grid-cols-3 gap-2 md:block md:space-y-3 w-full">
                         {[
-                            { key: "code",     label: "Login With Code",  sub: "Pastors" },
-                            { key: "email",    label: "Login With Email", sub: "Members & Partners" },
-                            { key: "register", label: "Register",         sub: "New Members" },
-                        ].map(({ key, label, sub }) => (
+                            { key: "code",     label: "Login With Code",  short: "Code",     sub: "Pastors" },
+                            { key: "email",    label: "Login With Email", short: "Email",    sub: "Members & Partners", subShort: "Members" },
+                            { key: "register", label: "Register",         short: "Register", sub: "New Members" },
+                        ].map(({ key, label, short, sub, subShort }) => (
                             <button
                                 key={key}
                                 onClick={() => { setMode(key); setErrors({}); setTouched({}); }}
                                 aria-pressed={mode === key}
-                                className={`w-full py-2 md:py-3 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-lg
+                                className={`w-full min-h-[52px] py-2 md:py-3 px-1 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform md:hover:scale-[1.02] shadow-lg
                                     ${mode === key
                                     ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30"
                                     : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"}`}
                             >
-                                <div>{label}</div>
-                                <div className="text-[10px] opacity-60 font-normal mt-0.5">{sub}</div>
+                                <div><span className="md:hidden">{short}</span><span className="hidden md:inline">{label}</span></div>
+                                <div className="text-[10px] opacity-60 font-normal mt-0.5 truncate"><span className="md:hidden">{subShort || sub}</span><span className="hidden md:inline">{sub}</span></div>
                             </button>
                         ))}
                     </div>
 
-                    <div className="mt-6 text-center">
+                    <div className="hidden md:block mt-6 text-center">
                         {mode === "code"     && <p className="text-white/30 text-[10px] leading-relaxed">Your unique code was<br />provided by admin</p>}
                         {mode === "email"    && <p className="text-white/30 text-[10px] leading-relaxed">Use your registered<br />email and password</p>}
                         {mode === "register" && <p className="text-white/30 text-[10px] leading-relaxed">After registering you can<br />request to join a department</p>}
                     </div>
 
                     {/* Head-office staff sign in to their own portals (separate from the member / pastor sign-in above). */}
-                    <div className="mt-5 w-full border-t border-white/10 pt-4" aria-label="Staff portals">
+                    <div className="hidden md:block mt-5 w-full border-t border-white/10 pt-4" aria-label="Staff portals">
                         <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Staff portals</p>
                         <div className="grid grid-cols-1 gap-1.5">
                             {[
@@ -518,6 +518,16 @@ onBlur={() => {
                     </div>
                 </div>
 
+
+                {/* Staff portals on phones: sits under the sign-in form instead of squeezing beside it. */}
+                <div className="order-3 md:hidden w-full rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md p-3" aria-label="Staff portals">
+                    <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Staff portals</p>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[{ href: "/admin/login", label: "Master" }, { href: "/finance/login", label: "Finance" }, { href: "/events/login", label: "Events" }].map(({ href, label }) => (
+                            <a key={href} href={href} className="flex min-h-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-xs font-semibold text-white/80 active:bg-white/20">{label}</a>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

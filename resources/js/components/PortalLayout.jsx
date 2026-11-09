@@ -102,6 +102,7 @@ const SidebarItem = ({ icon, label, to, active, onClick, badge }) => (
 export default function PortalLayout({ children, user, activePage, setActivePage, onLogout, children: childContent }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [notifications] = useState([
     { id: 1, title: "Report Due", message: "Weekly finance report is due tomorrow", time: "2h ago" },
     { id: 2, title: "New Member", message: "John Doe registered in your zone", time: "5h ago" },
@@ -118,9 +119,11 @@ export default function PortalLayout({ children, user, activePage, setActivePage
   ];
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-sky-50 via-white to-gold-50/30">
+    <div className="flex min-h-screen bg-gradient-to-br from-sky-50 via-white to-gold-50/30 overflow-x-hidden">
+      {/* Phones: the sidebar is a drawer */}
+      {menuOpen && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
       {/* Sidebar */}
-      <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-100 flex flex-col shadow-lg">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:translate-x-0 bg-white/95 lg:bg-white/80 backdrop-blur-xl border-r border-gray-100 flex flex-col shadow-lg ${menuOpen ? "translate-x-0" : "-translate-x-full"}`} onClick={(e) => { if (e.target.closest("a,button")) setMenuOpen(false); }}>
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
@@ -175,11 +178,14 @@ export default function PortalLayout({ children, user, activePage, setActivePage
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-6 shadow-sm">
-          <div>
-            <h2 className="text-gray-900 font-semibold capitalize">{activePage.replace("-", " ")}</h2>
+        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between gap-2 px-3 sm:px-6 shadow-sm sticky top-0 z-30">
+          <div className="flex items-center gap-2 min-w-0">
+            <button type="button" className="lg:hidden p-2 -ml-1 rounded-xl hover:bg-gray-100" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
+              <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <h2 className="text-gray-900 font-semibold capitalize truncate">{activePage.replace("-", " ")}</h2>
           </div>
           
           <div className="flex items-center gap-4">
@@ -192,7 +198,7 @@ export default function PortalLayout({ children, user, activePage, setActivePage
             </div>
 
             {/* User Profile */}
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+            <div className="flex items-center gap-3 sm:pl-4 sm:border-l border-gray-200">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center shadow-md shadow-gold-500/20">
                 <span className="text-white font-semibold text-sm">
                   {user?.name?.charAt(0) || "P"}
@@ -207,7 +213,7 @@ export default function PortalLayout({ children, user, activePage, setActivePage
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-6 overflow-y-auto min-w-0">
           {children}
         </div>
       </main>

@@ -1031,6 +1031,11 @@ export default function MembersPortal({ onLogout }) {
                     font-weight: 500;
                     color: #94a3b8;
                     transition: color 0.2s;
+                    white-space: nowrap;
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    line-height: 1.2;
                 }
                 .mpm-mobile-label.is-active { color: #fff; font-weight: 600; }
                 .mpm-mobile-dot {

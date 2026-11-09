@@ -454,8 +454,8 @@ export default function PremiumCard({
 
       {/* Footer with sparkline */}
       {sparklineData && sparklineData.length > 0 && (
-        <footer className="premium-card__footer">
-          <div className="flex items-center justify-between">
+        <footer className="premium-card__footer hidden sm:block">
+          <div className="flex flex-col items-start gap-1 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-w-0 [&_svg]:max-w-full">
             <Sparkline data={sparklineData} variant={safeVariant} size="md" />
             <span className="text-[11px] text-[var(--color-text-tertiary)] tracking-normal">
               last 7 days
