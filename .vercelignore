@@ -28,3 +28,7 @@ update_home_group_leaders.php
 .env
 .env.*
 !.env.example
+android
+dist-app
+.gradle
+scripts/verify
