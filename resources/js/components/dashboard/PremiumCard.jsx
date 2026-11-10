@@ -27,6 +27,7 @@ import { useState, useEffect, useRef } from "react";
 
 function AnimatedCounter({
   value,
+  className = "",
   duration = 800,
   prefix = "",
   suffix = "",
@@ -105,7 +106,7 @@ function AnimatedCounter({
   return (
     <span
       ref={counterRef}
-      className="tabular-nums tracking-tight"
+      className={`tabular-nums tracking-tight ${className}`}
       aria-live="polite"
       aria-atomic="true"
     >

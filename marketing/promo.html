@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heartfelt Community · Promo</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+    html, body { width: 1280px; height: 720px; overflow: hidden; background: #060f1d; color: #fff; }
+    .stage { position: relative; width: 1280px; height: 720px; overflow: hidden;
+        background: radial-gradient(60% 60% at 85% 5%, rgba(47,107,255,.40), transparent 70%), radial-gradient(55% 55% at 5% 100%, rgba(201,168,76,.28), transparent 70%), linear-gradient(160deg, #08172b, #0f2744 60%, #132f55); }
+    .scene { position: absolute; inset: 0; padding: 70px 90px; opacity: 0; transform: scale(1.03); transition: opacity .7s ease, transform 1.2s ease; pointer-events: none; display: flex; align-items: center; }
+    .scene.on { opacity: 1; transform: scale(1); }
+    .center { justify-content: center; text-align: center; flex-direction: column; }
+    .kicker { font-size: 15px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold2); font-weight: 700; }
+    h1 { font-size: 78px; line-height: 1.03; letter-spacing: -.01em; }
+    h2 { font-size: 58px; line-height: 1.08; }
+    p.sub { font-size: 24px; line-height: 1.45; color: #c4d3ea; margin-top: 18px; max-width: 560px; }
+    .rise { opacity: 0; transform: translateY(40px); transition: opacity .8s ease, transform .9s cubic-bezier(.2,.8,.2,1); }
+    .on .rise { opacity: 1; transform: translateY(0); }
+    .on .d1 { transition-delay: .25s; } .on .d2 { transition-delay: .5s; } .on .d3 { transition-delay: .8s; } .on .d4 { transition-delay: 1.1s; }
+    .split { display: flex; align-items: center; gap: 60px; width: 100%; }
+    .split > div { flex: 1; min-width: 0; }
+    .phones { display: flex; gap: 22px; justify-content: center; align-items: center; }
+    .phone.pp { width: 258px; }
+    .tilt-l { transform: rotate(-5deg) translateY(30px); } .tilt-r { transform: rotate(4deg) translateY(-24px); }
+    .logo { height: 96px; background: #fff; border-radius: 20px; padding: 10px 20px; margin-bottom: 30px; }
+    .shot { width: 560px; border-radius: 16px; box-shadow: 0 30px 60px -22px rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.15); }
+    .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; justify-content: center; }
+    .chip { border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); border-radius: 99px; padding: 12px 22px; font-size: 20px; font-weight: 600; }
+    .qr { width: 220px; height: 220px; background: #fff; padding: 14px; border-radius: 22px; margin-top: 26px; }
+    .bar { position: absolute; left: 0; bottom: 0; height: 5px; width: 0; background: linear-gradient(90deg, var(--gold), #f6e2a0); transition: width 48s linear; }
+    .bar.run { width: 100%; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+    <section class="scene center" id="s0">
+        <img class="logo rise" src="assets/logo.webp" alt="">
+        <h1 class="serif rise d1">Heartfelt <span class="gold-text">Community</span></h1>
+        <p class="sub rise d2" style="max-width:none">The app for the whole church family</p>
+    </section>
+
+    <section class="scene" id="s1">
+        <div class="split">
+            <div>
+                <p class="kicker rise">Introducing</p>
+                <h2 class="serif rise d1">Your church family, <span class="gold-text">in your pocket.</span></h2>
+                <p class="sub rise d2">Connect, grow, give and serve, all in one beautiful app.</p>
+            </div>
+            <div class="phones"><div class="phone pp tilt-l rise d1"><img src="assets/m-14-market.png" alt=""></div><div class="phone pp tilt-r rise d2"><img src="assets/m-01-home.png" alt=""></div></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s2">
+        <div class="split">
+            <div class="phones"><div class="phone pp rise d1"><img src="assets/m-01-home.png" alt=""></div><div class="phone pp rise d2" style="margin-top:50px"><img src="assets/m-05-comments.png" alt=""></div></div>
+            <div><p class="kicker rise">Community</p><h2 class="serif rise d1">Share. Follow. <span class="gold-text">Encourage.</span></h2><p class="sub rise d2">Posts, photos, videos, polls and stories: like Facebook, Instagram, TikTok and X, made for the church.</p></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s3">
+        <div class="split">
+            <div><p class="kicker rise">Watch</p><h2 class="serif rise d1">The Apostle’s messages, <span class="gold-text">live and on demand</span></h2><p class="sub rise d2">Teachings library, scheduled live services and reminders.</p></div>
+            <div class="phones"><div class="phone pp rise d1"><img src="assets/m-06-watch-teachings.png" alt=""></div><div class="phone pp rise d2" style="margin-top:50px"><img src="assets/m-07-watch-live.png" alt=""></div></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s4">
+        <div class="split">
+            <div class="phones"><div class="phone pp rise d1"><img src="assets/m-09-channels.png" alt=""></div><div class="phone pp rise d2" style="margin-top:50px"><img src="assets/m-10-channel-chat.png" alt=""></div></div>
+            <div><p class="kicker rise">Channels</p><h2 class="serif rise d1">Chat. Set goals. <span class="gold-text">Hold meetings.</span></h2><p class="sub rise d2">Create a channel for your group, ministry or friends.</p></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s5">
+        <div class="split">
+            <div><p class="kicker rise">Marketplace</p><h2 class="serif rise d1">Partners sell. <span class="gold-text">Everyone supports.</span></h2><p class="sub rise d2">Order directly or ask for a quote, all within the family.</p></div>
+            <div class="phones"><div class="phone pp rise d1"><img src="assets/m-14-market.png" alt=""></div></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s6">
+        <div class="split">
+            <div class="phones"><div class="phone pp rise d1"><img src="assets/m-20-idcard.png" alt=""></div><div class="phone pp rise d2" style="margin-top:50px"><img src="assets/m-18-notifications.png" alt=""></div></div>
+            <div><p class="kicker rise">My church</p><h2 class="serif rise d1">Home groups, prayer and <span class="gold-text">your digital ID</span></h2><p class="sub rise d2">A scannable ID card with your name, zone and region, ready to download or print.</p></div>
+        </div>
+    </section>
+
+    <section class="scene" id="s7">
+        <div class="split">
+            <div><p class="kicker rise">Leaders</p><h2 class="serif rise d1">Pastors lead their zones.<br><span class="gold-text">Head office sees it all.</span></h2><p class="sub rise d2">Live statistics, reports, broadcasts and community moderation.</p></div>
+            <div style="position:relative;height:440px"><img class="shot rise d1" src="assets/pastor-dashboard.png" alt="" style="position:absolute;right:0;top:0"><img class="shot rise d3" src="assets/admin-dashboard.png" alt="" style="position:absolute;right:60px;top:170px;width:520px"></div>
+        </div>
+    </section>
+
+    <section class="scene center" id="s8">
+        <p class="kicker rise">Safe · private · verified</p>
+        <h2 class="serif rise d1">Built to protect <span class="gold-text">the family</span></h2>
+        <div class="chips rise d2"><span class="chip">🔑 Role-based access</span><span class="chip">🛡 Moderated content</span><span class="chip">🪪 Verifiable ID cards</span><span class="chip">🔒 Encrypted</span><span class="chip">💳 Secure payments</span></div>
+    </section>
+
+    <section class="scene center" id="s9">
+        <h1 class="serif rise">Join the <span class="gold-text">family</span></h1>
+        <p class="sub rise d1" style="max-width:none">Scan, sign up with your zone code and add it to your home screen.</p>
+        <img class="qr rise d2" id="qr" alt="QR code">
+        <p class="rise d3" style="margin-top:18px;font-size:26px;font-weight:700;color:var(--gold2)">him-administration-system.vercel.app</p>
+    </section>
+
+    <div class="bar" id="bar"></div>
+</div>
+<script src="qr.js"></script>
+<script>
+    // [start, end] in seconds for each scene
+    var T = [[0, 4.5], [4.5, 10], [10, 15.5], [15.5, 21], [21, 26.5], [26.5, 32], [32, 38], [38, 44.5], [44.5, 49.5], [49.5, 56]];
+    var scenes = T.map(function (_, i) { return document.getElementById('s' + i); });
+    function show(i) { scenes.forEach(function (s, j) { s.classList.toggle('on', i === j); }); }
+    window.__total = T[T.length - 1][1];
+    window.__started = Date.now();
+    T.forEach(function (t, i) { setTimeout(function () { show(i); }, t[0] * 1000 + 300); });
+    document.getElementById('bar').style.transitionDuration = window.__total + 's';
+    setTimeout(function () { document.getElementById('bar').classList.add('run'); }, 100);
+    setTimeout(function () { window.__done = true; }, window.__total * 1000 + 600);
+</script>
+</body>
+</html>

@@ -166,7 +166,7 @@ class MemberController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isMember() || !$user->zone_id) {
+        if (!in_array($user->role?->value ?? $user->role, ['member', 'partner', 'hod'], true) || !$user->zone_id) {
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
@@ -194,7 +194,7 @@ class MemberController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isMember() || !$user->zone_id) {
+        if (!in_array($user->role?->value ?? $user->role, ['member', 'partner', 'hod'], true) || !$user->zone_id) {
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 

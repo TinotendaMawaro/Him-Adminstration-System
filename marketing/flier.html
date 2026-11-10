@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heartfelt Community · Flier</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+    @page { size: A4; margin: 0; }
+    body { width: 794px; height: 1123px; overflow: hidden; background: var(--navy); }
+    .page { position: relative; width: 794px; height: 1123px; overflow: hidden; color: #fff;
+        background: radial-gradient(80% 45% at 85% 8%, rgba(47,107,255,.55), transparent 70%), radial-gradient(70% 40% at 0% 100%, rgba(201,168,76,.32), transparent 70%), linear-gradient(170deg, #0a1b33, #0f2744 55%, #14305a); }
+    .top { display: flex; align-items: center; gap: 14px; padding: 34px 46px 0; }
+    .top img { height: 50px; background: #fff; border-radius: 12px; padding: 4px 8px; }
+    .top b { letter-spacing: .28em; font-size: 13px; color: var(--gold2); font-weight: 700; }
+    .hero { padding: 26px 46px 0; position: relative; z-index: 2; width: 58%; }
+    .tag { display: inline-block; border: 1px solid rgba(232,207,138,.5); color: var(--gold2); background: rgba(232,207,138,.1); border-radius: 99px; padding: 6px 14px; font-size: 11px; letter-spacing: .18em; font-weight: 700; text-transform: uppercase; }
+    h1 { font-size: 56px; line-height: 1.02; margin-top: 16px; letter-spacing: -.01em; }
+    .lead { margin-top: 16px; font-size: 16.5px; line-height: 1.5; color: #cbd8ec; max-width: 330px; }
+    .phones { position: absolute; right: 30px; top: 96px; width: 340px; height: 520px; z-index: 1; }
+    .phones .phone { position: absolute; width: 184px; }
+    .phones .p1 { left: 0; top: 70px; transform: rotate(-6deg); }
+    .phones .p2 { left: 120px; top: 0; transform: rotate(4deg); z-index: 2; }
+    .grid { position: absolute; left: 46px; right: 46px; top: 690px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; z-index: 3; }
+    .card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 18px; padding: 16px 16px 15px; backdrop-filter: blur(6px); }
+    .card .ic { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; background: linear-gradient(135deg, var(--gold), #f2dc9a); color: #1c1503; }
+    .card h3 { font-size: 15px; margin-top: 10px; }
+    .card p { font-size: 12px; line-height: 1.4; color: #b8c7de; margin-top: 4px; }
+    .cta { position: absolute; left: 46px; right: 46px; bottom: 38px; display: flex; align-items: center; gap: 22px; background: #fff; color: var(--ink); border-radius: 24px; padding: 18px 22px; z-index: 3; box-shadow: 0 20px 40px -18px rgba(0,0,0,.6); }
+    .cta .qr { width: 104px; height: 104px; flex: none; }
+    .cta h2 { font-size: 24px; line-height: 1.15; }
+    .cta p { font-size: 13px; color: var(--mut); margin-top: 6px; line-height: 1.45; }
+    .cta .url { display: inline-block; margin-top: 9px; background: var(--navy); color: #fff; padding: 7px 13px; border-radius: 10px; font-weight: 700; font-size: 13px; }
+    .foot { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 10px; color: #7f93b3; z-index: 3; }
+</style>
+</head>
+<body>
+<div class="page">
+    <div class="top"><img src="assets/logo.webp" alt=""><b>HEARTFELT</b></div>
+
+    <div class="hero">
+        <span class="tag">New · Mobile app</span>
+        <h1 class="serif">Your church family, <span class="gold-text">in your pocket.</span></h1>
+        <p class="lead">Connect, grow, give and serve with Heartfelt International Ministries, all in one beautiful app.</p>
+    </div>
+
+    <div class="phones">
+        <div class="phone p1"><img src="assets/m-14-market.png" alt=""></div>
+        <div class="phone p2"><img src="assets/m-01-home.png" alt=""></div>
+    </div>
+
+    <div class="grid">
+        <div class="card"><div class="ic">💬</div><h3>Community</h3><p>Share posts, photos and short videos. Follow, like and comment with your church family.</p></div>
+        <div class="card"><div class="ic">▶</div><h3>Watch &amp; Live</h3><p>Teachings from Apostle Tavonga Vutabwashe, plus live services with reminders.</p></div>
+        <div class="card"><div class="ic">👥</div><h3>Channels</h3><p>Create channels for chat, goals, meetings and live sessions with your group.</p></div>
+        <div class="card"><div class="ic">🛍</div><h3>Marketplace</h3><p>Partners sell products and services. Order, or ask for a quote, in a tap.</p></div>
+        <div class="card"><div class="ic">🏠</div><h3>My church</h3><p>Join a home group or department and send private prayer requests to your pastor.</p></div>
+        <div class="card"><div class="ic">🪪</div><h3>Digital ID card</h3><p>Your name, zone, region and a scannable QR code. Download or print it.</p></div>
+    </div>
+
+    <div class="cta">
+        <img class="qr" id="qr" alt="QR code">
+        <div>
+            <h2 class="serif">Join us today</h2>
+            <p>Scan the code or open the link on your phone, sign up with your zone code and tap “Add to Home screen”. Android app also available.</p>
+            <span class="url">him-administration-system.vercel.app</span>
+        </div>
+    </div>
+    <div class="foot">© 2026 Heartfelt International Ministries · support@heartfeltonline.org</div>
+</div>
+<script src="qr.js"></script>
+</body>
+</html>

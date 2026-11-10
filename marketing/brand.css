@@ -1,0 +1,24 @@
+/* Shared brand styles for the flier, presentation and promo video. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800;900&display=swap");
+
+:root {
+    --navy: #0f2744;
+    --navy2: #1e3a5f;
+    --blue: #2f6bff;
+    --gold: #c9a84c;
+    --gold2: #e8cf8a;
+    --ink: #0b1626;
+    --mut: #64748b;
+    --paper: #ffffff;
+    --soft: #f2f6fc;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { font-family: Inter, "Segoe UI", Arial, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.serif { font-family: "Playfair Display", Georgia, "Times New Roman", serif; }
+.gold-text { background: linear-gradient(90deg, #f6e2a0, #c9a84c 60%, #f6e2a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* A phone frame around an app screenshot */
+.phone { position: relative; border-radius: 38px; background: #0a1220; padding: 9px; box-shadow: 0 30px 60px -20px rgba(2, 8, 23, .55), 0 0 0 2px #26364f inset; }
+.phone img { display: block; width: 100%; border-radius: 30px; }
+.phone::before { content: ""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 34%; height: 17px; border-radius: 12px; background: #0a1220; z-index: 2; }
