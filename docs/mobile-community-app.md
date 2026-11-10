@@ -55,3 +55,23 @@ For the Play Store you need a signing key and `assembleRelease` (or "Generate Si
 ## Profile photo
 
 Every role must have a profile photo: a prompt blocks the app/portal until one is uploaded. Photos are content-checked and stored in Vercel Blob.
+
+## Partnership
+
+Members see their partnership the moment they land (a strip above the tabs), and get a first-time tour that says whether they are a partner.
+
+- Status comes from `PartnershipService`: **none, pending, active, expiring** (last 7 days), **expired**. The renewal date lives in `partners.renewal_date`.
+- A completed *partnership* payment (ClicknPay) renews the partner for another month / quarter / year automatically.
+- `php artisan partners:lifecycle` (daily, also called by the cron route) expires lapsed partners, sends renewal reminders and, once a month, invites members who are not partners and asks expired partners to renew.
+- **Expired partners lose partner benefits:** the whole marketplace (`/api/market/*` returns 403 `partnership_expired`) and teachings marked *Partners only* in the Master console. Members who never partnered are not affected.
+
+## Sign-in, sign-out and leaving
+
+An animated welcome plays after every sign-in (all roles). Signing out asks first, then shows a goodbye. Back at the first screen asks "Leave Heartfelt?" (Yes / No); on Android this uses `@capacitor/app`. Web portals for pastors and HODs sign out after 30 minutes of inactivity.
+
+## Data
+
+Nothing is hard-coded in the front end: events, partnership packages, department members, zone details and achievements all come from the database. The church calendar lives in `database/seeders/ChurchCalendar2026Seeder.php`.
+
+After deploying a version with new migrations run on the production database:
+`php artisan migrate --force` then `php artisan db:seed --class=ChurchCalendar2026Seeder --force`.
