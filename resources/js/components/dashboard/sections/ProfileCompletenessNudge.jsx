@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../lib/api";
-import { Icons } from "../../MembersPortal";
+import { Icons } from "../../icons";
 
 export default function ProfileCompletenessNudge({ user, onNavigateToProfile }) {
   const { data } = useQuery({

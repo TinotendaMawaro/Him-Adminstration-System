@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 import SpiritualJourney from "../dashboard/sections/SpiritualJourney";
 
 export default function Member360View({ memberId, onClose }) {

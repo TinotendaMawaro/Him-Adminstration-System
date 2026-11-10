@@ -190,6 +190,11 @@ class User extends Authenticatable implements \Filament\Models\Contracts\Filamen
      */
     public function getProfilePhotoAttribute($value)
     {
-        return $value ? Storage::url($value) : null;
+        if (!$value) {
+            return null;
+        }
+
+        // Photos uploaded from the apps live in cloud storage (a full https URL); older ones are paths on the public disk.
+        return str_starts_with($value, 'http') ? $value : Storage::url($value);
     }
 }

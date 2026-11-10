@@ -13,11 +13,10 @@ import TermsModal      from "./components/onboarding/TermsModal.jsx";
 import GuidedTour      from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal   from "./components/PastorsPortal.jsx";
 import HODPortal       from "./components/HODPortal.jsx";
-import MembersPortal   from "./components/MembersPortalWrapper.jsx";
-import PartnerPortal   from "./components/PartnerPortal.jsx";
 import PartnerEnrollmentPage from "./components/PartnerEnrollmentPage.jsx";
 import GiveOnline      from "./components/GiveOnline.jsx";
 import MobileApp        from "./mobile/MobileApp.jsx";
+import ProfilePhotoGate from "./components/ProfilePhotoGate.jsx";
 import api             from "./lib/api.js";
 
 const queryClient = new QueryClient({
@@ -49,16 +48,17 @@ function PortalRouter({ onLogout }) {
         <>
             {portal}
             <GiveOnline />
+            <ProfilePhotoGate />
         </>
     );
 
-    // Members and partners get the mobile community app. The classic portals stay reachable (?classic=1) for anything not yet in the app.
-    const classic = new URLSearchParams(window.location.search).has("classic");
+    // Members and partners use the mobile community app (the old members portal is gone). Everyone else keeps their own portal.
+    const memberApp = <><MobileApp onLogout={onLogout} /><GiveOnline hideLauncher /></>;
 
     switch (user.role) {
         case "pastor":  return withGiving(<PastorsPortal  onLogout={onLogout} />);
-        case "partner": return classic ? withGiving(<PartnerPortal onLogout={onLogout} />) : <><MobileApp onLogout={onLogout} /><GiveOnline hideLauncher /></>;
-        case "member":  return classic ? withGiving(<MembersPortal onLogout={onLogout} />) : <><MobileApp onLogout={onLogout} /><GiveOnline hideLauncher /></>;
+        case "partner":
+        case "member":  return memberApp;
         case "hod":     return withGiving(<HODPortal      onLogout={onLogout} />);
         default:
             return (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function RegistrationModal({ event, onClose, onConfirm }) {
   const [attendanceType, setAttendanceType] = useState(null);

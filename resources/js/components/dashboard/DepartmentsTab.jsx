@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/api";
 import Pagination from "../Pagination.jsx";
+import { SelectionBar, useSelection } from "../ui/DataTable.jsx";
 
 // Assign HOD Modal
 function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSuccess }) {
@@ -69,15 +71,15 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Assign HOD">
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
         <div className="px-6 py-5 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-900">Assign HOD</h2>
           <p className="text-gray-500 text-sm mt-1">Select a user to lead {departmentName}</p>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
               {error}
@@ -144,7 +146,8 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -182,6 +185,7 @@ export default function DepartmentsTab() {
     });
 
     const departments = departmentsResponse?.departments || [];
+    const selection = useSelection(departments);
     const paginationMeta = departmentsResponse?.meta || {
         current_page: 1,
         last_page: 1,
@@ -219,7 +223,7 @@ export default function DepartmentsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Departments</h2>
           <p className="text-gray-500 mt-1">Manage church departments and HODs</p>
@@ -231,9 +235,19 @@ export default function DepartmentsTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <SelectionBar
+        count={selection.chosen.length}
+        noun="department"
+        onClear={selection.clear}
+        actions={selection.chosen.length === 1 ? [{ label: selection.chosen[0].hod ? "Change HOD" : "Appoint HOD", tone: "primary", onClick: () => handleAssignHod(selection.chosen[0]) }] : []}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {departments.map(department => (
-          <div key={department.id} className="group relative bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer p-6">
+          <div key={department.id} className={`group relative flex h-full flex-col bg-white/70 backdrop-blur-xl rounded-3xl border overflow-hidden hover:shadow-xl transition-all duration-300 p-6 pt-12 ${selection.has(department.id) ? "border-sky-400 ring-2 ring-sky-300" : "border-white/50"}`}>
+            <label className="absolute left-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow">
+              <input type="checkbox" className="h-4 w-4" aria-label={`Select ${department.name}`} checked={selection.has(department.id)} onChange={() => selection.toggle(department.id)} />
+            </label>
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400/20 to-sky-100/10 flex items-center justify-center">
                 <svg className="w-6 h-6 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,7 +294,7 @@ export default function DepartmentsTab() {
               </div>
             </div>
 
-            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className="mt-auto flex gap-2" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => handleAssignHod(department)}
                 className="flex-1 text-sm bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 text-white px-5 py-2.5 rounded-full font-semibold shadow-lg shadow-gold-500/25 hover:shadow-gold-500/40 hover:scale-105 transition-all duration-300"
@@ -290,18 +304,18 @@ export default function DepartmentsTab() {
             </div>
           </div>
         ))}
-
-        {/* Pagination */}
-        {paginationMeta.total > 0 && (
-          <Pagination
-            currentPage={paginationMeta.current_page}
-            totalPages={paginationMeta.last_page}
-            totalItems={paginationMeta.total}
-            itemsPerPage={paginationMeta.per_page}
-            onPageChange={handlePageChange}
-          />
-        )}
       </div>
+
+      {/* Pagination */}
+      {paginationMeta.total > 0 && (
+        <Pagination
+          currentPage={paginationMeta.current_page}
+          totalPages={paginationMeta.last_page}
+          totalItems={paginationMeta.total}
+          itemsPerPage={paginationMeta.per_page}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       {/* Assign HOD Modal */}
       <AssignHodModal

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../../lib/api";
+import { alertsState, enableAlerts, setTitleBadge, showAlert } from "../../lib/alerts.js";
 
 // Notification type icons and colors
 const getNotificationStyle = (category, type) => {
@@ -41,6 +42,19 @@ const formatTime = (dateString) => {
 // NOTIFICATION DROPDOWN - Glass Panel
 // ============================================================================
 
+// Where a notification should take the person (the pastor / HOD portals' own pages).
+const pageFor = (n) => {
+    const text = `${n.title || ''} ${n.message || ''}`.toLowerCase();
+    if (n.category === 'prayer_center') return 'prayer-center';
+    if (n.category === 'event_registration' || /event/.test(text)) return 'events';
+    if (/home ?group/.test(text)) return 'homegroups';
+    if (/department|hod/.test(text)) return 'departments';
+    if (/report/.test(text)) return 'reports';
+    if (/member|transfer/.test(text)) return 'members';
+    if (/partner|payment|giving/.test(text)) return 'partnership';
+    return null;
+};
+
 const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onClose, onOpenDrawer, onNavigate }) => {
     const dropdownRef = useRef(null);
     
@@ -63,9 +77,10 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllRead, onCl
         if (!notification.is_read) {
             onMarkAsRead(notification.id);
         }
-        if (notification.category === 'prayer_center' && onNavigate) {
+        const target = pageFor(notification);
+        if (target && onNavigate) {
             onClose();
-            onNavigate('prayer-center');
+            onNavigate(target);
         }
     };
 
@@ -223,9 +238,10 @@ const NotificationDrawer = ({ notifications, onMarkAsRead, onMarkAllRead, onClos
         if (!notification.is_read) {
             onMarkAsRead(notification.id);
         }
-        if (notification.category === 'prayer_center' && onNavigate) {
+        const target = pageFor(notification);
+        if (target && onNavigate) {
             onClose();
-            onNavigate('prayer-center');
+            onNavigate(target);
         }
     };
 
@@ -368,6 +384,8 @@ export default function NotificationBell({ userId, onNavigate }) {
     const [error, setError] = useState(null);
     const [showSuccessGlow, setShowSuccessGlow] = useState(false);
     const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+    const lastUnread = useRef(null);
+    const [alertPerm, setAlertPerm] = useState(alertsState());
 
     // Fetch notifications from API
     const fetchNotifications = async () => {
@@ -376,9 +394,15 @@ export default function NotificationBell({ userId, onNavigate }) {
             setError(null);
             const { data } = await api.get("/notifications");
 
+            const incoming = data.unread_count || 0;
+            if (lastUnread.current != null && incoming > lastUnread.current) {
+                const newest = (data.notifications || []).find((n) => !n.is_read);
+                showAlert(newest?.title || 'Heartfelt', newest?.message || `You have ${incoming} unread notifications`);
+            }
+            lastUnread.current = incoming;
+            setTitleBadge(incoming);
             setNotifications(data.notifications || []);
-            setUnreadCount(data.unread_count || 0);
-            console.log("[Notifications] Fetched:", data.unread_count, "unread");
+            setUnreadCount(incoming);
         } catch (err) {
             console.error("[Notifications] Fetch error:", err);
             setError("Failed to load notifications");
@@ -398,7 +422,6 @@ export default function NotificationBell({ userId, onNavigate }) {
             )
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
-        console.log("[Notifications] Marked as read:", notificationId);
         } catch (err) {
             console.error("[Notifications] Mark as read error:", err);
         }
@@ -410,7 +433,6 @@ export default function NotificationBell({ userId, onNavigate }) {
             await api.put("/notifications/read-all");
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
         setUnreadCount(0);
-        console.log("[Notifications] All marked as read");
         } catch (err) {
             console.error("[Notifications] Mark all as read error:", err);
         }
@@ -425,7 +447,6 @@ export default function NotificationBell({ userId, onNavigate }) {
         if (wasUnread) {
             setUnreadCount((prev) => Math.max(0, prev - 1));
         }
-        console.log("[Notifications] Deleted:", notificationId);
         } catch (err) {
             console.error("[Notifications] Delete error:", err);
         }
@@ -436,8 +457,12 @@ export default function NotificationBell({ userId, onNavigate }) {
         fetchNotifications();
 
         // Poll every 30 seconds for new notifications
-        const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
+        const tick = () => { if (!document.hidden) fetchNotifications(); };
+        const interval = setInterval(tick, 30000);
+        const onFocus = () => fetchNotifications();
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', tick);
+        return () => { clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', tick); };
     }, [userId]);
 
     return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import { Icons } from "./MembersPortal";
+import { Icons } from "./icons";
 
 const LeaderPromotionConsent = ({ user, onLogout }) => {
     const [processing, setProcessing] = useState(false);

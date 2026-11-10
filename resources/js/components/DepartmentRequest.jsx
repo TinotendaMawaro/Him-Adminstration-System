@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Icons } from "./MembersPortal";
+import { Icons } from "./icons";
 
 const DepartmentRequest = ({ user, onClose, onLeave, onRequestLeave }) => {
     const queryClient = useQueryClient();

@@ -15,12 +15,9 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    // Every client (web app, mobile app, Capacitor app at https://localhost) signs in with a bearer token, so no origin is
+    // "stateful". Leaving localhost in this list made the installed app demand a CSRF cookie it can never have (HTTP 419).
+    'stateful' => array_values(array_filter(explode(',', (string) env('SANCTUM_STATEFUL_DOMAINS', '')))),
 
     /*
     |--------------------------------------------------------------------------

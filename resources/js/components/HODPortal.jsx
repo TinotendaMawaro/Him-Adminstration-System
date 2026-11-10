@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "../context/UserContext";
 import api from "../lib/api";
-import { Icons } from "./MembersPortal";
+import { Icons } from "./icons";
 import HomeGroupSelector from "./HomeGroupSelector.jsx";
 import RecommendedHomeGroupCard from "./dashboard/RecommendedHomeGroupCard.jsx";
 import ProfileCompletenessNudge from "./dashboard/sections/ProfileCompletenessNudge.jsx";

@@ -1,29 +1,18 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Home as HomeIcon, PlaySquare, ShoppingBag, User, Users, WifiOff } from "lucide-react";
 import "./mobile.css";
-import { DarkProvider, Toaster, TopBar, useDark, cx, Spinner } from "./ui.jsx";
+import { DarkProvider, Toaster, useDark, cx } from "./ui.jsx";
+import { ChurchHub, DepartmentScreen, HomeGroupScreen, PersonalScreen, PhotoGate, PrayerScreen } from "./Church.jsx";
 import { NavProvider, useNav } from "./nav.jsx";
 import Home, { Explore, HashtagScreen, PostScreen } from "./Home.jsx";
 import Watch from "./Watch.jsx";
 import Channels, { ChannelScreen } from "./Channels.jsx";
 import Market, { ListingEditor, ListingScreen, OrdersScreen, ShopScreen } from "./Market.jsx";
-import Me, { EditProfile, EventsScreen, IdCardScreen, NotificationsScreen, PartnerInfo, ProfileScreen, SavedScreen } from "./Me.jsx";
+import Me, { EditProfile, EventsScreen, IdCardScreen, PartnerInfo, ProfileScreen, SavedScreen } from "./Me.jsx";
+import NotificationsScreen from "./Notifications.jsx";
+import { setTitleBadge, showAlert } from "../lib/alerts.js";
 import { community } from "./lib.js";
-
-const MembersPortal = lazy(() => import("../components/MembersPortalWrapper.jsx"));
-
-function ClassicPortal({ onLogout }) {
-    const nav = useNav();
-    return (
-        <div className="flex flex-col h-full">
-            <TopBar back title="Classic portal" subtitle="Prayer, home groups, departments and more" />
-            <div className="flex-1 overflow-auto bg-white" style={{ colorScheme: "light" }}>
-                <Suspense fallback={<Spinner />}><MembersPortal onLogout={onLogout} embedded /></Suspense>
-            </div>
-        </div>
-    );
-}
 
 const TABS = [
     { id: "home", label: "Home", icon: HomeIcon },
@@ -41,6 +30,16 @@ function Shell({ onLogout }) {
     const bootQ = useQuery({ queryKey: ["bootstrap"], queryFn: community.bootstrap, staleTime: 30_000, refetchInterval: 60_000, refetchOnWindowFocus: true });
     const boot = bootQ.data?.data;
     const deepLinked = useRef(false);
+
+    // New notification since the last check: show the count in the tab title and, if allowed, alert the device.
+    const lastUnread = useRef(null);
+    useEffect(() => {
+        const n = boot?.unread_notifications;
+        if (n == null) return;
+        setTitleBadge(n);
+        if (lastUnread.current != null && n > lastUnread.current) showAlert("Heartfelt", `You have ${n} unread notification${n > 1 ? "s" : ""}`, () => nav.push("notifications"));
+        lastUnread.current = n;
+    }, [boot?.unread_notifications]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { setVisited((v) => (v[nav.tab] ? v : { ...v, [nav.tab]: true })); }, [nav.tab]);
 
@@ -64,18 +63,12 @@ function Shell({ onLogout }) {
         }
     }, [boot]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-    useEffect(() => {
-        const open = () => nav.push("classic");
-        window.addEventListener("him:classic", open);
-        return () => window.removeEventListener("him:classic", open);
-    }, [nav]);
-
     const screens = useMemo(() => ({
         profile: (p) => <ProfileScreen {...p} />, channel: (p) => <ChannelScreen {...p} />, listing: (p) => <ListingScreen {...p} />, "listing-edit": (p) => <ListingEditor {...p} />,
         orders: (p) => <OrdersScreen {...p} />, shop: () => <ShopScreen />, explore: () => <Explore />, hashtag: (p) => <HashtagScreen {...p} />, post: (p) => <PostScreen {...p} />,
         notifications: () => <NotificationsScreen />, saved: () => <SavedScreen />, events: () => <EventsScreen />, idcard: () => <IdCardScreen />, "edit-profile": () => <EditProfile />,
-        "partner-info": () => <PartnerInfo />, classic: () => <ClassicPortal onLogout={onLogout} />,
-    }), [onLogout]);
+        "partner-info": () => <PartnerInfo />, church: () => <ChurchHub />, homegroup: () => <HomeGroupScreen />, department: () => <DepartmentScreen />, prayer: () => <PrayerScreen />, personal: () => <PersonalScreen />,
+    }), []);
 
     const badges = { watch: boot?.live_now || 0, me: boot?.unread_notifications || 0 };
 
@@ -108,6 +101,7 @@ function Shell({ onLogout }) {
                             </button>
                         ))}
                     </nav>
+                    <PhotoGate />
                     <Toaster />
                 </div>
             </div>

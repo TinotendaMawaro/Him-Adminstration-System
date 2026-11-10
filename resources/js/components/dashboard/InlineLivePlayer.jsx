@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function InlineLivePlayer({ event }) {
   const [viewerCount, setViewerCount] = useState(0);

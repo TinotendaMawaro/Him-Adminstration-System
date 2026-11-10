@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 import StatusBadge from "./StatusBadge";
 
 function formatEventDate(startsAt, endsAt) {

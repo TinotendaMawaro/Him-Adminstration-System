@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/api";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function RecommendedHomeGroupCard({ onJoin }) {
   const { data } = useQuery({

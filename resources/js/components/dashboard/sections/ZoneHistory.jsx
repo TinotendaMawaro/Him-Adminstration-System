@@ -7,25 +7,45 @@ export default function ZoneHistory() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), category: "milestone", notes: "" });
 
-  useEffect(() => {
-    var _fetchData = async function() {
-      try {
-        var response = await api.get('/pastors/zone-history');
-        var result = response.data;
-        if (result.success) {
-          setHistory(result.data);
-        } else {
-          setError(result.message || 'Failed to load history');
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const load = async function() {
+    try {
+      var response = await api.get('/pastors/zone-history');
+      var result = response.data;
+      if (result.success) {
+        setHistory(result.data);
+      } else {
+        setError(result.message || 'Failed to load history');
       }
-    };
-    _fetchData();
-  }, []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const saveEntry = async function(e) {
+    e.preventDefault();
+    setSaving(true);
+    setFormError("");
+    try {
+      await api.post('/pastors/zone-history', form);
+      setAdding(false);
+      setForm({ ...form, notes: "" });
+      await load();
+    } catch (err) {
+      var errs = err.response && err.response.data && err.response.data.errors;
+      setFormError((errs && Object.values(errs).flat()[0]) || (err.response && err.response.data && err.response.data.message) || "Could not save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   var formatDate = function(dateString) {
     var date = new Date(dateString);
@@ -136,7 +156,7 @@ export default function ZoneHistory() {
     <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 py-5 border-b border-gray-100/50">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -145,6 +165,10 @@ export default function ZoneHistory() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Zone History</h3>
           </div>
+
+          <button type="button" onClick={() => setAdding((v) => !v)} className="px-4 py-2 rounded-xl bg-gold-500 text-white text-sm font-semibold hover:bg-gold-600 transition-colors">
+            {adding ? "Cancel" : "+ Add entry"}
+          </button>
 
           {/* Filter Dropdown */}
           <select
@@ -160,6 +184,24 @@ export default function ZoneHistory() {
           </select>
         </div>
       </div>
+
+      {adding && (
+        <form onSubmit={saveEntry} className="px-6 py-4 border-b border-gray-100/50 bg-gold-50/40 grid grid-cols-1 sm:grid-cols-6 gap-3">
+          <label className="sm:col-span-2 text-xs font-semibold text-gray-600">Date
+            <input type="date" required max={new Date().toISOString().slice(0, 10)} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal" />
+          </label>
+          <label className="sm:col-span-2 text-xs font-semibold text-gray-600">Type
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal">
+              <option value="milestone">Milestone</option><option value="achievement">Achievement</option><option value="event">Event</option><option value="growth">Growth</option><option value="note">Note</option>
+            </select>
+          </label>
+          <div className="sm:col-span-2 flex items-end"><button type="submit" disabled={saving || form.notes.trim().length < 3} className="w-full rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save to history"}</button></div>
+          <label className="sm:col-span-6 text-xs font-semibold text-gray-600">What happened?
+            <textarea required rows={2} maxLength={1000} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-normal" placeholder="e.g. Zone crossed 100 members" />
+          </label>
+          {formError && <p role="alert" className="sm:col-span-6 text-sm text-rose-600">{formError}</p>}
+        </form>
+      )}
 
       {/* Timeline Content */}
       <div className="p-6">

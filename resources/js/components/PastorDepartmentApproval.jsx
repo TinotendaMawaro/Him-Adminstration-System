@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icons } from "./MembersPortal";
+import { Icons } from "./icons";
 
 const PastorDepartmentApproval = ({ user, onClose }) => {
     const [requests, setRequests] = useState([]);

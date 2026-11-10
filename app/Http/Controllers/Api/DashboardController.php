@@ -175,8 +175,26 @@ class DashboardController extends Controller
         $giving = $monthly(fn ($f, $t) => (float) DB::table('payments')->where('zone_id', $zoneId)->whereNull('deleted_at')->where('status', 'completed')->whereBetween('paid_at', [$f, $t])->sum('amount'));
         $reports = $monthly(fn ($f, $t) => Report::where('zone_id', $zoneId)->whereBetween('report_date', [$f->toDateString(), $t->toDateString()])->count());
 
+        // Composition of the zone's people, for the dashboard pie charts.
+        $people = User::where('zone_id', $zoneId)->whereIn('role', ['member', 'partner', 'hod'])->where('is_active', true);
+        $inGroup = (clone $people)->whereNotNull('home_group_id')->count();
+        $inDept = (clone $people)->whereNotNull('department_id')->count();
+        $total = (clone $people)->count();
+        $byGroup = DB::table('users')->join('home_groups', 'home_groups.id', '=', 'users.home_group_id')
+            ->where('users.zone_id', $zoneId)->where('users.is_active', true)
+            ->groupBy('home_groups.id', 'home_groups.name')->orderByRaw('COUNT(*) DESC')->limit(5)
+            ->get(['home_groups.name as label', DB::raw('COUNT(*) as value')])->map(fn ($r) => ['label' => $r->label, 'value' => (int) $r->value])->all();
+        $statusRows = Member::where('zone_id', $zoneId)->selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status');
+        $distribution = [
+            'status'      => [['label' => 'Active', 'value' => (int) ($statusRows['active'] ?? 0)], ['label' => 'Inactive', 'value' => (int) $statusRows->except('active')->sum()]],
+            'home_groups' => [['label' => 'In a home group', 'value' => $inGroup], ['label' => 'Not in a group', 'value' => max(0, $total - $inGroup)]],
+            'departments' => [['label' => 'Serving in a department', 'value' => $inDept], ['label' => 'Not serving yet', 'value' => max(0, $total - $inDept)]],
+            'by_group'    => $byGroup,
+        ];
+
         return [
             'zone'               => $zone ? ['id' => $zone->id, 'name' => $zone->name, 'code' => $zone->code, 'region' => $zone->region?->name] : null,
+            'distribution'       => $distribution,
             'zone_pastors'       => (int) Pastor::where('zone_id', $zoneId)->count(),
             'reports_this_month' => (int) end($reports),
             'zone_giving_month'  => round((float) end($giving), 2),

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Icons } from "./MembersPortal";
+import { Icons } from "./icons";
 
 // ============================================================================
 // LOADING SPINNER COMPONENT

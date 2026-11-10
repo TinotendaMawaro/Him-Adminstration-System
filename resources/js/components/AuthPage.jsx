@@ -19,7 +19,7 @@ const LoadingSpinner = () => (
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = () => {} }) {
-    const [mode, setMode]                   = useState("code");
+    const [mode, setMode]                   = useState("email");
     const [isLoading, setIsLoading]         = useState(false);
     const [errors, setErrors]               = useState({});
     const [touched, setTouched]             = useState({});
@@ -239,45 +239,73 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
     // ─── JSX ──────────────────────────────────────────────────────────────────
 
     const transitionRef = useRef(null);
-    const inputBase = "px-3 py-2.5 md:px-2 md:py-1.5 rounded text-base md:text-xs w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
+    const inputBase = "px-4 py-3 rounded-xl text-base md:text-sm w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
+
+    const TABS = [
+        { key: "email", label: "Members", sub: "Sign in with email" },
+        { key: "code", label: "Pastors", sub: "Sign in with code" },
+        { key: "register", label: "Join", sub: "New member" },
+    ];
+    const switchMode = (key) => { setMode(key); setErrors({}); setTouched({}); };
 
     return (
-        <div className="relative flex justify-center items-center min-h-screen p-3 md:p-0 font-sans bg-slate-900 overflow-hidden" role="main" aria-label="Authentication Page">
+        <div className="relative min-h-screen overflow-hidden bg-[#070f1d] font-sans text-white lg:grid lg:grid-cols-[1.05fr_1fr]" role="main" aria-label="Authentication Page">
             <AnimatedBackground />
+            <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(60% 50% at 15% 10%, rgba(47,107,255,.28), transparent 70%), radial-gradient(50% 45% at 90% 95%, rgba(201,168,76,.22), transparent 70%)" }} />
 
-            <div className="relative w-full max-w-4xl flex flex-col md:flex-row gap-3 md:gap-0 rounded-2xl md:overflow-hidden shadow-2xl">
+            {/* ── Brand panel (desktop) ─────────────────────────────────────── */}
+            <aside className="relative z-10 hidden flex-col justify-between p-12 xl:p-16 lg:flex">
+                <div className="flex items-center gap-3">
+                    <img src="/images/logo.webp" alt="" className="h-12 w-auto object-contain" />
+                    <span className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200/80">Heartfelt</span>
+                </div>
+                <div className="max-w-xl">
+                    <p className="mb-4 inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-amber-200">One family · one platform</p>
+                    <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight xl:text-6xl" style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>
+                        <span className="bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-transparent">Heartfelt</span><br />International Ministries
+                    </h1>
+                    <p className="mt-5 max-w-md text-lg text-slate-300">Pastoral care, community, giving and events: everything the church family needs, in one place.</p>
+                    <ul className="mt-9 grid max-w-lg grid-cols-2 gap-3 text-sm">
+                        {[["Community", "Posts, channels, live services"], ["Care", "Home groups and prayer"], ["Giving", "Secure online payments"], ["Your ID card", "Scannable and downloadable"]].map(([t, d]) => (
+                            <li key={t} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md"><div className="font-bold text-white">{t}</div><div className="mt-0.5 text-slate-400">{d}</div></li>
+                        ))}
+                    </ul>
+                </div>
+                <p className="text-xs text-slate-500">© 2026 Heartfelt International Ministries</p>
+            </aside>
 
-                {/* ── Left panel ────────────────────────────────────────────── */}
-                <div className="order-2 md:order-none w-full md:w-2/3 p-4 flex flex-col justify-between gap-3 backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl md:rounded-r-none shadow-2xl relative overflow-hidden min-h-[460px] md:h-[530px] transition-all duration-500">
-
-                    {/* Header */}
-                    <div className="text-center mb-3">
-                        <img src="/images/logo.webp" alt="HIM Logo" className="h-16 mx-auto mb-2 object-contain animate-bounce" />
-                        <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-transparent tracking-wide"
-                            style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>
-                            Heartfelt International Ministry
-                        </h1>
-                        {mode !== "register" && (
-                            <p className="font-bold text-base md:text-lg tracking-wide text-white/80 pt-4"
-                               style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>
-                                Welcome Back
-                            </p>
-                        )}
-                        {mode === "register" && (
-                            <p className="text-sm text-white/60 pt-2">Create your member account</p>
-                        )}
+            {/* ── Sign-in card ──────────────────────────────────────────────── */}
+            <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 sm:px-8">
+                <div className="w-full max-w-[440px]">
+                    <div className="mb-6 text-center lg:hidden">
+                        <img src="/images/logo.webp" alt="Heartfelt International Ministries" className="mx-auto h-14 w-auto object-contain" />
+                        <h1 className="mt-3 bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-2xl font-extrabold text-transparent" style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>Heartfelt International Ministries</h1>
                     </div>
 
-                    {/* Forms */}
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-8">
+                        <div role="tablist" aria-label="Sign in method" className="grid grid-cols-3 gap-1 rounded-2xl bg-black/25 p-1">
+                            {TABS.map(({ key, label, sub }) => (
+                                <button key={key} role="tab" aria-selected={mode === key} onClick={() => switchMode(key)}
+                                    className={`min-h-[52px] rounded-xl px-1 text-center transition-all duration-200 ${mode === key ? "bg-gradient-to-b from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/40" : "text-slate-300 hover:bg-white/10"}`}>
+                                    <div className="text-sm font-bold">{label}</div>
+                                    <div className={`text-[10px] ${mode === key ? "text-blue-100" : "text-slate-400"}`}>{sub}</div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mb-5 mt-6 text-center">
+                            <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>{mode === "register" ? "Create your account" : "Welcome back"}</h2>
+                            <p className="mt-1 text-sm text-slate-400">{mode === "code" ? "Pastors sign in with their unique code" : mode === "register" ? "Join the church family in a minute" : "Members and partners: use your email and password"}</p>
+                        </div>
+
                     <div className="flex-1 flex flex-col justify-center md:overflow-y-auto py-2">
                         <SwitchTransition mode="out-in">
                         <CSSTransition key={mode} nodeRef={transitionRef} timeout={300} classNames="fade" unmountOnExit>
-                            <form ref={transitionRef} onSubmit={handleSubmit} className="flex flex-col space-y-2 px-1" noValidate>
+                            <form ref={transitionRef} onSubmit={handleSubmit} className="flex flex-col space-y-3" noValidate>
 
                                     {/* Code */}
                                     {mode === "code" && (
                                         <>
-                                            <p className="text-xs text-white/50 text-center">Pastors — Enter your unique code</p>
                                             <input
                                                 ref={inputRef} type="text" placeholder="Enter unique identifier"
                                                 value={code}
@@ -303,7 +331,6 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                                     {/* Email login */}
                                     {mode === "email" && (
                                         <>
-                                            <p className="text-xs text-white/50 text-center">Members &amp; Partners — Sign in with email</p>
                                             <div>
                                                 <input type="email" name="email" placeholder="Email Address" value={emailLogin.email} onChange={handleEmailLoginChange} onBlur={() => handleBlur("emailLoginEmail")}
                                                        className={`${inputBase} ${errors.emailLoginEmail ? "border-red-500" : ""}`} />
@@ -453,7 +480,7 @@ onBlur={() => {
                                     <button
                                         type="submit"
                                         disabled={isLoading || showRegisterSuccess || showPartnerPrompt}
-                                        className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white font-bold py-1.5 px-3 rounded shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-xs"
+                                        className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white font-bold py-3.5 px-4 rounded-xl text-sm tracking-wide shadow-lg shadow-blue-900/40 md:hover:-translate-y-0.5 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-xs"
                                     >
                                         {isLoading && <LoadingSpinner />}
                                         {getSubmitText()}
@@ -463,72 +490,22 @@ onBlur={() => {
                         </SwitchTransition>
                     </div>
 
-                    {/* Footer */}
-                    <div className="text-center text-white/40 text-xs pt-2 border-t border-white/5">
-                        <p className="text-[10px]">Email: <span className="text-white/60">support@heartfeltonline.org</span></p>
-                        <p className="text-[10px]">© 2026 Heartfelt International Ministries — All rights reserved</p>
-                    </div>
-                </div>
 
-                {/* ── Right panel ───────────────────────────────────────────── */}
-                <div className="order-1 md:order-none w-full md:w-1/3 p-3 md:p-8 flex flex-col justify-center items-center backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl md:rounded-l-none shadow-2xl" role="navigation">
-                    <h3 className="hidden md:block font-bold text-base md:text-lg mb-4 tracking-wide text-white/80">Quick Access</h3>
-                    <div className="grid grid-cols-3 gap-2 md:block md:space-y-3 w-full">
-                        {[
-                            { key: "code",     label: "Login With Code",  short: "Code",     sub: "Pastors" },
-                            { key: "email",    label: "Login With Email", short: "Email",    sub: "Members & Partners", subShort: "Members" },
-                            { key: "register", label: "Register",         short: "Register", sub: "New Members" },
-                        ].map(({ key, label, short, sub, subShort }) => (
-                            <button
-                                key={key}
-                                onClick={() => { setMode(key); setErrors({}); setTouched({}); }}
-                                aria-pressed={mode === key}
-                                className={`w-full min-h-[52px] py-2 md:py-3 px-1 rounded-lg md:rounded-xl font-semibold text-sm transition-all duration-300 transform md:hover:scale-[1.02] shadow-lg
-                                    ${mode === key
-                                    ? "bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white shadow-blue-600/30"
-                                    : "bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"}`}
-                            >
-                                <div><span className="md:hidden">{short}</span><span className="hidden md:inline">{label}</span></div>
-                                <div className="text-[10px] opacity-60 font-normal mt-0.5 truncate"><span className="md:hidden">{subShort || sub}</span><span className="hidden md:inline">{sub}</span></div>
-                            </button>
-                        ))}
                     </div>
 
-                    <div className="hidden md:block mt-6 text-center">
-                        {mode === "code"     && <p className="text-white/30 text-[10px] leading-relaxed">Your unique code was<br />provided by admin</p>}
-                        {mode === "email"    && <p className="text-white/30 text-[10px] leading-relaxed">Use your registered<br />email and password</p>}
-                        {mode === "register" && <p className="text-white/30 text-[10px] leading-relaxed">After registering you can<br />request to join a department</p>}
-                    </div>
-
-                    {/* Head-office staff sign in to their own portals (separate from the member / pastor sign-in above). */}
-                    <div className="hidden md:block mt-5 w-full border-t border-white/10 pt-4" aria-label="Staff portals">
-                        <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Staff portals</p>
-                        <div className="grid grid-cols-1 gap-1.5">
-                            {[
-                                { href: "/admin/login",   label: "Master",  sub: "Head office console" },
-                                { href: "/finance/login", label: "Finance", sub: "Payments & receipts" },
-                                { href: "/events/login",  label: "Events",  sub: "Events & registrations" },
-                            ].map(({ href, label, sub }) => (
-                                <a key={href} href={href} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/15 hover:text-white">
-                                    <span>{label}</span>
-                                    <span className="text-[10px] font-normal text-white/40">{sub}</span>
-                                </a>
+                    <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md" aria-label="Staff portals">
+                        <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Staff portals</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[{ href: "/admin/login", label: "Master" }, { href: "/finance/login", label: "Finance" }, { href: "/events/login", label: "Events" }].map(({ href, label }) => (
+                                <a key={href} href={href} className="flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/5 px-2 text-xs font-semibold text-slate-200 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">{label}</a>
                             ))}
                         </div>
                     </div>
-                </div>
 
-
-                {/* Staff portals on phones: sits under the sign-in form instead of squeezing beside it. */}
-                <div className="order-3 md:hidden w-full rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md p-3" aria-label="Staff portals">
-                    <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Staff portals</p>
-                    <div className="grid grid-cols-3 gap-2">
-                        {[{ href: "/admin/login", label: "Master" }, { href: "/finance/login", label: "Finance" }, { href: "/events/login", label: "Events" }].map(({ href, label }) => (
-                            <a key={href} href={href} className="flex min-h-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-xs font-semibold text-white/80 active:bg-white/20">{label}</a>
-                        ))}
-                    </div>
+                    <p className="mt-5 text-center text-[11px] text-slate-500">Need help? <span className="text-slate-300">support@heartfeltonline.org</span><br className="sm:hidden" /><span className="hidden sm:inline"> · </span>© 2026 Heartfelt International Ministries</p>
                 </div>
-            </div>
+            </section>
         </div>
     );
 }
+

@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api.js";
 import { useCurrentUser, useUser } from "../context/UserContext";
 
-import ProfilePictureUpload from "./ProfilePictureUpload";
+import DataTable, { SelectionBar, useSelection } from "./ui/DataTable.jsx";
 
 import ZoneTab from "./dashboard/ZoneTab.jsx";
 import MembersTab from "./dashboard/MembersTab.jsx";
@@ -2341,8 +2341,9 @@ const PartnershipPage = () => {
         setPastorRegistrations([]);
     }, []);
 
+    // Real payments go through the ClicknPay gateway dialog (the old form here only pretended to charge).
     const openPaymentModal = useCallback((tierKey, minAmount) => {
-        setPaymentModal({ tierKey, amount: minAmount });
+        window.dispatchEvent(new CustomEvent("him:give", { detail: { type: "partnership", amount: minAmount } }));
     }, []);
     const closePaymentModal = useCallback(() => setPaymentModal(null), []);
     const handlePaymentSubmit = useCallback(async (e) => {
@@ -2474,10 +2475,7 @@ const PartnershipPage = () => {
                         ].map((btn) => (
                             <button
                                 key={btn.key}
-                                onClick={() => {
-                                    setTitheType(btn.key);
-                                    setTitheModal(true);
-                                }}
+                                onClick={() => window.dispatchEvent(new CustomEvent("him:give", { detail: { type: btn.key } }))}
                                 className="group relative overflow-hidden rounded-xl bg-white/70 backdrop-blur-lg border border-white/40 shadow-md hover:shadow transition-all duration-200"
                             >
                                 <div
@@ -2863,6 +2861,7 @@ const PartnersPage = () => {
     const [partners, setPartners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const selection = useSelection(partners);
 
     useEffect(() => {
         setLoading(true);
@@ -2940,76 +2939,27 @@ const PartnersPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white/70 backdrop-blur-lg rounded-xl border border-white/40 shadow-md overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
-                        <thead>
-                            <tr className="border-b border-gray-100">
-                                <th className="px-3 py-2 font-medium text-gray-600">
-                                    Partner
-                                </th>
-                                <th className="px-3 py-2 font-medium text-gray-600">
-                                    Number
-                                </th>
-                                <th className="px-3 py-2 font-medium text-gray-600">
-                                    Tier
-                                </th>
-                                <th className="px-3 py-2 font-medium text-gray-600">
-                                    Status
-                                </th>
-                                <th className="px-3 py-2 font-medium text-gray-600">
-                                    Pledge
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {loading && (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-3 py-5 text-center text-gray-500"
-                                    >
-                                        Loading…
-                                    </td>
-                                </tr>
-                            )}
-                            {!loading && partners.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-3 py-5 text-center text-gray-500"
-                                    >
-                                        No partners found
-                                    </td>
-                                </tr>
-                            )}
-                            {!loading &&
-                                partners.map((p) => (
-                                    <tr
-                                        key={p.id}
-                                        className="hover:bg-white/60 transition-colors"
-                                    >
-                                        <td className="px-3 py-2 font-medium text-gray-900">
-                                            {p.full_name || p.name || "—"}
-                                        </td>
-                                        <td className="px-3 py-2 font-mono text-gray-700">
-                                            {p.partner_number || "—"}
-                                        </td>
-                                        <td className="px-3 py-2 capitalize text-gray-700">
-                                            {p.tier_label || p.tier || "—"}
-                                        </td>
-                                        <td className="px-3 py-2 capitalize text-gray-700">
-                                            {p.status || "—"}
-                                        </td>
-                                        <td className="px-3 py-2 text-gray-700 text-xs">
-                                            ${p.pledge_amount || 0}
-                                        </td>
-                                    </tr>
-                                ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <SelectionBar
+                count={selection.chosen.length}
+                noun="partner"
+                onClear={selection.clear}
+                actions={[{ label: "Copy numbers", onClick: () => navigator.clipboard?.writeText(selection.chosen.map((x) => x.partner_number).filter(Boolean).join(", ")) }]}
+            />
+            <DataTable
+                columns={[
+                    { key: "name", label: "Partner", primary: true, className: "font-semibold", render: (x) => x.full_name || x.name || "—" },
+                    { key: "number", label: "Number", className: "font-mono text-xs", render: (x) => x.partner_number || "—" },
+                    { key: "tier", label: "Tier", className: "capitalize", render: (x) => x.tier_label || x.tier || "—" },
+                    { key: "status", label: "Status", className: "capitalize", render: (x) => x.status || "—" },
+                    { key: "pledge", label: "Pledge", render: (x) => `$${x.pledge_amount || 0}` },
+                ]}
+                rows={partners}
+                loading={loading}
+                selection={selection}
+                pageSize={15}
+                noun="partner"
+                empty="No partners found"
+            />
         </div>
     );
 };
@@ -3197,6 +3147,14 @@ export default function PastorsPortal({ onLogout }) {
                 return <ZoneTab user={user} />;
             case "partners":
                 return <PartnersPage />;
+            case "idcard":
+                return (
+                    <div className="mx-auto max-w-3xl p-1 sm:p-4">
+                        <h2 className="mb-1 text-xl font-bold text-gray-900">My ID card</h2>
+                        <p className="mb-4 text-sm text-gray-500">Download or print your card. The QR code confirms it is genuine.</p>
+                        <PastorMembershipCard user={user} />
+                    </div>
+                );
             case "more":
                 return <DashboardContent user={user} onNavigate={setActiveItem} />;
             default:
@@ -3219,6 +3177,7 @@ export default function PastorsPortal({ onLogout }) {
             reports: "Reports",
             zone: "My Zone",
             partners: "Partners",
+            idcard: "My ID Card",
         })[activeItem] || "Dashboard";
 
     return (
@@ -3234,7 +3193,7 @@ export default function PastorsPortal({ onLogout }) {
                 isMobile={isMobile}
             />
             <div
-                className={`pl-0 lg:pl-64 flex flex-col min-h-screen w-full ${isMobile ? "pb-20" : ""}`}
+                className={`pl-0 lg:pl-72 flex flex-col min-h-screen w-full min-w-0 ${isMobile ? "pb-20" : ""}`}
             >
                 {/* Mobile top bar */}
                 <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-xl border-b border-gray-100 relative z-30">
@@ -3278,8 +3237,8 @@ export default function PastorsPortal({ onLogout }) {
                             onNavigate={setActiveItem}
                         />
                     </div>
-                    <div className="flex-1 overflow-y-auto bg-white/60 backdrop-blur-lg m-2 lg:m-3 rounded-xl shadow-md border border-white/40">
-                        <main className="flex-1 p-3 lg:p-4">
+                    <div className="flex-1 overflow-y-auto bg-white/80 m-2 sm:m-3 lg:m-4 rounded-2xl shadow-md border border-white/40">
+                        <main className="flex-1 min-w-0 mx-auto w-full max-w-[1500px] p-3 sm:p-5 lg:p-6">
                             {getPageContent()}
                         </main>
                     </div>

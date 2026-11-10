@@ -1,4 +1,4 @@
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function EventDetailModal({ event, onClose }) {
   if (!event) return null;

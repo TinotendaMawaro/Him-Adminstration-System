@@ -1,4 +1,4 @@
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 import EventCountdown from "./EventCountdown";
 
 export default function FeaturedEventBanner({ event, onRegister, isRegistered, onAddReminder, onShare, onViewDetails }) {

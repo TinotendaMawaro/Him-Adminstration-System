@@ -573,23 +573,59 @@ class PastorController extends Controller
               return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
           }
 
+          // Blank form fields arrive as null: every optional field must accept that (this used to reject the whole save).
           $validated = $request->validate([
               'name'             => 'sometimes|string|max:255',
-              'description'      => 'sometimes|string|nullable',
-              'location'         => 'sometimes|string|max:255',
-              'year_established' => 'sometimes|integer|min:1900|max:2100',
-              'address'          => 'sometimes|string|nullable',
-              'phone'            => 'sometimes|string|max:50',
+              'description'      => 'sometimes|nullable|string|max:5000',
+              'location'         => 'sometimes|nullable|string|max:255',
+              'year_established' => 'sometimes|nullable|integer|min:1900|max:2100',
+              'address'          => 'sometimes|nullable|string|max:500',
+              'phone'            => 'sometimes|nullable|string|max:50',
           ]);
 
           $zone = Zone::findOrFail($user->zone_id);
           $zone->update($validated);
+
+          ZoneHistory::create([
+              'zone_id'    => $zone->id,
+              'pastor_id'  => $user->id,
+              'start_date' => now()->toDateString(),
+              'end_date'   => now()->toDateString(),
+              'notes'      => 'Zone details updated by ' . $user->name . ' (' . implode(', ', array_keys($validated)) . ')',
+          ]);
 
           return response()->json([
               'success' => true,
               'message' => 'Zone information updated successfully',
               'data'    => $zone,
           ]);
+      }
+
+      /** POST /api/pastors/zone-history — a pastor records a milestone, event, growth or note in their zone's history */
+      public function addZoneHistory(Request $request): JsonResponse
+      {
+          $user = $request->user();
+
+          if (!$user->isPastor() || !$user->zone_id) {
+              return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+          }
+
+          $v = $request->validate([
+              'date'     => ['required', 'date', 'before_or_equal:today'],
+              'category' => ['required', Rule::in(['achievement', 'event', 'growth', 'milestone', 'note'])],
+              'notes'    => ['required', 'string', 'min:3', 'max:1000'],
+          ]);
+
+          // The word the timeline classifies on ("achievement", "event", "growth", "milestone") leads the note.
+          $record = ZoneHistory::create([
+              'zone_id'    => $user->zone_id,
+              'pastor_id'  => $user->id,
+              'start_date' => $v['date'],
+              'end_date'   => $v['date'],
+              'notes'      => ($v['category'] === 'note' ? '' : ucfirst($v['category']) . ': ') . trim($v['notes']),
+          ]);
+
+          return response()->json(['success' => true, 'message' => 'Added to the zone history', 'data' => ['id' => $record->id]], 201);
       }
 
       /** POST /api/pastors/members/bulk — bulk actions for selected zone members */

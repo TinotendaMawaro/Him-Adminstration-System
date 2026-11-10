@@ -156,6 +156,7 @@ const menuItems = [
     { id: "partnership", label: "Partnership", icon: Icons.HandCoins },
     { id: "reports", label: "Reports", icon: Icons.DocumentChart },
     { id: "zone", label: "My Zone", icon: Icons.MapPin },
+    { id: "idcard", label: "My ID Card", icon: Icons.Dashboard },
 ];
 
 // ============================================================================

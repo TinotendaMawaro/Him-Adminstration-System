@@ -50,10 +50,19 @@ export default function GiveOnline({ hideLauncher = false }) {
     const preselect = useRef(null);
     const dialogRef = useRef(null);
 
+    // The close button must always work. (It used to be blocked while "submitting", which stayed stuck after coming back
+    // from the payment page with the browser's Back button.)
     const close = useCallback(() => {
-        if (submitting) return;
+        setSubmitting(false);
         setOpen(false);
-    }, [submitting]);
+    }, []);
+
+    // Returning from the payment page via Back restores this page from memory: reset the busy state.
+    useEffect(() => {
+        const onShow = (e) => e.persisted && setSubmitting(false);
+        window.addEventListener("pageshow", onShow);
+        return () => window.removeEventListener("pageshow", onShow);
+    }, []);
 
     // Other parts of the portal can open this dialog already pointing at something.
     useEffect(() => {
@@ -82,6 +91,7 @@ export default function GiveOnline({ hideLauncher = false }) {
                 preselect.current = null;
                 if (pre?.type && d.types.some((t) => t.value === pre.type)) {
                     setType(pre.type);
+                    setAmount(pre.amount ? String(pre.amount) : "");
                     if (pre.type === EVENT) {
                         const regs = d.registrations || [];
                         const pick = regs.find((r) => r.id === pre.registrationId) || (regs.length === 1 ? regs[0] : null);
@@ -157,7 +167,7 @@ export default function GiveOnline({ hideLauncher = false }) {
             </button>}
 
             {open && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && close()}>
+                <div className="fixed inset-0 z-[10001] flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && close()}>
                     <div
                         ref={dialogRef}
                         tabIndex={-1}
@@ -167,8 +177,8 @@ export default function GiveOnline({ hideLauncher = false }) {
                         className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl outline-none sm:max-w-md sm:rounded-3xl"
                     >
                         <div className="relative overflow-hidden rounded-t-3xl bg-gradient-to-br from-[#1e3a5f] to-[#2d5282] px-6 pb-5 pt-6 text-white sm:rounded-t-3xl">
-                            <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-amber-400/20" />
-                            <button type="button" onClick={close} className="absolute right-4 top-4 rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Close">
+                            <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-amber-400/20" />
+                            <button type="button" onClick={close} className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg text-white hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Close">
                                 ✕
                             </button>
                             <p className="text-xs font-semibold uppercase tracking-widest text-amber-300">Pay online</p>

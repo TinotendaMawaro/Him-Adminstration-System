@@ -2,54 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Community\MediaStore;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Cloudinary\Cloudinary;
-use Cloudinary\Transformation\Resize;
 
+/** Legacy endpoint kept for the pastor/HOD portals: stores the photo through the same content-checked cloud store as everything else. */
 class ProfilePictureController extends Controller
 {
-    protected $cloudinary;
-
-    public function __construct()
+    public function upload(Request $request, MediaStore $store)
     {
-        $this->cloudinary = new Cloudinary([
-            'cloud' => [
-                'cloud_name' => config('cloudinary.cloud_name'),
-                'api_key' => config('cloudinary.api_key'),
-                'api_secret' => config('cloudinary.api_secret'),
-            ],
-        ]);
-    }
+        $request->validate(['profile_picture' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:4096']);
 
-    public function upload(Request $request)
-    {
-        $request->validate([
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        $stored = $store->storeImage($request->file('profile_picture'));
+        $request->user()->update(['profile_photo' => $stored['url']]);
 
-        $user = Auth::user();
-
-        // Upload to Cloudinary
-        $uploadedFileUrl = $this->cloudinary->uploadApi()->upload(
-            $request->file('profile_picture')->getRealPath(),
-            [
-                'folder' => 'profile_pictures',
-                'transformation' => [
-                    'width' => 300,
-                    'height' => 300,
-                    'crop' => 'fill',
-                ],
-            ]
-        )['secure_url'];
-
-        // Update user profile picture
-        $user->profile_photo = $uploadedFileUrl;
-        $user->save();
-
-        return response()->json([
-            'message' => 'Profile picture updated successfully',
-            'profile_pic' => $uploadedFileUrl,
-        ]);
+        return response()->json(['message' => 'Profile picture updated successfully', 'profile_pic' => $stored['url']]);
     }
 }

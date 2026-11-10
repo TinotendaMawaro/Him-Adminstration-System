@@ -63,7 +63,7 @@ export default function Me({ boot, onLogout }) {
                 <Row icon={CalendarDays} label="Events & conferences" color="#0e7490" onClick={() => nav.push("events")} />
                 <Row icon={HandHeart} label="Give online" hint="Tithes, offerings, seeds and partnership" color="#12a150" onClick={() => window.dispatchEvent(new CustomEvent("him:give"))} />
                 <Row icon={IdCard} label="My ID card" hint="Download or print, with a scannable QR" color="#2f6bff" onClick={() => nav.push("idcard")} />
-                <Row icon={LayoutDashboard} label="Classic portal" hint="Prayer, home groups, departments, reports and more" color="#667791" onClick={() => nav.push("classic")} />
+                <Row icon={LayoutDashboard} label="My church" hint="Zone, home group, department, prayer and details" color="#667791" onClick={() => nav.push("church")} />
             </Group>
             <Group title="Account">
                 <Row icon={Edit3} label="Edit community profile" onClick={() => nav.push("edit-profile")} />
@@ -163,42 +163,6 @@ export function SavedScreen() {
     return <div className="flex flex-col h-full"><TopBar back title="Saved posts" /><Scroller><FeedList queryKey={["feed", "saved"]} fetcher={(page) => community.bookmarks(page)} empty={<Empty icon={Bookmark} title="Nothing saved yet" text="Tap the bookmark on any post to keep it here." />} /></Scroller></div>;
 }
 
-// ── Notifications ───────────────────────────────────────────────────────────────────────────────
-
-const ICON = { community: [Heart, "#e11d48"], market: [ShoppingBag, "#12a150"], message: [MessageCircle, "#2f6bff"], broadcast: [Megaphone, "#c9a84c"], event_registration: [Ticket, "#0e7490"], system: [Info, "#667791"] };
-
-export function NotificationsScreen() {
-    const nav = useNav();
-    const qc = useQueryClient();
-    const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["notifications"], queryFn: async () => (await api.get("/notifications", { params: { limit: 80 } })).data, staleTime: 10_000 });
-    const list = data?.notifications || [];
-    const markAll = async () => { try { await api.put("/notifications/read-all"); refetch(); qc.invalidateQueries({ queryKey: ["bootstrap"] }); } catch (e) { toast.error(errorMessage(e)); } };
-    const open = async (n) => {
-        if (!n.is_read) { api.put(`/notifications/${n.id}/read`).then(() => { refetch(); qc.invalidateQueries({ queryKey: ["bootstrap"] }); }).catch(() => {}); }
-        if (n.category === "market") nav.push("orders", { as: /ORD-|QTE-/.test(n.title) && /New order|Quote request/.test(n.title) ? "seller" : "buyer" });
-        else if (n.category === "event_registration") nav.push("events");
-        else if (n.category === "community" && /Live|Starting soon/.test(n.title)) nav.setTab("watch");
-    };
-    return (
-        <div className="flex flex-col h-full">
-            <TopBar back title="Notifications" right={list.some((n) => !n.is_read) && <Btn variant="ghost" size="sm" icon={CheckCheck} onClick={markAll}>Read all</Btn>} />
-            <Scroller onRefresh={refetch}>
-                <div className="p-3 space-y-2 pb-8">
-                    {isLoading && [0, 1, 2, 3].map((i) => <Skel key={i} h={72} r={16} />)}
-                    {isError && <ErrorState error={error} onRetry={refetch} />}
-                    {!isLoading && list.length === 0 && <Empty icon={Bell} title="You're all caught up" text="Likes, replies, orders and reminders will show up here." />}
-                    {list.map((n) => { const [I, c] = ICON[n.category] || ICON.system; return (
-                        <button key={n.id} onClick={() => open(n)} className="w-full hm-card p-3.5 flex gap-3 text-left" style={!n.is_read ? { borderColor: "color-mix(in srgb, var(--accent) 45%, var(--line))", background: "color-mix(in srgb, var(--accent) 5%, var(--surface))" } : undefined}>
-                            <span className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${c} 14%, transparent)`, color: c }}><I size={19} /></span>
-                            <div className="flex-1 min-w-0"><div className="font-bold text-[14.5px] leading-snug">{n.title}</div><div className="text-[13px] line-clamp-2 mt-0.5" style={{ color: "var(--mut)" }}>{n.message}</div><div className="text-[11px] mt-1" style={{ color: "var(--mut)" }}>{timeAgo(n.created_at)}</div></div>
-                            {!n.is_read && <span className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: "var(--accent)" }} />}
-                        </button>); })}
-                </div>
-            </Scroller>
-        </div>
-    );
-}
-
 // ── Events, ID card, partner info, classic portal ───────────────────────────────────────────────
 
 export function EventsScreen() {
@@ -243,8 +207,8 @@ export function PartnerInfo() {
             <div className="hm-scroll p-5 space-y-4">
                 <div className="rounded-3xl p-5 text-white" style={{ background: "linear-gradient(135deg,#0f2744,#2f6bff)" }}><Store size={34} /><div className="font-extrabold text-2xl mt-3 leading-tight">Open your shop to the whole community</div><p className="text-sm opacity-85 mt-2">The marketplace is for ministry partners. List your products and services, receive orders, answer quote requests, and grow your business among people you already trust.</p></div>
                 {["Partners-only shops keep the marketplace trusted", "Members order directly or ask you for a quote", "You agree payment and delivery with each buyer", "Head office can suspend shops that break the rules"].map((t) => <div key={t} className="flex gap-3 items-start"><CheckCheck size={20} style={{ color: "var(--ok)" }} className="shrink-0 mt-0.5" /><span className="text-[15px]">{t}</span></div>)}
-                <p className="text-sm rounded-2xl p-4" style={{ background: "var(--surface2)", color: "var(--mut)" }}>To become a partner, open the <b>Partnership</b> section of the classic portal and choose a package. Once your partnership is active, your shop opens automatically.</p>
-                <Btn block onClick={() => window.dispatchEvent(new CustomEvent("him:classic", { detail: "partnership" }))}>Go to Partnership</Btn>
+                <p className="text-sm rounded-2xl p-4" style={{ background: "var(--surface2)", color: "var(--mut)" }}>To become a partner, choose a partnership package and enrol. Once your partnership is active, your shop opens automatically.</p>
+                <Btn block onClick={() => window.location.assign("/partner/enroll")}>Choose a partnership package</Btn>
             </div>
         </div>
     );

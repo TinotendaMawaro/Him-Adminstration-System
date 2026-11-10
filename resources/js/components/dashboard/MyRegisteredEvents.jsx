@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function MyRegisteredEvents({ registrations, onCancel, onBrowse }) {
   const [activeTab, setActiveTab] = useState("upcoming");

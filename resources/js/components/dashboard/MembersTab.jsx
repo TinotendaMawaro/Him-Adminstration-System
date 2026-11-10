@@ -3,12 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
 import Member360View from "../pastors/Member360View.jsx";
 import TransferMemberModal from "../pastors/TransferMemberModal.jsx";
-import Pagination from "../Pagination.jsx";
+import DataTable, { ConfirmDialog, SelectionBar, useSelection } from "../ui/DataTable.jsx";
 
-const ROW_CLASS = "h-11";
-const TH_CLASS = "px-2 py-1 text-left text-[11px] font-medium text-gray-500 uppercase tracking-widest bg-white/75 backdrop-blur-md border-b border-gray-100";
-const TD_CLASS = "px-2 py-1 text-xs text-gray-900 border-b border-gray-100 align-middle";
-const INPUT_CLASS = "h-9 rounded-lg border border-gray-200 bg-white/70 px-2 text-xs focus:ring-1 focus:ring-[#dfb15b]/60 focus:border-[#dfb15b]";
+const INPUT_CLASS = "h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-1 focus:ring-[#dfb15b]/60 focus:border-[#dfb15b]";
 
 export default function MembersTab() {
     const queryClient = useQueryClient();
@@ -24,7 +21,8 @@ export default function MembersTab() {
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
-    const [selectedIds, setSelectedIds] = useState([]);
+    const [confirm, setConfirm] = useState(null);   // { title, message, run }
+    const [busy, setBusy] = useState(false);
 
     const {
            data: membersResponse,
@@ -78,25 +76,12 @@ export default function MembersTab() {
          retry: 1,
     });
 
-    const handlePageChange = (page) => {
-      setCurrentPage(page);
-      setSelectedIds([]);
-    };
+    const handlePageChange = (page) => setCurrentPage(page);
 
-    useEffect(() => {
-      setCurrentPage(1);
-      setSelectedIds([]);
-    }, [debouncedSearch, filterStatus, filterHomeGroup, filterMinistry]);
+    useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus, filterHomeGroup, filterMinistry]);
 
     const filteredMembers = useMemo(() => Array.isArray(membersData) ? membersData : [], [membersData]);
-
-    const toggleSelectAll = () => {
-      setSelectedIds(prev => prev.length === filteredMembers.length ? [] : filteredMembers.map(m => m.id));
-    };
-
-    const toggleSelect = (id) => {
-      setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    };
+    const selection = useSelection(filteredMembers);
 
     const handleViewMember = async (member) => {
       try {
@@ -140,38 +125,66 @@ export default function MembersTab() {
       URL.revokeObjectURL(link.href);
     };
 
-    const handleBulkAction = async (action) => {
-      if (!selectedIds.length) return;
-      if (!window.confirm(`Confirm ${action} for ${selectedIds.length} member(s)?`)) return;
+    const runBulk = (action, rows) => setConfirm({
+      title: `${action === "activate" ? "Activate" : "Deactivate"} ${rows.length} member${rows.length > 1 ? "s" : ""}?`,
+      message: action === "activate" ? "They will be able to use the app again." : "They will be marked inactive and will not be able to sign in until reactivated.",
+      confirmLabel: action === "activate" ? "Activate" : "Deactivate",
+      tone: action === "activate" ? "success" : "danger",
+      run: async () => { await api.post("/pastors/members/bulk", { ids: rows.map((m) => m.id), action }); },
+    });
+
+    const confirmAndRun = async () => {
+      setBusy(true);
       try {
-        await api.post('/pastors/members/bulk', { ids: selectedIds, action });
+        await confirm.run();
         await handleRefresh();
-        setSelectedIds([]);
+        selection.clear();
+        setFlash("Done");
       } catch (err) {
-        alert(err.response?.data?.message || err.message || "Action failed");
+        setFlash(err.response?.data?.message || err.message || "Action failed");
       }
+      setConfirm(null);
+      setBusy(false);
+      setTimeout(() => setFlash(""), 5000);
     };
 
-    const handleStatusToggle = async (member) => {
-      const action = member.status === 'active' ? 'deactivate' : 'activate';
-      if (!window.confirm(`Change status to ${action} for this member?`)) return;
-      try {
-        await api.post(`/pastors/members/${member.id}/status`, { status: action === 'activate' ? 'active' : 'inactive' });
-        await handleRefresh();
-      } catch (err) {
-        alert(err.response?.data?.message || err.message || "Status update failed");
-      }
-    };
+    const toggleStatus = (member) => runBulk(member.status === "active" ? "deactivate" : "activate", [member]);
+
+    const barActions = selection.chosen.length === 1
+      ? [
+          { label: "View", onClick: () => handleViewMember(selection.chosen[0]) },
+          { label: "Move zone", tone: "primary", onClick: () => setTransferMember(selection.chosen[0]) },
+          selection.chosen[0].status === "active"
+            ? { label: "Deactivate", tone: "warn", onClick: () => toggleStatus(selection.chosen[0]) }
+            : { label: "Activate", tone: "success", onClick: () => toggleStatus(selection.chosen[0]) },
+        ]
+      : [
+          { label: "Activate selected", tone: "success", onClick: () => runBulk("activate", selection.chosen) },
+          { label: "Deactivate selected", tone: "warn", onClick: () => runBulk("deactivate", selection.chosen) },
+        ];
+
+    const columns = [
+      { key: "member_code", label: "Member code", className: "font-mono text-xs whitespace-nowrap", render: (m) => m.member_code || m.member_number || "N/A" },
+      { key: "name", label: "Full name", primary: true, className: "font-semibold", render: (m) => m.full_name || m.name || "Unknown" },
+      { key: "phone", label: "Phone", className: "whitespace-nowrap", render: (m) => m.phone || "N/A" },
+      { key: "email", label: "Email", className: "max-w-[220px] truncate", render: (m) => m.email || "N/A" },
+      { key: "registered", label: "Registered", className: "whitespace-nowrap", render: (m) => m.membership_date ? new Date(m.membership_date).toLocaleDateString() : "N/A" },
+      { key: "status", label: "Status", render: (m) => (
+        <span className={`inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-[11px] font-medium ${m.status === "active" ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${m.status === "active" ? "bg-emerald-500" : "bg-red-500"}`} />{m.status === "active" ? "Active" : "Inactive"}
+        </span>) },
+      { key: "department", label: "Department", className: "max-w-[160px] truncate", render: (m) => m.department?.name || "N/A" },
+    ];
 
     return (
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 leading-tight">Zone Members</h2>
             <p className="text-xs text-gray-500">Only your zone members are visible</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">{filteredMembers.length} member{filteredMembers.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-gray-500">{paginationMeta.total || filteredMembers.length} member{(paginationMeta.total || filteredMembers.length) !== 1 ? "s" : ""}</span>
             <button onClick={handleRefresh} disabled={membersFetching} className="h-8 px-3 bg-[#dfb15b] text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50">
               {membersFetching ? "..." : "Refresh"}
             </button>
@@ -186,20 +199,20 @@ export default function MembersTab() {
         )}
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, code, phone, email..." className={`${INPUT_CLASS} w-48`} />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={`${INPUT_CLASS} w-28`}>
+          <input type="search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, code, phone, email..." className={`${INPUT_CLASS} w-full sm:w-64`} />
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-32`}>
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <select value={filterMinistry} onChange={(e) => setFilterMinistry(e.target.value)} className={`${INPUT_CLASS} w-28`}>
+          <select value={filterMinistry} onChange={(e) => setFilterMinistry(e.target.value)} className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-32`}>
             <option value="">All Ministries</option>
             <option value="R">Revival (R)</option>
             <option value="M">Ministry (M)</option>
             <option value="H">Harvest (H)</option>
             <option value="P">Purpose (P)</option>
           </select>
-          <select value={filterHomeGroup} onChange={(e) => setFilterHomeGroup(e.target.value)} className={`${INPUT_CLASS} w-36`}>
+          <select value={filterHomeGroup} onChange={(e) => setFilterHomeGroup(e.target.value)} className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-40`}>
             <option value="">All Home Groups</option>
             {homegroups.map((hg) => <option key={hg.id} value={hg.id}>{hg.name}</option>)}
           </select>
@@ -208,70 +221,19 @@ export default function MembersTab() {
           </button>
         </div>
 
-        {selectedIds.length > 0 && (
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-xs text-gray-600">{selectedIds.length} selected</span>
-            <button onClick={() => handleBulkAction('deactivate')} className="h-7 px-3 bg-amber-500 text-white text-xs rounded-lg">Deactivate</button>
-            <button onClick={() => handleBulkAction('activate')} className="h-7 px-3 bg-emerald-500 text-white text-xs rounded-lg">Activate</button>
-          </div>
-        )}
+        <SelectionBar count={selection.chosen.length} noun="member" actions={barActions} onClear={selection.clear} />
 
-        <div className="flex-1 overflow-auto rounded-xl border border-gray-200 bg-white">
-          <table className="min-w-full table-fixed">
-            <thead className="sticky top-0 z-10">
-              <tr>
-                <th className={`${TH_CLASS} w-8`}><input type="checkbox" checked={selectedIds.length === filteredMembers.length && filteredMembers.length > 0} onChange={toggleSelectAll} /></th>
-                <th className={`${TH_CLASS} w-28`}>Member Code</th>
-                <th className={`${TH_CLASS}`}>Full Name</th>
-                <th className={`${TH_CLASS} w-28`}>Phone</th>
-                <th className={`${TH_CLASS} w-44`}>Email</th>
-                <th className={`${TH_CLASS} w-24`}>Registered</th>
-                <th className={`${TH_CLASS} w-20`}>Status</th>
-                <th className={`${TH_CLASS} w-24`}>Title</th>
-                <th className={`${TH_CLASS} w-28`}>Department</th>
-                <th className={`${TH_CLASS} w-40`}>Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {membersLoading ? (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-xs text-gray-500">Loading members...</td></tr>
-              ) : filteredMembers.length === 0 ? (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-xs text-gray-500">No members found</td></tr>
-              ) : filteredMembers.map((member) => (
-                <tr key={member.id} className={`${ROW_CLASS} hover:bg-gray-50`}>
-                  <td className={`${TD_CLASS}`}><input type="checkbox" checked={selectedIds.includes(member.id)} onChange={() => toggleSelect(member.id)} /></td>
-                  <td className={`${TD_CLASS} font-mono`} title={member.member_code || member.member_number || "N/A"}>{member.member_code || member.member_number || "N/A"}</td>
-                  <td className={`${TD_CLASS} font-medium truncate`} title={member.full_name || member.name || "Unknown"}>{member.full_name || member.name || "Unknown"}</td>
-                  <td className={`${TD_CLASS}`} title={member.phone || "N/A"}>{member.phone || "N/A"}</td>
-                  <td className={`${TD_CLASS} truncate`} title={member.email || "N/A"}>{member.email || "N/A"}</td>
-                  <td className={`${TD_CLASS}`}>{member.membership_date ? new Date(member.membership_date).toLocaleDateString() : "N/A"}</td>
-                  <td className={`${TD_CLASS}`}>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium bg-white ${member.status === "active" ? "border-emerald-200 text-emerald-700" : "border-red-200 text-red-700"}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${member.status === "active" ? "bg-emerald-500" : "bg-red-500"}`}></span>
-                      {member.status === "active" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className={`${TD_CLASS}`} title={member.title || "N/A"}>{member.title || "N/A"}</td>
-                  <td className={`${TD_CLASS} truncate`} title={member.department?.name || "N/A"}>{member.department?.name || "N/A"}</td>
-                  <td className={`${TD_CLASS}`}>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => handleViewMember(member)} className="text-[#dfb15b] hover:text-amber-900">View</button>
-                      <button onClick={() => setTransferMember(member)} className="text-sky-600 hover:text-sky-800">Move zone</button>
-                      <button onClick={() => handleStatusToggle(member)} className="text-emerald-600 hover:text-emerald-800">
-                        {member.status === 'active' ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {paginationMeta.total > 0 && (
-            <div className="border-t border-gray-200 bg-gray-50 px-2 py-1">
-              <Pagination currentPage={paginationMeta.current_page} totalPages={paginationMeta.last_page} totalItems={paginationMeta.total} itemsPerPage={paginationMeta.per_page} onPageChange={handlePageChange} />
-            </div>
-          )}
-        </div>
+        <DataTable
+          columns={columns}
+          rows={filteredMembers}
+          loading={membersLoading}
+          selection={selection}
+          noun="member"
+          empty="No members found"
+          pagination={{ page: paginationMeta.current_page, lastPage: paginationMeta.last_page, total: paginationMeta.total, perPage: paginationMeta.per_page, onPage: handlePageChange }}
+        />
+
+        <ConfirmDialog open={!!confirm} title={confirm?.title} message={confirm?.message} confirmLabel={confirm?.confirmLabel} tone={confirm?.tone} busy={busy} onConfirm={confirmAndRun} onClose={() => !busy && setConfirm(null)} />
 
         {transferMember && (
           <TransferMemberModal
@@ -282,7 +244,7 @@ export default function MembersTab() {
         )}
 
         {flash && (
-          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white shadow-lg" role="status">{flash}</div>
+          <div className="fixed bottom-6 left-1/2 z-[10000] -translate-x-1/2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white shadow-lg" role="status">{flash}</div>
         )}
 
         {showDrawer && selectedMember && (

@@ -209,13 +209,14 @@ class AuthController extends Controller
     public function uploadProfilePhoto(Request $request): JsonResponse
     {
         $request->validate([
-            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photo' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
 
         $user = $request->user();
-        $path = $request->file('photo')->store('profile-photos', 'public');
+        // Content-checked and stored in cloud storage (the server's own disk is read-only in production).
+        $stored = app(\App\Services\Community\MediaStore::class)->storeImage($request->file('photo'));
 
-        $user->update(['profile_photo' => $path]);
+        $user->update(['profile_photo' => $stored['url']]);
         $user->load(['zone', 'department', 'homeGroup']);
 
         return response()->json(['success' => true, 'user' => new UserResource($user)]);

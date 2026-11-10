@@ -2382,9 +2382,10 @@ window.qrcode=module.exports;
             '<circle cx="118" cy="268" r="80" fill="none" stroke="url(#gd)" stroke-width="5"/>' + photo +
             '<text x="226" y="236" font-family="Georgia, serif" font-size="' + nameSize + '" fill="#ffffff" font-weight="700">' + esc(name) + '</text>' +
             '<rect x="226" y="252" width="90" height="4" rx="2" fill="url(#gd)"/>' +
-            field(226, 300, 'ZONE', card.zone, a) +
-            field(226, 380, 'DATE OF BIRTH', card.dob, a) +
-            field(226, 460, (card.number_label || 'MEMBER NO.').toUpperCase(), card.number, a) +
+            field(226, 292, 'ZONE', card.zone, a) +
+            field(226, 354, 'REGION', card.region || '—', a) +
+            field(226, 416, 'DATE OF BIRTH', card.dob, a) +
+            field(226, 478, (card.number_label || 'MEMBER NO.').toUpperCase(), card.number, a) +
             // QR
             '<rect x="' + (W - 36 - 214) + '" y="206" width="214" height="214" rx="20" fill="#ffffff"/>' +
             qrPaths(card.verify_url, W - 36 - 214 + 16, 222, 182) +

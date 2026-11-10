@@ -171,6 +171,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
         Route::get('/activities', [PastorController::class, 'activities']);
         Route::put('/zone', [PastorController::class, 'updateZoneInfo']);
         Route::get('/zone-history', [PastorController::class, 'zoneHistory']);
+        Route::post('/zone-history', [PastorController::class, 'addZoneHistory'])->middleware('throttle:30,1');
         Route::get('/partners', [PastorController::class, 'partners']);
 
         // 360 member view

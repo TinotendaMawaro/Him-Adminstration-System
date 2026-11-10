@@ -76,7 +76,7 @@ class CommunityService
             'id'       => $u->id,
             'name'     => $u->name,
             'handle'   => $p->handle,
-            'avatar'   => $u->profile_photo ? '/storage/' . ltrim($u->profile_photo, '/') : null,
+            'avatar'   => $u->profile_photo,
             'verified' => (bool) $p->is_verified || in_array($role, ['master', 'pastor'], true),
             'badge'    => ['master' => 'HIM Admin', 'pastor' => 'Pastor', 'hod' => 'Dept Head', 'partner' => 'Partner'][$role] ?? null,
             'zone'     => $u->relationLoaded('zone') ? $u->zone?->name : null,

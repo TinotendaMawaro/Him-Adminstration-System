@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
 import InviteMemberDrawer from "./InviteMemberModal.jsx";
 import Drawer from "../Drawer.jsx";
 import Pagination from "../Pagination.jsx";
+import { ActionButton, ConfirmDialog, SelectionBar, useSelection } from "../ui/DataTable.jsx";
 
 // Ripple Effect Button Component
 function RippleButton({ children, onClick, className = "", variant = "primary", shakeOnClick = false, disabled = false }) {
@@ -69,7 +71,7 @@ function RippleButton({ children, onClick, className = "", variant = "primary", 
 
 
 // Create Homegroup Modal
-function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
+function CreateHomegroupModal({ isOpen, onClose, onSuccess, editing }) {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -78,6 +80,15 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Opened from "Edit": start from that group's details.
+  useEffect(() => {
+    if (!isOpen) return;
+    setError("");
+    setFormData(editing
+      ? { name: editing.name || "", location: editing.location || "", meeting_day: editing.meeting_day || "Sunday", meeting_time: (editing.meeting_time || "10:00").slice(0, 5) }
+      : { name: "", location: "", meeting_day: "Sunday", meeting_time: "10:00" });
+  }, [isOpen, editing]);
 
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -95,14 +106,14 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
     setError("");
 
     try {
-      const response = await api.post('/homegroups', formData);
+      const response = editing ? await api.put(`/homegroups/${editing.id}`, formData) : await api.post('/homegroups', formData);
 
       if (response.data && response.data.success) {
         onSuccess();
         onClose();
         setFormData({ name: "", location: "", meeting_day: "Sunday", meeting_time: "10:00" });
       } else {
-        setError(response.data?.message || 'Failed to create homegroup');
+        setError(response.data?.message || 'Failed to save the home group');
       }
     } catch (err) {
       // Extract detailed error message from Laravel validation or other errors
@@ -118,12 +129,12 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="px-6 py-5 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">Create New Homegroup</h2>
+          <h2 className="text-xl font-bold text-gray-900">{editing ? "Edit Homegroup" : "Create New Homegroup"}</h2>
         </div>
         <div className="p-6 space-y-4">
           {error && (
@@ -182,11 +193,12 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess }) {
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
           <RippleButton variant="secondary" onClick={onClose}>Cancel</RippleButton>
           <RippleButton onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Creating...' : 'Create Homegroup'}
+            {loading ? 'Saving...' : editing ? 'Save changes' : 'Create Homegroup'}
           </RippleButton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -443,19 +455,22 @@ function ViewMembersDrawer({ isOpen, onClose, homegroupName, members, loading })
 }
 
 // Homegroup Card with Animated Hover Border Glow
-function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMember, onViewMembers }) {
+function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMember, onViewMembers, selected, onToggle }) {
   return (
     <div 
-      className="group relative bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300"
+      className={`group relative flex h-full flex-col bg-white/70 backdrop-blur-xl rounded-3xl border overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 ${selected ? "border-sky-400 ring-2 ring-sky-300" : "border-white/50"}`}
       onClick={() => onViewMembers(homegroup)}
     >
+      <label className="absolute left-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow" onClick={(e) => e.stopPropagation()}>
+        <input type="checkbox" className="h-4 w-4" aria-label={`Select ${homegroup.name}`} checked={!!selected} onChange={() => onToggle(homegroup.id)} />
+      </label>
       {/* Animated border glow on hover */}
       <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="absolute inset-[-2px] rounded-3xl bg-gradient-to-r from-gold-400 via-emerald-400 to-sky-400" style={{ animation: 'spin 3s linear infinite' }} />
       </div>
       
       {/* Inner card to cover the glow */}
-      <div className="relative bg-white/70 backdrop-blur-xl rounded-[1.4rem] m-0.5 p-5 h-full">
+      <div className="relative flex flex-1 flex-col bg-white/70 backdrop-blur-xl rounded-[1.4rem] m-0.5 p-5 pt-12">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-sky-400/20 flex items-center justify-center">
@@ -514,7 +529,7 @@ function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMemb
         )}
 
         {/* Actions */}
-        <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-auto flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
           <div className="flex gap-2">
             {homegroup.leader ? (
               <>
@@ -564,7 +579,7 @@ function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMemb
 // Floating Add Button
 function FloatingAddButton({ onClick, label }) {
   return (
-    <button onClick={onClick} className="fixed bottom-8 right-8 z-40 group">
+    <button onClick={onClick} className="fixed bottom-24 right-4 sm:bottom-24 sm:right-6 lg:bottom-24 lg:right-8 z-40 group">
       <div className="absolute -inset-1 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 animate-pulse transition-opacity" />
       <div className="relative flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-gold-500 to-gold-600 rounded-full shadow-xl shadow-gold-500/30 hover:shadow-gold-500/50 transition-all duration-300 hover:scale-110">
         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -592,12 +607,16 @@ export default function HomegroupsTab() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
+  const [editing, setEditing] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);   // array of home groups
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
 
    // Use react-query to fetch homegroups from pastor's zone endpoint with pagination
    // Include token prefix in query key so different logged-in pastors get separate cache entries
    const authToken = typeof window !== 'undefined' ? localStorage.getItem('him_token') || '' : '';
    const tokenPrefix = authToken ? authToken.slice(0, 8) : 'anon';
-   const { data: homegroupsResponse, isLoading, error, refetch } = useQuery({
+   const { data: homegroupsResponse, isLoading, error: queryError, refetch } = useQuery({
      queryKey: ['pastor-homegroups', tokenPrefix, currentPage, perPage],
      queryFn: async () => {
        const params = new URLSearchParams({
@@ -608,7 +627,7 @@ export default function HomegroupsTab() {
        if (!res.data.success) throw new Error(res.data.message || 'Failed');
        const data = res.data.data.map((hg) => ({
          ...hg,
-         members: hg.members_count,
+         members: hg.members_count ?? hg.users_count ?? 0,
        }));
 
        return { data, meta: res.data.meta };
@@ -628,6 +647,27 @@ export default function HomegroupsTab() {
     total: 0
   };
   const loading = isLoading;
+  const selection = useSelection(homegroups);
+
+  const runDelete = async () => {
+    setDeleting(true);
+    setError("");
+    const results = await Promise.allSettled(confirmDelete.map((g) => api.delete(`/homegroups/${g.id}`)));
+    const failed = results.filter((r) => r.status === "rejected");
+    if (failed.length) setError(failed[0].reason?.response?.data?.message || `${failed.length} home group(s) could not be deleted.`);
+    setConfirmDelete(null);
+    setDeleting(false);
+    selection.clear();
+    refreshHomegroups();
+  };
+
+  const barActions = selection.chosen.length === 1
+    ? [
+        { label: "Members", onClick: () => handleViewMembers(selection.chosen[0]) },
+        { label: "Edit", tone: "primary", onClick: () => { setEditing(selection.chosen[0]); setShowCreateModal(true); } },
+        { label: "Delete", tone: "danger", onClick: () => setConfirmDelete(selection.chosen) },
+      ]
+    : [{ label: "Delete selected", tone: "danger", onClick: () => setConfirmDelete(selection.chosen) }];
 
   // Handle page changes
   const handlePageChange = (page) => {
@@ -699,15 +739,18 @@ export default function HomegroupsTab() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Home Groups</h2>
           <p className="text-gray-500 mt-1">Manage your zone's home groups</p>
         </div>
         <div className="text-sm text-gray-500">
-          {homegroups.length} home group{homegroups.length !== 1 ? 's' : ''}
+          {paginationMeta.total || homegroups.length} home group{(paginationMeta.total || homegroups.length) !== 1 ? 's' : ''}
         </div>
       </div>
+
+      {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      <SelectionBar count={selection.chosen.length} noun="home group" actions={barActions} onClear={selection.clear} />
 
       {/* Grid of Homegroup Cards */}
       {loading ? (
@@ -751,6 +794,8 @@ export default function HomegroupsTab() {
               onDemoteLeader={handleDemoteLeader}
               onInviteMember={handleInviteMember}
               onViewMembers={handleViewMembers}
+              selected={selection.has(homegroup.id)}
+              onToggle={selection.toggle}
             />
           ))}
         </div>
@@ -768,13 +813,24 @@ export default function HomegroupsTab() {
       )}
 
       {/* Floating Create Button */}
-      <FloatingAddButton onClick={() => setShowCreateModal(true)} label="Create Homegroup" />
+      <FloatingAddButton onClick={() => { setEditing(null); setShowCreateModal(true); }} label="Create Homegroup" />
 
       {/* Modals */}
       <CreateHomegroupModal 
         isOpen={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
+        onClose={() => { setShowCreateModal(false); setEditing(null); }}
         onSuccess={refreshHomegroups}
+        editing={editing}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={confirmDelete && confirmDelete.length > 1 ? `Delete ${confirmDelete.length} home groups?` : "Delete this home group?"}
+        message="Members stay in the church, but they will no longer belong to a home group. This cannot be undone."
+        confirmLabel="Delete"
+        busy={deleting}
+        onConfirm={runDelete}
+        onClose={() => !deleting && setConfirmDelete(null)}
       />
 
         <AssignLeaderDrawer

@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
 import PremiumCard from "./PremiumCard";
+import PieChartCard from "./PieChartCard";
 
 // ============================================================================
 // The pastor's dashboard statistics: THEIR ZONE only, real numbers.
@@ -115,6 +116,7 @@ export default function DashboardStats({ onNavigate }) {
           );
         })}
       </div>
+      <div className="mt-5"><PieChartCard distribution={data?.distribution} zoneName={zone?.name} /></div>
     </div>
   );
 }

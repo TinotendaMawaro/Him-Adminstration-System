@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api";
-import { Icons } from "../MembersPortal";
+import { Icons } from "../icons";
 
 export default function LocationEntry({ onComplete }) {
   const queryClient = useQueryClient();
