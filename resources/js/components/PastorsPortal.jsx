@@ -1421,7 +1421,7 @@ const PartnersPage = () => {
             />
             <DataTable
                 columns={[
-                    { key: "name", label: "Partner", primary: true, className: "font-semibold", render: (x) => x.full_name || x.name || "—" },
+                    { key: "name", label: "Partner", primary: true, className: "font-semibold", render: (x) => <span data-history-user={x.user_id || undefined}>{x.full_name || x.name || "—"}</span> },
                     { key: "number", label: "Number", className: "font-mono text-xs", render: (x) => x.partner_number || "—" },
                     { key: "tier", label: "Tier", className: "capitalize", render: (x) => x.tier_label || x.tier || "—" },
                     { key: "status", label: "Status", className: "capitalize", render: (x) => x.status || "—" },

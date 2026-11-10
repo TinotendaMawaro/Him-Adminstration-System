@@ -89,6 +89,11 @@ class SecureApiMiddleware
 
         // 5️⃣ Add security headers to response
         $response->headers->set('X-Content-Type-Options', 'nosniff');
+        // Personal data must never be kept by a browser, proxy or CDN cache.
+        if ($request->headers->has('Authorization')) {
+            $response->headers->set('Cache-Control', 'no-store, private');
+            $response->headers->set('Pragma', 'no-cache');
+        }
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

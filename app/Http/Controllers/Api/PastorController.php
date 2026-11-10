@@ -719,11 +719,17 @@ class PastorController extends Controller
         $moved = app(\App\Services\MemberTransferService::class)
             ->transfer($member, Zone::findOrFail($validated['zone_id']), $request->user(), trim($validated['reason']));
 
+        // The person gets a fresh code and password for their new zone; the pastor sees them once, to hand over.
+        $credentials = $moved->user_id
+            ? app(\App\Services\CredentialService::class)->issue($moved->user, $moved->zone, $request->user(), 'Moved to ' . $moved->zone->name)
+            : null;
+
         return response()->json([
             'success' => true,
             'message' => "{$moved->name} {$moved->surname} has been moved to the new zone.",
             'data'    => new MemberResource($moved->load(['user', 'zone', 'homeGroup', 'department', 'gender', 'demography'])),
-        ]);
+            'credentials' => $credentials,
+        ])->header('Cache-Control', 'no-store');
     }
 
     /** GET /api/pastors/members/{member}/360 — 360-degree member view */

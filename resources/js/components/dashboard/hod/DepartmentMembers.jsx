@@ -31,7 +31,7 @@ export default function DepartmentMembersPage() {
         { key: "name", label: "Member", primary: true, className: "font-semibold", render: (m) => (
             <span className="flex items-center gap-2.5">
                 {m.photo ? <img src={m.photo} alt="" className="h-8 w-8 rounded-full object-cover" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">{(m.name || "?").charAt(0)}</span>}
-                {m.name}
+                <span data-history-user={m.id}>{m.name}</span>
             </span>) },
         { key: "role", label: "Role", render: (m) => <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${m.is_hod ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-700"}`}>{m.role}</span> },
         { key: "email", label: "Email", className: "max-w-[240px] truncate", render: (m) => m.email || "—" },

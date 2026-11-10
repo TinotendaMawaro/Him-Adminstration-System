@@ -84,7 +84,7 @@ class PartnerResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('partner_number')->searchable()->sortable(),
-                TextColumn::make('full_name')->searchable()->sortable(),
+                TextColumn::make('full_name')->searchable()->sortable()->extraCellAttributes(fn ($record) => ['data-history-user' => $record->user_id]),
                 TextColumn::make('tier')->badge()->color(fn ($state) => $state?->getColor()),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('pledge_amount')->money('USD')->sortable(),

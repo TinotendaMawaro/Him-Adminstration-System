@@ -20,6 +20,7 @@ class Pastor extends Model
         'ordained_date',
         'title',
         'is_zone_pastor',
+        'is_zone_admin',
         'is_regional_leader',
         'is_general_overseer',
         'region_id',

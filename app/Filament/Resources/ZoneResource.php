@@ -78,6 +78,38 @@ class ZoneResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('pic')->label('Set pastor in charge')->icon('heroicon-o-star')
+                        ->modalDescription('The pastor in charge leads this zone. The previous one stays a pastor of the zone. Both are told.')
+                        ->form([\Filament\Forms\Components\Select::make('pastor_id')->label('Pastor')->required()->searchable()
+                            ->options(fn (Zone $record) => \App\Models\Pastor::where('zone_id', $record->id)->get()->mapWithKeys(fn ($p) => [$p->id => trim("{$p->name} {$p->surname}") . ' (' . $p->code . ')' . ($p->is_zone_pastor ? ' - current' : '')])->all())
+                            ->helperText('Only pastors already in this zone are listed. Transfer a pastor into the zone first if needed.')])
+                        ->action(function (Zone $record, array $data) {
+                            try {
+                                app(\App\Services\LeadershipService::class)->setPastorInCharge($record, \App\Models\Pastor::findOrFail($data['pastor_id']), auth()->user());
+                            } catch (\Illuminate\Validation\ValidationException $e) {
+                                \Filament\Notifications\Notification::make()->title('Not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
+                                return;
+                            }
+                            \Filament\Notifications\Notification::make()->title('Pastor in charge updated')->success()->send();
+                        }),
+                    Tables\Actions\Action::make('zoneAdmin')->label('Set zone administrator')->icon('heroicon-o-key')
+                        ->visible(fn () => app(\App\Services\LeadershipService::class)->hasZoneAdminSupport())
+                        ->form([
+                            \Filament\Forms\Components\Select::make('pastor_id')->label('Pastor')->required()->searchable()
+                                ->options(fn (Zone $record) => \App\Models\Pastor::where('zone_id', $record->id)->get()->mapWithKeys(fn ($p) => [$p->id => trim("{$p->name} {$p->surname}") . ($p->is_zone_admin ? ' - administrator' : '')])->all()),
+                            \Filament\Forms\Components\Toggle::make('on')->label('Make administrator')->default(true)->helperText('Switch off to remove the role.'),
+                        ])
+                        ->action(function (Zone $record, array $data) {
+                            try {
+                                app(\App\Services\LeadershipService::class)->setZoneAdmin($record, \App\Models\Pastor::findOrFail($data['pastor_id']), (bool) $data['on'], auth()->user());
+                            } catch (\Illuminate\Validation\ValidationException $e) {
+                                \Filament\Notifications\Notification::make()->title('Not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
+                                return;
+                            }
+                            \Filament\Notifications\Notification::make()->title('Zone administrator updated')->success()->send();
+                        }),
+                ])->label('Leadership')->icon('heroicon-o-user-group'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

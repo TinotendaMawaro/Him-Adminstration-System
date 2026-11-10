@@ -110,7 +110,7 @@ class PastorResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'zone.region']))
             ->columns([
                 Tables\Columns\TextColumn::make('code')->badge()->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('full_name')->label('Pastor')
+                Tables\Columns\TextColumn::make('full_name')->label('Pastor')->extraCellAttributes(fn ($record) => ['data-history-user' => $record->user_id])
                     ->state(fn (Pastor $r) => trim("{$r->title} {$r->name} {$r->surname}"))
                     ->searchable(['name', 'surname']),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->toggleable()->placeholder('—'),
@@ -172,7 +172,7 @@ class PastorResource extends Resource
                         Forms\Components\DatePicker::make('effective')->label('Effective date')->default(now())->required(),
                         Forms\Components\Textarea::make('reason')->label('Reason / notes')->maxLength(500)->rows(2),
                     ])
-                    ->action(function (Pastor $r, array $data) {
+                    ->action(function (Pastor $r, array $data, $livewire) {
                         try {
                             $moved = app(PastorTransferService::class)->transfer($r, Zone::findOrFail($data['zone_id']), auth()->user(), $data['reason'] ?? null, $data['effective'] ?? null);
                         } catch (ValidationException $e) {
@@ -180,7 +180,14 @@ class PastorResource extends Resource
                             return;
                         }
                         Notification::make()->title('Pastor transferred')->body("{$moved->name} {$moved->surname} is now in " . $moved->zone->name)->success()->send();
+
+                        // A new zone means a new code and a new password: show them once, with Copy and a watermarked PDF.
+                        if ($moved->user) {
+                            $creds = app(\App\Services\CredentialService::class)->issue($moved->user, $moved->zone, auth()->user(), 'Transferred to ' . $moved->zone->name);
+                            \App\Filament\Support\CredentialsModal::open($livewire, $r, $creds);
+                        }
                     }),
+                \App\Filament\Support\CredentialsModal::action(),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('export')->label('Export CSV')->icon('heroicon-o-arrow-down-tray')->color('gray')

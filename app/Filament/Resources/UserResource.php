@@ -72,7 +72,7 @@ class UserResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('name')->sortable()->searchable()->extraCellAttributes(fn ($record) => ['data-history-user' => $record->id]),
                 Tables\Columns\TextColumn::make('email')->sortable()->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('role')->badge()->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->label('Active')->boolean()->sortable(),

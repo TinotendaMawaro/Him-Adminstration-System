@@ -1,3 +1,5 @@
+<script src="/js/him-privacy.js" defer></script>
+<script src="/js/him-history.js" defer></script>
 <style>
     :root { --portal-accent: {{ $accent }}; }
     /* Premium finish: softer cards, crisper tables, branded sidebar accent */

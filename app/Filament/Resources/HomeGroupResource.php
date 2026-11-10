@@ -61,6 +61,24 @@ class HomeGroupResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('leader')->label('Assign leader')->icon('heroicon-o-user-plus')->color('warning')
+                    ->modalDescription(fn (\App\Models\HomeGroup $record) => 'Choose someone from ' . ($record->zone?->name ?? 'this zone') . '. They join the group and become its leader.')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('user_id')->label('Person')->required()->searchable()
+                            ->helperText('Only people who belong to this zone are listed.')
+                            ->getSearchResultsUsing(fn (string $search, $record) => \App\Models\User::query()->where('zone_id', $record->zone_id)->where('is_active', true)
+                                ->whereIn('role', ['member', 'partner', 'hod'])->where('name', 'like', "%{$search}%")->orderBy('name')->limit(30)->pluck('name', 'id')->all())
+                            ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->name),
+                    ])
+                    ->action(function (\App\Models\HomeGroup $record, array $data) {
+                        try {
+                            app(\App\Services\LeadershipService::class)->assignHomeGroupLeader($record, \App\Models\User::findOrFail($data['user_id']), auth()->user());
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            \Filament\Notifications\Notification::make()->title('Not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
+                            return;
+                        }
+                        \Filament\Notifications\Notification::make()->title('Home group leader assigned')->success()->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

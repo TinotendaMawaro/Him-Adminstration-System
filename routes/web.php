@@ -6,6 +6,10 @@ use App\Http\Controllers\PayReturnController;
 use App\Http\Controllers\ReceiptController;
 use Illuminate\Support\Facades\Route;
 
+// The hover "history" card in the head-office console (session-authenticated; master only).
+Route::get('/staff/history/{user}', [\App\Http\Controllers\Api\PeopleController::class, 'history'])
+    ->whereNumber('user')->middleware(['auth', 'role:master', 'throttle:120,1'])->name('staff.history');
+
 // ── Staff portal downloads (session-authenticated; roles enforced in the controllers) ──
 Route::get('/exports/{report}', ExportController::class)
     ->middleware('throttle:20,1')

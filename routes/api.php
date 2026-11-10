@@ -75,6 +75,12 @@ Route::post('/register', RegisterController::class)
     Route::post('/location/reverse-geocode', [LocationController::class, 'reverseGeocode'])
          ->middleware('auth:sanctum', 'throttle:30,1');
 
+// ── People history hover + credentials PDF ───────────────────────────────────
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
+    Route::get('/people/{user}/history', [\App\Http\Controllers\Api\PeopleController::class, 'history'])->whereNumber('user')->middleware('role:master,pastor,hod', 'throttle:120,1');
+    Route::post('/credentials/pdf', [\App\Http\Controllers\Api\PeopleController::class, 'credentialsPdf'])->middleware('role:master,pastor', 'throttle:20,1');
+});
+
 // ── Partnership Packages (public — no auth required) ─────────────────────────
 Route::prefix('partnership-packages')->group(function () {
     Route::get('/', [PartnershipPackageController::class, 'index']);

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/api.js";
+import CredentialsPanel from "./CredentialsPanel.jsx";
 
 /**
  * A pastor moves a member of their zone to another zone.
@@ -12,6 +13,7 @@ export default function TransferMemberModal({ member, onClose, onDone }) {
     const [reason, setReason] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [issued, setIssued] = useState(null);   // { message, credentials } once the move is done
 
     const { data: zones = [], isLoading } = useQuery({
         queryKey: ["pastor-transfer-zones"],
@@ -34,13 +36,16 @@ export default function TransferMemberModal({ member, onClose, onDone }) {
         setError("");
         try {
             const { data } = await api.post(`/pastors/members/${member.id}/transfer`, { zone_id: Number(zoneId), reason: reason.trim() });
-            onDone?.(data.message);
+            if (data.credentials) { setIssued({ message: data.message, credentials: data.credentials }); setSaving(false); }
+            else onDone?.(data.message);
         } catch (err) {
             const errors = err.response?.data?.errors;
             setError((errors && Object.values(errors).flat()[0]) || err.response?.data?.message || "The move could not be completed.");
             setSaving(false);
         }
     };
+
+    if (issued) return <CredentialsPanel credentials={issued.credentials} onClose={() => onDone?.(issued.message)} />;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`Move ${name} to another zone`}>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ChevronRight, Crown, HeartHandshake, Home, IdCard, PlaySquare, ShoppingBag, Sparkles, Users } from "lucide-react";
+import { BadgeCheck, ChevronRight, Crown, HeartHandshake, Home, IdCard, PlaySquare, ShieldCheck, ShoppingBag, Sparkles, Users } from "lucide-react";
 import { community } from "./lib.js";
 import { useUser } from "../context/UserContext.jsx";
 
@@ -29,6 +29,7 @@ export default function AppTour({ onFinish }) {
         { icon: Users, color: "#7c3aed", title: "Channels", text: "Start a channel for your group: chat, set goals, plan meetings and schedule live sessions." },
         { icon: ShoppingBag, color: "#12a150", title: "Market", text: "Partners open shops here. Everyone can order or ask for a quote. Keep your partnership active to keep the marketplace unlocked." },
         { icon: IdCard, color: "#0e7490", title: "Me", text: "Your zone, home group, department, prayer requests to your pastor, events and your digital ID card live under Me → My church." },
+        { icon: ShieldCheck, color: "#0e7490", title: "Your data is protected", text: "Screenshots are blocked in this app to protect everyone's personal information. Never share your password, and sign out of all devices from Me → Security if you lose your phone." },
         { icon: p && (p.status === "active" || p.status === "expiring") ? Crown : HeartHandshake, color: "#b45309", title: "Your partnership", text: partnerLine },
     ];
     const s = steps[i], Icon = s.icon, last = i === steps.length - 1;

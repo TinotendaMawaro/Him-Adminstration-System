@@ -165,7 +165,7 @@ export default function MembersTab() {
 
     const columns = [
       { key: "member_code", label: "Member code", className: "font-mono text-xs whitespace-nowrap", render: (m) => m.member_code || m.member_number || "N/A" },
-      { key: "name", label: "Full name", primary: true, className: "font-semibold", render: (m) => m.full_name || m.name || "Unknown" },
+      { key: "name", label: "Full name", primary: true, className: "font-semibold", render: (m) => <span data-history-user={m.user_id || undefined}>{m.full_name || m.name || "Unknown"}</span> },
       { key: "phone", label: "Phone", className: "whitespace-nowrap", render: (m) => m.phone || "N/A" },
       { key: "email", label: "Email", className: "max-w-[220px] truncate", render: (m) => m.email || "N/A" },
       { key: "registered", label: "Registered", className: "whitespace-nowrap", render: (m) => m.membership_date ? new Date(m.membership_date).toLocaleDateString() : "N/A" },

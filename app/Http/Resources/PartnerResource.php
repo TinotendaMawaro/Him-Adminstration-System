@@ -13,6 +13,7 @@ class PartnerResource extends JsonResource
     {
         return [
             'id'                 => $this->id,
+            'user_id'            => $this->user_id,
             'name'               => $this->name,
             'surname'            => $this->surname,
             'full_name'          => $this->full_name,

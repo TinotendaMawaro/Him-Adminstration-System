@@ -81,7 +81,7 @@ class MemberResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'zone.region', 'homeGroup', 'department']))
             ->columns([
                 Tables\Columns\TextColumn::make('member_code')->label('Code')->badge()->searchable()->sortable()->placeholder('—'),
-                Tables\Columns\TextColumn::make('full_name')->label('Member')
+                Tables\Columns\TextColumn::make('full_name')->label('Member')->extraCellAttributes(fn ($record) => ['data-history-user' => $record->user_id])
                     ->state(fn (Member $r) => "{$r->name} {$r->surname}")->searchable(['name', 'surname']),
                 Tables\Columns\TextColumn::make('user.email')->label('Email')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('zone.name')->label('Zone')->placeholder('—')->sortable(),
@@ -148,15 +148,21 @@ class MemberResource extends Resource
                         Forms\Components\Textarea::make('reason')->required()->minLength(3)->maxLength(300)->rows(2),
                     ])
                     ->modalDescription('Moves the member and their login to the new zone. They leave their current home group and keep their member number.')
-                    ->action(function (Member $r, array $data) {
+                    ->action(function (Member $r, array $data, $livewire) {
                         try {
-                            app(\App\Services\MemberTransferService::class)->transfer($r, Zone::findOrFail($data['zone_id']), auth()->user(), $data['reason']);
+                            $moved = app(\App\Services\MemberTransferService::class)->transfer($r, Zone::findOrFail($data['zone_id']), auth()->user(), $data['reason']);
                         } catch (\Illuminate\Validation\ValidationException $e) {
                             Notification::make()->title('Move not possible')->body(collect($e->errors())->flatten()->first())->danger()->send();
                             return;
                         }
                         Notification::make()->title('Member moved')->success()->send();
+
+                        if ($moved->user) {
+                            $creds = app(\App\Services\CredentialService::class)->issue($moved->user, $moved->zone, auth()->user(), 'Moved to ' . $moved->zone->name);
+                            \App\Filament\Support\CredentialsModal::open($livewire, $r, $creds);
+                        }
                     }),
+                \App\Filament\Support\CredentialsModal::action(),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('export')->label('Export CSV')->icon('heroicon-o-arrow-down-tray')->color('gray')
