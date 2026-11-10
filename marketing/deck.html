@@ -16,7 +16,7 @@
     h2 { font-size: 44px; line-height: 1.1; margin-top: 12px; }
     p.lead { font-size: 20px; line-height: 1.5; color: #c4d3ea; margin-top: 16px; max-width: 560px; }
     .light p.lead { color: #3d4f69; }
-    .num { position: absolute; right: 72px; bottom: 34px; font-size: 12px; color: #6f86a8; }
+    body { counter-reset: n; } .slide { counter-increment: n; } .slide::after { content: counter(n); position: absolute; right: 72px; bottom: 34px; font-size: 12px; color: #6f86a8; }
     .brand { position: absolute; left: 72px; bottom: 30px; font-size: 11px; letter-spacing: .24em; color: #6f86a8; font-weight: 700; }
     .row { display: flex; gap: 40px; align-items: center; height: 100%; }
     .col { flex: 1; min-width: 0; }
@@ -72,26 +72,26 @@
         <div class="tile"><div class="ic">🤝</div><h3>Missed connection</h3><p>Members wanted to belong, share the Apostle’s messages and support each other’s work.</p></div>
     </div>
     <p class="lead" style="max-width:none;margin-top:34px">One secure platform, one login, one database: from the member’s phone to the head-office desk.</p>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">2</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 3 · Overview -->
 <section class="slide">
     <p class="kicker">The platform</p>
-    <h2 class="serif">Every role gets the right tools</h2>
+    <h2 class="serif">Members in the app. Everyone else on the web.</h2>
     <div class="flow">
-        <div class="node">📱 Members<small>Mobile app</small></div><div class="arrow">→</div>
-        <div class="node">⛪ Pastors<small>Zone portal</small></div><div class="arrow">→</div>
-        <div class="node">🏷 HODs<small>Department portal</small></div><div class="arrow">→</div>
-        <div class="node">🏛 Head office<small>Master console</small></div>
+        <div class="node" style="flex:1.2">📱 Members &amp; partners<small>Mobile app only</small></div><div class="arrow">→</div>
+        <div class="node">⛪ Pastors<small>Web portal</small></div>
+        <div class="node">🏷 HODs<small>Web portal</small></div>
+        <div class="node">💳 Finance<small>Web portal</small></div>
+        <div class="node">🎟 Events<small>Web portal</small></div>
+        <div class="node">🏛 Master<small>Web console</small></div>
     </div>
     <div class="flow" style="margin-top:14px">
-        <div class="node" style="flex:2">💳 Finance portal<small>Payments, receipts, reconciliation</small></div>
-        <div class="node" style="flex:2">🎟 Events portal<small>Events, registrations, attendance</small></div>
-        <div class="node" style="flex:2">🔐 One secure database<small>Shared by every portal</small></div>
+        <div class="node" style="flex:3">🔐 One secure database and one set of rules, shared by the app and every portal</div>
     </div>
     <p class="lead" style="max-width:none;margin-top:30px">Master controls everything: users, zones, pastors, reports, broadcasts and the community itself.</p>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">3</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 4 · Home -->
@@ -113,7 +113,7 @@
             <div class="phone sm" style="margin-top:44px"><img src="assets/m-05-comments.png" alt=""></div>
         </div>
     </div>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">4</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 5 · Watch -->
@@ -134,7 +134,7 @@
             </ul>
         </div>
     </div>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">5</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 6 · Channels -->
@@ -156,7 +156,7 @@
             <div class="phone sm" style="margin-top:44px"><img src="assets/m-10-channel-chat.png" alt=""></div>
         </div>
     </div>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">6</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 7 · Marketplace -->
@@ -176,7 +176,7 @@
             </ul>
         </div>
     </div>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">7</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 8 · My church + ID -->
@@ -198,12 +198,56 @@
             <div class="phone sm" style="margin-top:44px"><img src="assets/m-18-notifications.png" alt=""></div>
         </div>
     </div>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">8</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
+</section>
+
+<!-- 8b · Welcome and sign-out -->
+<section class="slide light">
+    <div class="row">
+        <div class="col" style="display:flex;gap:18px;justify-content:center">
+            <div class="phone sm"><img src="assets/app-welcome.png" alt=""></div>
+            <div class="phone sm" style="margin-top:44px"><img src="assets/app-tour.png" alt=""></div>
+        </div>
+        <div class="col">
+            <p class="kicker">First impressions</p>
+            <h2 class="serif">A warm welcome, a gentle tour</h2>
+            <ul class="tick">
+                <li>An animated welcome greets every member by name</li>
+                <li>A short tour for first-timers explains each tab</li>
+                <li>It tells you straight away whether you are a partner</li>
+                <li>Signing out asks first, then says goodbye</li>
+                <li>Leaving the app asks "Leave Heartfelt?" Yes or No</li>
+            </ul>
+        </div>
+    </div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
+</section>
+
+<!-- 8c · Partnership -->
+<section class="slide">
+    <div class="row">
+        <div class="col">
+            <p class="kicker">Partnership</p>
+            <h2 class="serif">Partner. Renew. <span class="gold-text">Stay connected.</span></h2>
+            <ul class="tick">
+                <li>Members see their partnership status the moment they land</li>
+                <li>A monthly reminder invites non-partners to join</li>
+                <li>Renewal reminders arrive in the last week</li>
+                <li>If a partnership expires, the marketplace and partner-only teachings lock until it is renewed</li>
+                <li>Pay securely through the ClicknPay gateway</li>
+            </ul>
+        </div>
+        <div class="col" style="display:flex;gap:18px;justify-content:center">
+            <div class="phone sm"><img src="assets/app-partnership.png" alt=""></div>
+            <div class="phone sm" style="margin-top:44px"><img src="assets/app-market-locked.png" alt=""></div>
+        </div>
+    </div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 9 · Pastor portal -->
 <section class="slide light">
-    <p class="kicker">Pastor portal</p>
+    <p class="kicker">Pastor portal · web</p>
     <h2 class="serif">Every pastor sees their own zone, and only their zone</h2>
     <div class="row" style="height:auto;margin-top:26px;align-items:flex-start">
         <div class="col" style="flex:1.7"><img class="shot" src="assets/pastor-dashboard.png" alt=""></div>
@@ -211,15 +255,15 @@
             <li>Live zone statistics and a composition pie chart</li>
             <li>Members: tick rows to act, bulk activate, move to another zone</li>
             <li>Home groups, departments and HOD appointments</li>
-            <li>Reports, prayer centre and zone history</li>
+            <li>Reports, prayer centre, zone history and the shared events calendar</li>
         </ul></div>
     </div>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">9</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 10 · Head office -->
 <section class="slide">
-    <p class="kicker">Head office</p>
+    <p class="kicker">Head office · web</p>
     <h2 class="serif">Master controls everything</h2>
     <div class="row" style="height:auto;margin-top:26px;align-items:flex-start">
         <div class="col" style="flex:1.7"><img class="shot" src="assets/admin-dashboard.png" alt=""></div>
@@ -230,7 +274,7 @@
             <li>Community admin: reports queue, posts, people, channels, teachings, live sessions, marketplace</li>
         </ul></div>
     </div>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">10</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 11 · Trust -->
@@ -245,7 +289,7 @@
         <div class="tile"><div class="ic">🔒</div><h3>Encrypted</h3><p>HTTPS everywhere and a TLS-encrypted cloud database.</p></div>
         <div class="tile"><div class="ic">💳</div><h3>Secure payments</h3><p>Online giving is handled by the ClicknPay gateway; card details never touch our servers.</p></div>
     </div>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">11</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 12 · Tech -->
@@ -258,7 +302,7 @@
         <div class="tile"><h3>Cloud</h3><p>Vercel hosting, TiDB Cloud database, Vercel Blob for photos and Resend for email.</p></div>
     </div>
     <p class="lead" style="max-width:none;margin-top:34px">Same database and same logic for every portal and the mobile app. A daily scheduler sends reminders and housekeeping.</p>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">12</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 13 · Roadmap -->
@@ -270,7 +314,7 @@
         <div class="tile"><div class="stat" style="color:#c9a84c">2</div><h3 style="margin-top:12px">Grow</h3><p>Upload the Apostle’s messages, schedule live services and open partner shops.</p></div>
         <div class="tile"><div class="stat" style="color:#c9a84c">3</div><h3 style="margin-top:12px">Extend</h3><p>Play Store and App Store releases, push notifications and in-app giving receipts.</p></div>
     </div>
-    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num" style="color:#8aa0c0">13</div>
+    <div class="brand" style="color:#8aa0c0">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 
 <!-- 14 · CTA -->
@@ -285,7 +329,7 @@
         </div>
         <div class="col" style="display:flex;justify-content:center"><img class="qr" id="qr" alt="QR code"></div>
     </div>
-    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div><div class="num">14</div>
+    <div class="brand">HEARTFELT INTERNATIONAL MINISTRIES</div>
 </section>
 <script src="qr.js"></script>
 </body>
