@@ -668,6 +668,20 @@ class DepartmentController extends Controller
     /**
      * Get department members
      */
+
+    /** Department rosters and activity are for the department's own people, its pastor and head office: not for every signed-in user. */
+    private function authorizeDepartment(?\App\Models\User $user, Department $department): void
+    {
+        $ok = $user && (
+            $user->isMaster()
+            || ($user->isPastor() && (int) $user->zone_id === (int) $department->zone_id)
+            || (int) $department->hod_id === (int) $user->id
+            || (int) $user->department_id === (int) $department->id
+        );
+
+        abort_unless($ok, 403, 'You do not have access to this department.');
+    }
+
     public function members(int $id): JsonResponse
     {
         $department = Department::find($id);
@@ -677,6 +691,8 @@ class DepartmentController extends Controller
                 'message' => 'Department not found.',
             ], 404);
         }
+
+        $this->authorizeDepartment(auth()->user(), $department);
 
         $members = $department->members()
             ->with(['gender', 'demography'])
@@ -731,6 +747,8 @@ class DepartmentController extends Controller
                 'message' => 'Department not found.',
             ], 404);
         }
+
+        $this->authorizeDepartment($request->user(), $department);
 
         $activities = $department->activities()
             ->with(['creator:id,name,profile_photo'])

@@ -74,37 +74,20 @@ export default function ZoneTab({ user }) {
     retry: 1,
   });
 
-  const { data: historyData, isLoading: historyLoading, error: historyError } = useQuery({
-    queryKey: ['pastor-zone-history'],
-    queryFn: async () => {
-      const res = await api.get('/pastors/zone-history');
-      if (!res.data.success) throw new Error(res.data.message || 'Failed to load zone history');
-      return res.data;
-    },
-    staleTime: 60000,
-    refetchOnWindowFocus: true,
-    retry: 1,
-  });
-
   const zone = user?.zone;
 
-  // Derive zoneData, pastorsData, timelineData from props and query results
+  // Derive zoneData and pastorsData from props and query results (the zone history card loads its own data)
   const zoneData = useMemo(() => ({
     name: zone?.name || user?.zoneName || "IOC",
-    description: "A vibrant community of believers committed to spiritual growth and fellowship.",
+    description: zone?.description || "",
     location: (zone?.region?.country?.name || '') + ' - ' + (zone?.region?.name || ''),
-    established: zone?.year_established || "2020",
+    established: zone?.year_established || "",
     membersCount: summaryData?.total_members?.toString() || "0",
     homeGroupsCount: summaryData?.total_home_groups?.toString() || "0",
     departmentsCount: summaryData?.total_departments?.toString() || "0",
     address: zone?.address || "",
     phone: zone?.phone || "",
   }), [zone, user?.zoneName, summaryData]);
-
-  const timelineData = useMemo(() => {
-    // historyData is the timeline array directly (from queryFn returning res.data.data)
-    return Array.isArray(historyData) ? historyData.slice(0, 4) : [];
-  }, [historyData]);
 
   const pastorsData = useMemo(() => {
     const currentPastor = zone?.currentPastor || user;
@@ -121,21 +104,28 @@ export default function ZoneTab({ user }) {
         id: pastor.id,
         name: pastor.name,
         title: "Associate Pastor",
-        period: "2023 - 2024",
         isCurrent: false
       });
     });
     return list;
   }, [zone, user, zoneData.established]);
 
-  const achievements = [
-    { title: "Members", icon: "M", tier: "platinum" },
-    { title: "Home Groups", icon: "H", tier: "gold" },
-    { title: "Spiritual", icon: "S", tier: "gold" },
-    { title: "Depts", icon: "D", tier: "silver" },
-    { title: "Community", icon: "C", tier: "silver" },
-    { title: "Youth", icon: "Y", tier: "bronze" },
-  ];
+  // Achievements are earned from the zone's real numbers (members, home groups, departments), not a fixed list.
+  const achievements = useMemo(() => {
+    const members = Number(summaryData?.total_members || 0);
+    const groups = Number(summaryData?.total_home_groups || 0);
+    const depts = Number(summaryData?.total_departments || 0);
+    const rows = [
+      { id: "m10", title: "10 members", description: "Ten active members in the zone", tier: "bronze", icon: "\u{1F465}", have: members, need: 10 },
+      { id: "m50", title: "50 members", description: "Fifty active members in the zone", tier: "silver", icon: "\u{1F465}", have: members, need: 50 },
+      { id: "m100", title: "100 members", description: "One hundred active members in the zone", tier: "gold", icon: "\u{1F465}", have: members, need: 100 },
+      { id: "m250", title: "250 members", description: "Two hundred and fifty active members", tier: "platinum", icon: "\u{1F465}", have: members, need: 250 },
+      { id: "g5", title: "5 home groups", description: "Five home groups meeting in the zone", tier: "bronze", icon: "\u{1F3E0}", have: groups, need: 5 },
+      { id: "g20", title: "20 home groups", description: "Twenty home groups meeting in the zone", tier: "gold", icon: "\u{1F3E0}", have: groups, need: 20 },
+      { id: "d3", title: "3 departments", description: "Three departments serving the zone", tier: "silver", icon: "\u{1F3DB}", have: depts, need: 3 },
+    ];
+    return rows.map((r) => ({ id: r.id, title: r.title, description: r.description, tier: r.tier, icon: r.icon, unlocked: r.have >= r.need, date: r.have >= r.need ? "Earned" : `${r.have}/${r.need}` }));
+  }, [summaryData]);
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -151,8 +141,8 @@ const openDrawer = (title, content) => setDrawerState({ isOpen: true, title, con
 const closeDrawer = () => setDrawerState(prev => ({ ...prev, isOpen: false }));
 
   // Combined loading/error states
-  const loading = summaryLoading || historyLoading;
-  const error = summaryError?.message || historyError?.message;
+  const loading = summaryLoading;
+  const error = summaryError?.message;
 
   if (loading) {
     return <div className="flex items-center justify-center p-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div></div>;
@@ -300,14 +290,7 @@ const closeDrawer = () => setDrawerState(prev => ({ ...prev, isOpen: false }));
           </AnimatedCard>
 
           <AnimatedCard delay={300}>
-            <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/50 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-100/50">
-                <h3 className="text-lg font-semibold text-gray-900">Zone Timeline</h3>
-              </div>
-              <div className="p-6">
-                {timelineData.length > 0 ? <ZoneHistory timeline={timelineData} /> : <p className="text-gray-500 text-sm">No history available</p>}
-              </div>
-            </div>
+            <ZoneHistory />
           </AnimatedCard>
         </div>
 

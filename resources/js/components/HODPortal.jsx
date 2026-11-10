@@ -11,10 +11,9 @@ import { Icons } from "./icons";
 import HomeGroupSelector from "./HomeGroupSelector.jsx";
 import RecommendedHomeGroupCard from "./dashboard/RecommendedHomeGroupCard.jsx";
 import ProfileCompletenessNudge from "./dashboard/sections/ProfileCompletenessNudge.jsx";
-import EventsTab, { FALLBACK_EVENTS } from "./dashboard/EventsTab.jsx";
+import EventsPanel from "./events/EventsPanel.jsx";
 import HODActivitiesPage from "./dashboard/hod/HODActivities";
 import HODAchievementsPage from "./dashboard/hod/HODAchievements";
-import DepartmentReportsPage from "./dashboard/hod/DepartmentReports";
 import DepartmentProfilePage from "./dashboard/hod/DepartmentProfile";
 import IdCardPanel from "./IdCardPanel.jsx";
 import DepartmentMembersPage from "./dashboard/hod/DepartmentMembers";
@@ -236,7 +235,7 @@ const HODHomeTab = ({ user, onLogout }) => {
         staleTime: 30000,
     });
 
-    const upcomingEvents = (homeEventsData && homeEventsData.length > 0 ? homeEventsData : FALLBACK_EVENTS)
+    const upcomingEvents = (homeEventsData || [])
         .filter((e) => !e.is_past)
         .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
         .slice(0, 4);
@@ -638,9 +637,9 @@ const HODLayout = ({ user, activeTab, setActivePage, onLogout, children }) => {
         { id: "workspace", label: "Workspace", Icon: Icons.BuildingOffice },
         { id: "members", label: "Members", Icon: Icons.Users },
         { id: "partnership", label: "Partnership", Icon: Icons.Heart },
+        { id: "events", label: "Events", Icon: Icons.Calendar },
         { id: "activities", label: "Activities", Icon: Icons.Calendar },
         { id: "achievements", label: "Achievements", Icon: Icons.ChartBar },
-        { id: "reports", label: "Reports", Icon: Icons.DocumentText },
         { id: "profile", label: "Profile", Icon: Icons.User },
     ];
 
@@ -842,12 +841,12 @@ export default function HODPortal({ user: initialUser, onLogout }) {
                 return <DepartmentMembersPage onNavigate={setActiveTab} />;
             case "partnership":
                 return <DepartmentPartnershipPage user={user} />;
+            case "events":
+                return <EventsPanel />;
             case "activities":
                 return <HODActivitiesPage />;
             case "achievements":
                 return <HODAchievementsPage />;
-            case "reports":
-                return <DepartmentReportsPage user={user} />;
             case "profile":
                 return (
                     <>

@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'role' => \App\Http\Middleware\CheckRole::class,
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'partnership' => \App\Http\Middleware\RequiresPartnership::class,
             'secure.api' => \App\Http\Middleware\SecureApiMiddleware::class,
         ]);
     })

@@ -59,6 +59,8 @@ Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
     abort_unless($secret !== '' && hash_equals("Bearer {$secret}", (string) $request->header('Authorization')), 403);
 
     \Illuminate\Support\Facades\Artisan::call('schedule:run');
+    // Idempotent and cheap, so it does not depend on the cron minute lining up with the schedule's clock time.
+    \Illuminate\Support\Facades\Artisan::call('partners:lifecycle');
 
     return response()->json(['success' => true, 'ran_at' => now()->toIso8601String()]);
 })->middleware('throttle:10,1');
@@ -432,7 +434,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:300,1'])->group(function 
         Route::put('/live/{id}/status', [$channels, 'liveStatus'])->whereNumber('id');
     });
 
-    Route::prefix('market')->group(function () use ($market) {
+    Route::prefix('market')->middleware('partnership')->group(function () use ($market) {
         Route::get('/meta', [$market, 'meta']);
         Route::get('/listings', [$market, 'index']);
         Route::get('/listings/mine', [$market, 'mine']);

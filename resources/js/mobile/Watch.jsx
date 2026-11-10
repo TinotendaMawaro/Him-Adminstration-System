@@ -54,6 +54,8 @@ function TeachingPlayer({ item, onClose }) {
 function Teachings() {
     const [series, setSeries] = useState("");
     const [playing, setPlaying] = useState(null);
+    const nav = useNav();
+    const open = (t) => (t.locked ? nav.push("partnership") : setPlaying(t));
     const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["teachings", series], queryFn: () => watch.teachings(series || undefined), staleTime: 60_000 });
     const d = data?.data;
     const qc = useQueryClient();
@@ -65,7 +67,7 @@ function Teachings() {
             {d && (
                 <div className="pb-8">
                     {d.featured && !series && (
-                        <button onClick={() => setPlaying(d.featured)} className="relative block mx-4 mt-4 rounded-[26px] overflow-hidden text-left w-[calc(100%-32px)]" style={{ aspectRatio: "16/10", boxShadow: "var(--shadow)" }}>
+                        <button onClick={() => open(d.featured)} className="relative block mx-4 mt-4 rounded-[26px] overflow-hidden text-left w-[calc(100%-32px)]" style={{ aspectRatio: "16/10", boxShadow: "var(--shadow)" }}>
                             <img src={d.featured.thumb} alt="" className="absolute inset-0 w-full h-full object-cover" />
                             <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,16,32,.92), rgba(8,16,32,.1) 65%)" }} />
                             <div className="absolute top-3.5 left-3.5 hm-badge hm-badge-gold" style={{ background: "var(--gold)", color: "#1c1503", height: 24 }}>FEATURED</div>
@@ -77,9 +79,9 @@ function Teachings() {
                     <div className="px-4 mt-1 space-y-3">
                         {d.items.length === 0 && <Empty icon={Video} title="No teachings yet" text="New messages from Apostle Tavonga Vutabwashe will appear here." />}
                         {d.items.map((t) => (
-                            <button key={t.id} onClick={() => setPlaying(t)} className="w-full flex gap-3 text-left hm-card p-2.5">
+                            <button key={t.id} onClick={() => open(t)} className="w-full flex gap-3 text-left hm-card p-2.5">
                                 <div className="relative w-[132px] shrink-0 rounded-xl overflow-hidden" style={{ aspectRatio: "16/10" }}><img src={t.thumb} alt="" loading="lazy" className="w-full h-full object-cover" /><div className="absolute inset-0 flex items-center justify-center"><div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,.5)" }}><Play size={14} fill="#fff" color="#fff" style={{ marginLeft: 2 }} /></div></div></div>
-                                <div className="flex-1 min-w-0 py-0.5"><div className="font-bold text-[14.5px] leading-snug line-clamp-2">{t.title}</div><div className="text-xs mt-1" style={{ color: "var(--mut)" }}>{t.speaker}</div><div className="text-[11.5px] mt-1 flex gap-2" style={{ color: "var(--mut)" }}>{t.series && <span className="hm-badge" style={{ background: "var(--surface2)" }}>{t.series}</span>}<span className="flex items-center gap-1"><Eye size={12} />{compact(t.views)}</span></div></div>
+                                <div className="flex-1 min-w-0 py-0.5"><div className="font-bold text-[14.5px] leading-snug line-clamp-2">{t.locked ? "🔒 " : ""}{t.title}</div><div className="text-xs mt-1" style={{ color: "var(--mut)" }}>{t.speaker}</div><div className="text-[11.5px] mt-1 flex gap-2" style={{ color: "var(--mut)" }}>{t.series && <span className="hm-badge" style={{ background: "var(--surface2)" }}>{t.series}</span>}<span className="flex items-center gap-1"><Eye size={12} />{compact(t.views)}</span></div></div>
                             </button>
                         ))}
                     </div>

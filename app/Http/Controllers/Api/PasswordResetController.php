@@ -46,7 +46,7 @@ class PasswordResetController extends Controller
         $data = $request->validate([
             'token'    => ['required', 'string'],
             'email'    => ['required', 'email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', PasswordRule::min(10)->mixedCase()->numbers()],
         ]);
 
         $status = Password::reset($data, function (User $user, string $password) {

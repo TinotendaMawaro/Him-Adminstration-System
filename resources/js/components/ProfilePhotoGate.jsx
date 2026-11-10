@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import api from "../lib/api.js";
+import { compressImage, uploadErrorMessage } from "../lib/image.js";
 import { useUser } from "../context/UserContext.jsx";
 
 /**
@@ -22,11 +23,11 @@ export default function ProfilePhotoGate() {
         setBusy(true);
         try {
             const fd = new FormData();
-            fd.append("photo", file);
+            fd.append("photo", await compressImage(file, 1000, 0.85));
             const { data } = await api.post("/profile/photo", fd, { headers: { "Content-Type": "multipart/form-data" } });
             updateUser?.({ profile_photo: data?.user?.profile_photo });
         } catch (e) {
-            setError(e?.response?.data?.errors?.photo?.[0] || e?.response?.data?.errors?.image?.[0] || e?.response?.data?.message || "That photo could not be uploaded. Please try a JPG or PNG under 4 MB.");
+            setError(uploadErrorMessage(e));
             setPreview(null);
         }
         setBusy(false);

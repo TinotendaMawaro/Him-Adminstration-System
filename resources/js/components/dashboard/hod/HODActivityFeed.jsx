@@ -15,69 +15,7 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Sample data for demonstration
-    const sampleActivities = [
-        {
-            id: 1,
-            type: "member_added",
-            title: "New Member Added",
-            description: "Tatenda Moyo joined the department",
-            time: "2 hours ago",
-            color: "from-violet-400 to-purple-600",
-            icon: "Users",
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        },
-        {
-            id: 2,
-            type: "event_created",
-            title: "Event Created",
-            description: "Youth Fellowship Service - Saturday at 6PM",
-            time: "5 hours ago",
-            color: "from-sky-400 to-sky-600",
-            icon: "Calendar",
-            timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-        },
-        {
-            id: 3,
-            type: "report_submitted",
-            title: "Weekly Report Submitted",
-            description: "Week 12 attendance & offerings recorded",
-            time: "1 day ago",
-            color: "from-emerald-400 to-emerald-600",
-            icon: "DocumentChart",
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-        {
-            id: 4,
-            type: "pastor_message",
-            title: "Pastor Message Received",
-            description: "Pastor John: Please submit quarterly report",
-            time: "1 day ago",
-            color: "from-amber-400 to-amber-600",
-            icon: "ChatBubbleLeftRight",
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-        {
-            id: 5,
-            type: "achievement",
-            title: "Achievement Unlocked",
-            description: "Department reached 50 active members",
-            time: "2 days ago",
-            color: "from-rose-400 to-rose-600",
-            icon: "Trophy",
-            timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        },
-        {
-            id: 6,
-            type: "meeting",
-            title: "Department Meeting",
-            description: "Weekly sync scheduled for Wednesday",
-            time: "3 days ago",
-            color: "from-purple-400 to-purple-600",
-            icon: "UserGroup",
-            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        },
-    ];
+
 
     // Map icon string to actual icon component
     const getIcon = (iconName) => {
@@ -94,7 +32,7 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
         return icons[iconName] || HODIcons.Bell;
     };
 
-    // Fetch activities from API (with fallback to sample)
+    // Fetch activities from the API
     const fetchActivities = async () => {
         try {
             setLoading(true);
@@ -151,11 +89,11 @@ export const HODActivityFeed = ({ departmentId, limit = 10 }) => {
                 activitiesData.sort((a, b) => b.timestamp - a.timestamp);
                 setActivities(activitiesData.slice(0, limit));
             } else {
-                setActivities(sampleActivities);
+                setActivities([]);
             }
         } catch (err) {
-            // Use sample data as fallback
-            setActivities(sampleActivities);
+            // Nothing to show if the request failed
+            setActivities([]);
         } finally {
             setLoading(false);
         }

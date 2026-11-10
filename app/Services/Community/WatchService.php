@@ -24,11 +24,20 @@ class WatchService
 
     // ── Teachings ─────────────────────────────────────────────────────────────────────────────────
 
-    public function teaching(Teaching $t): array
+    /** Partner-only teachings are locked (no video link is sent at all) for anyone who is not a partner in good standing. */
+    public function teaching(Teaching $t, ?\App\Models\User $viewer = null): array
     {
+        if ($t->partners_only && !($viewer && app(\App\Services\PartnershipService::class)->inGoodStanding($viewer))) {
+            return [
+                'id' => $t->id, 'title' => $t->title, 'description' => $t->description, 'series' => $t->series, 'speaker' => $t->speaker,
+                'locked' => true, 'partners_only' => true, 'thumb' => $t->thumbnail_url ?: "https://i.ytimg.com/vi/{$t->video_id}/hqdefault.jpg",
+                'featured' => $t->is_featured, 'views' => $t->views_count, 'published_at' => $t->published_at?->toIso8601String(),
+            ];
+        }
+
         $v = MediaLinks::video($t->youtube_url);
 
-        return [
+        return ['locked' => false, 'partners_only' => (bool) $t->partners_only,
             'id' => $t->id, 'title' => $t->title, 'description' => $t->description, 'series' => $t->series, 'speaker' => $t->speaker,
             'video_id' => $t->video_id, 'url' => $t->youtube_url, 'embed' => $v['embed'] ?? "https://www.youtube-nocookie.com/embed/{$t->video_id}",
             'thumb' => $t->thumbnail_url ?: "https://i.ytimg.com/vi/{$t->video_id}/hqdefault.jpg",
@@ -36,7 +45,7 @@ class WatchService
         ];
     }
 
-    public function teachings(?string $series = null, int $limit = 40): array
+    public function teachings(?string $series = null, int $limit = 40, ?\App\Models\User $viewer = null): array
     {
         $q = Teaching::where('status', 'published')->where(fn ($w) => $w->whereNull('published_at')->orWhere('published_at', '<=', now()));
         if ($series) {
@@ -44,9 +53,9 @@ class WatchService
         }
 
         return [
-            'featured' => ($f = (clone $q)->where('is_featured', true)->latest('published_at')->first()) ? $this->teaching($f) : null,
+            'featured' => ($f = (clone $q)->where('is_featured', true)->latest('published_at')->first()) ? $this->teaching($f, $viewer) : null,
             'series'   => Teaching::where('status', 'published')->whereNotNull('series')->distinct()->orderBy('series')->pluck('series')->all(),
-            'items'    => $q->orderByDesc('published_at')->orderByDesc('id')->limit($limit)->get()->map(fn ($t) => $this->teaching($t))->all(),
+            'items'    => $q->orderByDesc('published_at')->orderByDesc('id')->limit($limit)->get()->map(fn ($t) => $this->teaching($t, $viewer))->all(),
         ];
     }
 

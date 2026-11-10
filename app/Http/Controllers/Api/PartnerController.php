@@ -72,7 +72,8 @@ class PartnerController extends Controller
         /** @var PartnershipPackage $package */
         $package = PartnershipPackage::findOrFail($validated['package_id']);
 
-        $autoActivate = in_array($validated['payment_method'], ['visa', 'mastercard', 'paypal']);
+        // Never activate on a promise: a partner becomes active when the first payment is confirmed (online gateway or head office).
+        $autoActivate = false;
 
         $partner = DB::transaction(function () use ($user, $zone, $validated, $package, $autoActivate) {
             $partner = Partner::create([

@@ -1,26 +1,16 @@
 import { useState } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Bookmark, CalendarDays, CheckCheck, ChevronRight, CreditCard, Edit3, Flag, Globe, HandHeart, IdCard, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Search, ShieldCheck, Store, Sun, UserX, Users, Heart, ShoppingBag, MessageCircle, Megaphone, Info, Ticket, ExternalLink, Camera } from "lucide-react";
-import { Avatar, Btn, ActionSheet, ConfirmSheet, Empty, ErrorState, IconBtn, Segmented, Sheet, Skel, TopBar, Verified, toast, cx, useDark, Spinner } from "./ui.jsx";
+import { Bell, Bookmark, CalendarDays, CheckCheck, ChevronRight, CreditCard, Edit3, Flag, Globe, HandHeart, IdCard, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Search, ShieldCheck, Store, Sun, UserX, Users, Heart, ShoppingBag, MessageCircle, Megaphone, Info, Ticket, ExternalLink, Camera, HeartHandshake, KeyRound, ShieldAlert } from "lucide-react";
+import { Avatar, Btn, ActionSheet, ConfirmSheet, Empty, ErrorState, Group, IconBtn, Row, Segmented, Sheet, Skel, TopBar, Verified, toast, cx, useDark, Spinner } from "./ui.jsx";
 import { FeedList, Scroller } from "./Feed.jsx";
 import { PersonRow } from "./Home.jsx";
 import { ReportSheet } from "./Post.jsx";
 import IdCardPanel from "../components/IdCardPanel.jsx";
+import EventsPanel from "../components/events/EventsPanel.jsx";
 import api from "../lib/api.js";
 import { community, errorMessage, formatWhen, compact, haptic, market, money, timeAgo } from "./lib.js";
 import { useNav } from "./nav.jsx";
 import { useUser } from "../context/UserContext.jsx";
-
-function Row({ icon: Icon, label, hint, onClick, color = "var(--accent)", right, danger }) {
-    return (
-        <button onClick={() => { haptic(6); onClick?.(); }} className="w-full flex items-center gap-3.5 px-4 h-[58px] text-left active:bg-[var(--surface2)] transition-colors">
-            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${danger ? "var(--danger)" : color} 13%, transparent)`, color: danger ? "var(--danger)" : color }}><Icon size={19} /></span>
-            <span className="flex-1 min-w-0"><span className="block font-semibold text-[15.5px]" style={danger ? { color: "var(--danger)" } : undefined}>{label}</span>{hint && <span className="block text-xs" style={{ color: "var(--mut)" }}>{hint}</span>}</span>
-            {right ?? <ChevronRight size={18} style={{ color: "var(--mut)" }} />}
-        </button>
-    );
-}
-const Group = ({ title, children }) => <section className="mx-4 mt-4"><h3 className="hm-label">{title}</h3><div className="hm-card overflow-hidden divide-y" style={{ "--tw-divide-opacity": 1 }}>{Array.isArray(children) ? children.filter(Boolean).map((c, i) => <div key={i} style={{ borderColor: "var(--line)" }}>{c}</div>) : children}</div></section>;
 
 // ── Me tab ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -29,6 +19,14 @@ export default function Me({ boot, onLogout }) {
     const { user } = useUser();
     const { dark, toggle } = useDark();
     const [confirm, setConfirm] = useState(false);
+    const [confirmAll, setConfirmAll] = useState(false);
+    const sendResetLink = async () => {
+        try { await api.post("/forgot-password", { email: user?.email }); toast.success("Check your email for the password link"); } catch (e) { toast.error(errorMessage(e)); }
+    };
+    const signOutEverywhere = async () => {
+        try { await api.post("/logout-all"); } catch { /* the token may already be gone */ }
+        onLogout({ shouldLogoutApi: false });
+    };
     const me = boot?.me;
     const qc = useQueryClient();
     const member = user?.member;
@@ -57,13 +55,18 @@ export default function Me({ boot, onLogout }) {
             <Group title="Marketplace">
                 <Row icon={Receipt} label="My orders & quotes" color="#12a150" onClick={() => nav.push("orders", { as: "buyer" })} />
                 {boot?.can_sell ? <Row icon={Store} label="My shop" hint="Listings, orders and quote requests" color="#b45309" onClick={() => nav.push("shop")} />
-                    : <Row icon={ShieldCheck} label="Become a partner to sell" hint="Only active partners can open a shop" color="#b45309" onClick={() => nav.push("partner-info")} />}
+                    : <Row icon={ShieldCheck} label="Become a partner to sell" hint="Only active partners can open a shop" color="#b45309" onClick={() => nav.push("partnership")} />}
             </Group>
             <Group title="Church life">
+                <Row icon={HeartHandshake} label="Partnership" color="#b45309" hint={boot?.partnership ? ({ none: "Not a partner yet", pending: "Waiting for payment", active: "Active partner", expiring: "Renews soon", expired: "Expired: renew to unlock" })[boot.partnership.status] : undefined} onClick={() => nav.push("partnership")} />
                 <Row icon={CalendarDays} label="Events & conferences" color="#0e7490" onClick={() => nav.push("events")} />
                 <Row icon={HandHeart} label="Give online" hint="Tithes, offerings, seeds and partnership" color="#12a150" onClick={() => window.dispatchEvent(new CustomEvent("him:give"))} />
                 <Row icon={IdCard} label="My ID card" hint="Download or print, with a scannable QR" color="#2f6bff" onClick={() => nav.push("idcard")} />
                 <Row icon={LayoutDashboard} label="My church" hint="Zone, home group, department, prayer and details" color="#667791" onClick={() => nav.push("church")} />
+            </Group>
+            <Group title="Security">
+                <Row icon={KeyRound} label="Change password" hint="We email you a secure link" color="#0e7490" onClick={sendResetLink} />
+                <Row icon={ShieldAlert} label="Sign out of all devices" hint="Use this if you lost your phone" color="#e11d48" onClick={() => setConfirmAll(true)} />
             </Group>
             <Group title="Account">
                 <Row icon={Edit3} label="Edit community profile" onClick={() => nav.push("edit-profile")} />
@@ -71,7 +74,8 @@ export default function Me({ boot, onLogout }) {
                 <Row icon={LogOut} label="Sign out" danger onClick={() => setConfirm(true)} right={<span />} />
             </Group>
             <p className="text-center text-xs py-6" style={{ color: "var(--mut)" }}>Heartfelt International Ministries · Community</p>
-            <ConfirmSheet open={confirm} onClose={() => setConfirm(false)} title="Sign out?" text="You'll need to sign in again to use the app." confirm="Sign out" danger onConfirm={onLogout} />
+            <ConfirmSheet open={confirmAll} onClose={() => setConfirmAll(false)} title="Sign out everywhere?" text="Every phone and browser signed in to your account will be signed out, including this one." confirm="Sign out everywhere" danger onConfirm={signOutEverywhere} />
+            <ConfirmSheet open={confirm} onClose={() => setConfirm(false)} title="Sign out?" text="Do you want to sign out of Heartfelt? You will need to sign in again to use the app." confirm="Yes, sign out" cancel="No, stay" danger onConfirm={onLogout} />
         </Scroller>
     );
 }
@@ -166,50 +170,12 @@ export function SavedScreen() {
 // ── Events, ID card, partner info, classic portal ───────────────────────────────────────────────
 
 export function EventsScreen() {
-    const qc = useQueryClient();
-    const [busy, setBusy] = useState(null);
-    const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ["events-mobile"], queryFn: async () => (await api.get("/events", { params: { upcoming: 1 } })).data, staleTime: 30_000 });
-    const events = data?.data || [];
-    const register = async (e) => { setBusy(e.id); haptic(12); try { await api.post(`/events/${e.id}/register`); toast.success(e.requires_payment ? "Registered. Complete your payment to confirm." : "You're registered!"); await refetch(); } catch (err) { toast.error(errorMessage(err)); } finally { setBusy(null); } };
-    const cancel = async (e) => { setBusy(e.id); try { await api.delete(`/events/${e.id}/register`); toast.success("Registration cancelled"); await refetch(); } catch (err) { toast.error(errorMessage(err)); } finally { setBusy(null); } };
-
     return (
         <div className="flex flex-col h-full"><TopBar back title="Events & conferences" />
-            <Scroller onRefresh={refetch}><div className="p-4 space-y-3 pb-10">
-                {isLoading && [0, 1, 2].map((i) => <Skel key={i} h={150} r={22} />)}
-                {isError && <ErrorState error={error} onRetry={refetch} />}
-                {!isLoading && events.length === 0 && <Empty icon={CalendarDays} title="No upcoming events" text="New events and conferences will appear here." />}
-                {events.map((e) => { const r = e.my_registration; const d = new Date(e.starts_at); return (
-                    <div key={e.id} className="hm-card overflow-hidden">
-                        {(e.banner_image || e.image) && <div style={{ aspectRatio: "16/7" }}><img src={e.banner_image || e.image} alt="" className="w-full h-full object-cover" loading="lazy" /></div>}
-                        <div className="p-4 flex gap-3.5">
-                            <div className="w-14 shrink-0 rounded-2xl text-center py-2" style={{ background: "linear-gradient(160deg,#c9a84c,#a8832c)", color: "#1c1503" }}><div className="text-[11px] font-extrabold uppercase">{d.toLocaleString(undefined, { month: "short" })}</div><div className="text-2xl font-extrabold leading-none">{d.getDate()}</div></div>
-                            <div className="flex-1 min-w-0"><div className="font-extrabold text-[17px] leading-snug">{e.title}</div><div className="text-[12.5px] mt-1 space-y-0.5" style={{ color: "var(--mut)" }}><div>{formatWhen(e.starts_at)}</div>{e.venue_name && <div className="flex items-center gap-1"><MapPin size={12} />{e.venue_name}</div>}</div>
-                                <div className="flex flex-wrap gap-2 mt-2">{e.requires_payment && <span className="hm-badge hm-badge-gold">{money(e.registration_fee, e.currency)}</span>}{e.spots_remaining !== null && e.spots_remaining !== undefined && <span className="hm-badge" style={{ background: "var(--surface2)", color: "var(--mut)" }}>{e.spots_remaining} spots left</span>}{r && <span className="hm-badge" style={{ background: "color-mix(in srgb, var(--ok) 15%, transparent)", color: "var(--ok)" }}>{r.status === "confirmed" ? "Confirmed" : r.status === "pending" ? "Registered" : r.status}</span>}</div></div>
-                        </div>
-                        <div className="px-4 pb-4 flex gap-2">
-                            {r ? <>{Number(r.balance_due || 0) > 0 && <Btn size="sm" icon={CreditCard} className="flex-1" onClick={() => window.dispatchEvent(new CustomEvent("him:give", { detail: { type: "event_registration", registrationId: r.id } }))}>Pay {money(r.balance_due, e.currency)}</Btn>}{r.status !== "cancelled" && Number(r.amount_paid || 0) === 0 && <Btn size="sm" variant="soft" loading={busy === e.id} onClick={() => cancel(e)}>Cancel</Btn>}</>
-                                : e.requires_registration === false ? <div className="text-sm" style={{ color: "var(--mut)" }}>No registration needed. Just come!</div>
-                                : <Btn size="sm" block loading={busy === e.id} disabled={e.registration_open === false} onClick={() => register(e)}>{e.registration_open === false ? "Registration closed" : "Register"}</Btn>}
-                        </div>
-                    </div>); })}
-            </div></Scroller></div>
+            <Scroller><div className="p-4 pb-10"><EventsPanel /></div></Scroller></div>
     );
 }
 
 export function IdCardScreen() {
     return <div className="flex flex-col h-full"><TopBar back title="My ID card" /><div className="hm-scroll p-3 pb-10"><IdCardPanel /></div></div>;
-}
-
-export function PartnerInfo() {
-    return (
-        <div className="flex flex-col h-full"><TopBar back title="Sell on the marketplace" />
-            <div className="hm-scroll p-5 space-y-4">
-                <div className="rounded-3xl p-5 text-white" style={{ background: "linear-gradient(135deg,#0f2744,#2f6bff)" }}><Store size={34} /><div className="font-extrabold text-2xl mt-3 leading-tight">Open your shop to the whole community</div><p className="text-sm opacity-85 mt-2">The marketplace is for ministry partners. List your products and services, receive orders, answer quote requests, and grow your business among people you already trust.</p></div>
-                {["Partners-only shops keep the marketplace trusted", "Members order directly or ask you for a quote", "You agree payment and delivery with each buyer", "Head office can suspend shops that break the rules"].map((t) => <div key={t} className="flex gap-3 items-start"><CheckCheck size={20} style={{ color: "var(--ok)" }} className="shrink-0 mt-0.5" /><span className="text-[15px]">{t}</span></div>)}
-                <p className="text-sm rounded-2xl p-4" style={{ background: "var(--surface2)", color: "var(--mut)" }}>To become a partner, choose a partnership package and enrol. Once your partnership is active, your shop opens automatically.</p>
-                <Btn block onClick={() => window.location.assign("/partner/enroll")}>Choose a partnership package</Btn>
-            </div>
-        </div>
-    );
 }

@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Home as HomeIcon, PlaySquare, ShoppingBag, User, Users, WifiOff } from "lucide-react";
 import "./mobile.css";
-import { DarkProvider, Toaster, useDark, cx } from "./ui.jsx";
+import { ConfirmSheet, DarkProvider, Toaster, useDark, cx } from "./ui.jsx";
 import { ChurchHub, DepartmentScreen, HomeGroupScreen, PersonalScreen, PhotoGate, PrayerScreen } from "./Church.jsx";
 import { NavProvider, useNav } from "./nav.jsx";
 import Home, { Explore, HashtagScreen, PostScreen } from "./Home.jsx";
 import Watch from "./Watch.jsx";
 import Channels, { ChannelScreen } from "./Channels.jsx";
 import Market, { ListingEditor, ListingScreen, OrdersScreen, ShopScreen } from "./Market.jsx";
-import Me, { EditProfile, EventsScreen, IdCardScreen, PartnerInfo, ProfileScreen, SavedScreen } from "./Me.jsx";
+import Me, { EditProfile, EventsScreen, IdCardScreen, ProfileScreen, SavedScreen } from "./Me.jsx";
+import { PartnershipBanner, PartnershipScreen } from "./Partnership.jsx";
 import NotificationsScreen from "./Notifications.jsx";
 import { setTitleBadge, showAlert } from "../lib/alerts.js";
 import { community } from "./lib.js";
@@ -41,6 +42,10 @@ function Shell({ onLogout }) {
         lastUnread.current = n;
     }, [boot?.unread_notifications]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+    useEffect(() => {
+        try { if (sessionStorage.getItem("hm-open-partnership")) { sessionStorage.removeItem("hm-open-partnership"); nav.push("partnership"); } } catch { /* storage blocked */ }
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => { setVisited((v) => (v[nav.tab] ? v : { ...v, [nav.tab]: true })); }, [nav.tab]);
 
     useEffect(() => {
@@ -67,7 +72,7 @@ function Shell({ onLogout }) {
         profile: (p) => <ProfileScreen {...p} />, channel: (p) => <ChannelScreen {...p} />, listing: (p) => <ListingScreen {...p} />, "listing-edit": (p) => <ListingEditor {...p} />,
         orders: (p) => <OrdersScreen {...p} />, shop: () => <ShopScreen />, explore: () => <Explore />, hashtag: (p) => <HashtagScreen {...p} />, post: (p) => <PostScreen {...p} />,
         notifications: () => <NotificationsScreen />, saved: () => <SavedScreen />, events: () => <EventsScreen />, idcard: () => <IdCardScreen />, "edit-profile": () => <EditProfile />,
-        "partner-info": () => <PartnerInfo />, church: () => <ChurchHub />, homegroup: () => <HomeGroupScreen />, department: () => <DepartmentScreen />, prayer: () => <PrayerScreen />, personal: () => <PersonalScreen />,
+        partnership: () => <PartnershipScreen />, church: () => <ChurchHub />, homegroup: () => <HomeGroupScreen />, department: () => <DepartmentScreen />, prayer: () => <PrayerScreen />, personal: () => <PersonalScreen />,
     }), []);
 
     const badges = { watch: boot?.live_now || 0, me: boot?.unread_notifications || 0 };
@@ -92,6 +97,8 @@ function Shell({ onLogout }) {
                         {nav.stack.map((s) => <div key={s.id} className="hm-screen">{screens[s.name]?.(s.props) ?? null}</div>)}
                     </div>
 
+                    {nav.tab === "home" && nav.stack.length === 0 && <PartnershipBanner />}
+
                     <nav className="hm-tabbar hm-glass" role="tablist" aria-label="Main">
                         {TABS.map((t) => (
                             <button key={t.id} role="tab" aria-selected={nav.tab === t.id} className="hm-tab" data-on={nav.tab === t.id} onClick={() => nav.setTab(t.id)}>
@@ -102,6 +109,7 @@ function Shell({ onLogout }) {
                         ))}
                     </nav>
                     <PhotoGate />
+                    <ConfirmSheet open={nav.exitPrompt} onClose={() => nav.setExitPrompt(false)} title="Leave Heartfelt?" text="Are you sure you want to leave the app?" confirm="Yes, leave" cancel="No, stay" onConfirm={nav.leaveApp} />
                     <Toaster />
                 </div>
             </div>

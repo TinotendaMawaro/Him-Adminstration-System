@@ -62,6 +62,7 @@ class TeachingResource extends Resource
                 Forms\Components\TextInput::make('series')->maxLength(80)->helperText('Messages with the same series are grouped in the app.')->datalist(fn () => Teaching::whereNotNull('series')->distinct()->pluck('series')->all()),
                 Forms\Components\Select::make('status')->options(['published' => 'Published', 'draft' => 'Draft (hidden)'])->default('published')->required()->native(false),
                 Forms\Components\DateTimePicker::make('published_at')->label('Publish at')->helperText('Leave empty to publish now. A future time schedules it.')->native(false),
+                Forms\Components\Toggle::make('partners_only')->label('Partners only')->visible(fn () => \Illuminate\Support\Facades\Schema::hasColumn('community_teachings', 'partners_only'))->helperText('Only partners in good standing can watch it; everyone else sees a lock.'),
                 Forms\Components\Toggle::make('is_featured')->label('Feature at the top of Watch')->helperText('The latest featured teaching is shown in the big banner.'),
             ]),
         ]);

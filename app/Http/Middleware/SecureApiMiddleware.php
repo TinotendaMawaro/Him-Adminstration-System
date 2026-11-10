@@ -20,7 +20,7 @@ class SecureApiMiddleware
     /**
      * Maximum allowed request size (2MB)
      */
-    const MAX_REQUEST_SIZE = 2 * 1024 * 1024;
+    const MAX_REQUEST_SIZE = 4.5 * 1024 * 1024;   // photos are shrunk on the device; Vercel itself caps a request at 4.5 MB
 
     /**
      * Blocked user agents (common scanners/bots)

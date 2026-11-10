@@ -10,10 +10,10 @@ import { alertsState, enableAlerts } from "../lib/alerts.js";
 
 const ICON = {
     community: [Heart, "#e11d48"], market: [ShoppingBag, "#12a150"], message: [MessageCircle, "#2f6bff"], broadcast: [Megaphone, "#c9a84c"],
-    event_registration: [Ticket, "#0e7490"], prayer_center: [HandHeart, "#e11d48"], homegroup: [HomeIcon, "#12a150"], department: [Building2, "#7c3aed"], system: [Info, "#667791"],
+    event_registration: [Ticket, "#0e7490"], prayer_center: [HandHeart, "#e11d48"], partnership: [HandHeart, "#b45309"], homegroup: [HomeIcon, "#12a150"], department: [Building2, "#7c3aed"], system: [Info, "#667791"],
 };
 const FILTERS = [["all", "All"], ["unread", "Unread"], ["community", "Community"], ["market", "Market"], ["church", "Church"]];
-const CHURCH = new Set(["broadcast", "event_registration", "prayer_center", "homegroup", "department", "message", "system"]);
+const CHURCH = new Set(["broadcast", "event_registration", "prayer_center", "partnership", "homegroup", "department", "message", "system"]);
 
 const dayLabel = (iso) => {
     const d = new Date(iso), t = new Date();
@@ -49,6 +49,7 @@ export default function NotificationsScreen() {
         if (n.category === "market") nav.push("orders", { as: /New order|Quote request/.test(n.title) ? "seller" : "buyer" });
         else if (n.category === "event_registration") nav.push("events");
         else if (n.category === "prayer_center") nav.push("prayer");
+        else if (n.category === "partnership") nav.push("partnership");
         else if (n.category === "homegroup" || /home ?group/i.test(t)) nav.push("homegroup");
         else if (n.category === "department" || /department/i.test(t)) nav.push("department");
         else if (n.category === "community" && /Live|Starting soon/.test(n.title)) nav.setTab("watch");

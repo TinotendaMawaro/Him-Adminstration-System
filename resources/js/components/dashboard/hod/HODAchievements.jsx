@@ -3,72 +3,32 @@
 // Gold/Sky-Blue Glass Morphism Design System
 // ============================================================================
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../lib/api.js";
+import { useCurrentUser } from "../../../context/UserContext.jsx";
 import { HODIcons } from "./HODIcons";
 import { HODGlassCard, HODGoldButton, HODSkyButton, HODBadge, HODDrawer, HODAchievementBadge } from "./HODComponents";
 
 // ============================================================================
-// SAMPLE ACHIEVEMENTS DATA
+// MILESTONES: earned from the department's REAL numbers (members and activities in the database)
 // ============================================================================
 
-const sampleAchievements = [
-    {
-        id: 1,
-        title: "First Outreach",
-        description: "Completed first community outreach program",
-        date: "2024-01-15",
-        tier: "bronze",
-        icon: "Trophy",
-        earned: true,
-    },
-    {
-        id: 2,
-        title: "100 Members Milestone",
-        description: "Department reached 100 active members",
-        date: "2024-03-20",
-        tier: "silver",
-        icon: "Users",
-        earned: true,
-    },
-    {
-        id: 3,
-        title: "Annual Event Success",
-        description: "Successfully organized annual department conference",
-        date: "2024-06-10",
-        tier: "gold",
-        icon: "Calendar",
-        earned: true,
-    },
-    {
-        id: 4,
-        title: "5 Star Rating",
-        description: "Received 5-star rating from pastor evaluation",
-        date: "2024-08-15",
-        tier: "platinum",
-        icon: "Star",
-        earned: true,
-    },
-    {
-        id: 5,
-        title: "Community Impact",
-        description: "Impacted 500+ community members",
-        date: null,
-        tier: "gold",
-        icon: "Heart",
-        earned: false,
-        progress: 75,
-    },
-    {
-        id: 6,
-        title: "Youth Growth",
-        description: "Grow youth membership to 50",
-        date: null,
-        tier: "silver",
-        icon: "UserGroup",
-        earned: false,
-        progress: 60,
-    },
+const MILESTONES = [
+    { id: "m1", title: "First member", description: "Welcomed the first member into the department", metric: "members", target: 1, tier: "bronze", icon: "Users" },
+    { id: "m10", title: "10 members", description: "The department reached 10 members", metric: "members", target: 10, tier: "silver", icon: "Users" },
+    { id: "m25", title: "25 members", description: "The department reached 25 members", metric: "members", target: 25, tier: "gold", icon: "Users" },
+    { id: "m50", title: "50 members", description: "The department reached 50 members", metric: "members", target: 50, tier: "platinum", icon: "Users" },
+    { id: "a1", title: "First activity", description: "Scheduled the first department activity", metric: "activities", target: 1, tier: "bronze", icon: "Calendar" },
+    { id: "a10", title: "10 activities", description: "Ran ten department activities", metric: "activities", target: 10, tier: "silver", icon: "Calendar" },
+    { id: "a25", title: "25 activities", description: "Ran twenty-five department activities", metric: "activities", target: 25, tier: "gold", icon: "Trophy" },
 ];
+
+const buildAchievements = (counts) => MILESTONES.map((m) => {
+    const have = counts[m.metric] || 0;
+    const earned = have >= m.target;
+    return { ...m, earned, progress: earned ? 100 : Math.round((have / m.target) * 100), date: null };
+});
 
 // ============================================================================
 // ACHIEVEMENT BADGE COMPONENT
@@ -220,6 +180,11 @@ const AchievementBadge = ({ achievement, onClick }) => {
 // ============================================================================
 
 export default function HODAchievementsPage() {
+    const user = useCurrentUser();
+    const departmentId = user?.department?.id ?? user?.department_id ?? null;
+    const { data: memberData } = useQuery({ queryKey: ["hod-department-members", departmentId], enabled: !!departmentId, queryFn: async () => (await api.get(`/departments/${departmentId}/members`)).data, staleTime: 60000 });
+    const { data: activityData } = useQuery({ queryKey: ["hod-all-activities", departmentId], enabled: !!departmentId, queryFn: async () => (await api.get(`/departments/${departmentId}/activities`, { params: { limit: 200 } })).data, staleTime: 60000 });
+    const sampleAchievements = useMemo(() => buildAchievements({ members: (memberData?.members || []).length, activities: (activityData?.activities || []).length }), [memberData, activityData]);
     const [filter, setFilter] = useState("all");
     const [selectedAchievement, setSelectedAchievement] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);

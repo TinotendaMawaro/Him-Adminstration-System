@@ -103,8 +103,8 @@ export const DepartmentBanner = ({ user, departmentName, departmentColor }) => {
                             <TimeGreeting />
                         </div>
                         <p className="text-white/70 text-sm font-medium">Department Workspace</p>
-                        <h2 className="text-xl md:text-2xl font-bold text-white mt-1">{departmentName} Department</h2>
-                        <p className="text-white/70 text-sm mt-1">Head: {user?.name || "HOD Name"}</p>
+                        <h2 className="text-xl md:text-2xl font-bold text-white mt-1">{departmentName}</h2>
+                        <p className="text-white/70 text-sm mt-1">Head: {user?.name || ""}</p>
                         {/* Spiritual Verse */}
                         <div className="mt-3">
                             <SpiritualVerse />
@@ -168,42 +168,20 @@ export const DepartmentStats = ({ stats }) => {
 // ============================================================================
 
 export const DepartmentQuickActions = ({ onNavigate }) => {
+    // Every shortcut opens a page that really exists in this portal.
+    const items = [
+        { icon: HODIcons.Users, label: "Members", description: "Your department", color: "from-emerald-400 to-emerald-600", to: "members" },
+        { icon: HODIcons.Calendar, label: "Activities", description: "What is planned", color: "from-amber-400 to-amber-600", to: "activities" },
+        { icon: HODIcons.Calendar, label: "Events", description: "Church calendar", color: "from-violet-400 to-purple-600", to: "events" },
+        { icon: HODIcons.Trophy, label: "Achievements", description: "Milestones earned", color: "from-rose-400 to-rose-600", to: "achievements" },
+    ];
     return (
         <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 px-1">Quick Actions</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <HODQuickAction 
-                    icon={HODIcons.DocumentChart} 
-                    label="Submit Report" 
-                    description="Weekly update" 
-                    color="from-violet-400 to-purple-600" 
-                    onClick={() => onNavigate("reports")} 
-                    delay={200} 
-                />
-                <HODQuickAction 
-                    icon={HODIcons.Users} 
-                    label="Add Member" 
-                    description="Register new" 
-                    color="from-emerald-400 to-emerald-600" 
-                    onClick={() => onNavigate("members")} 
-                    delay={250} 
-                />
-                <HODQuickAction 
-                    icon={HODIcons.Calendar} 
-                    label="Schedule" 
-                    description="Plan activity" 
-                    color="from-amber-400 to-amber-600" 
-                    onClick={() => {}} 
-                    delay={300} 
-                />
-                <HODQuickAction 
-                    icon={HODIcons.Trophy} 
-                    label="Achievement" 
-                    description="Log milestone" 
-                    color="from-rose-400 to-rose-600" 
-                    onClick={() => {}} 
-                    delay={350} 
-                />
+                {items.map((it, i) => (
+                    <HODQuickAction key={it.to} icon={it.icon} label={it.label} description={it.description} color={it.color} onClick={() => onNavigate(it.to)} delay={200 + i * 50} />
+                ))}
             </div>
         </div>
     );
@@ -239,14 +217,16 @@ export const DepartmentActivity = ({ activities }) => {
 
 const DepartmentWorkspace = ({ user, onNavigate }) => {
     // Get department from user or use default
-    const departmentName = user?.department?.name || "Youth";
+    const departmentName = user?.department?.name || "No department yet";
     const departmentColor = user?.department?.color || "from-violet-400 to-purple-600";
 
     // Fetch HOD dashboard data
+    const hasDepartment = !!(user?.department?.id ?? user?.department_id);
     const { data, isLoading, error } = useQuery({
         queryKey: ['hod-dashboard'],
+        enabled: hasDepartment,
         queryFn: async () => {
-            const res = await api.get('/api/hod/dashboard');
+            const res = await api.get('/hod/dashboard');
             if (!res.data.success) throw new Error(res.data.message || 'Failed to fetch dashboard');
             return res.data.data;
         },
@@ -256,13 +236,29 @@ const DepartmentWorkspace = ({ user, onNavigate }) => {
         retry: 1,
     });
 
-    // Sample activities (static for now)
-    const activities = [
-        { icon: HODIcons.Users, title: "New Member Registered", description: "Tatenda Moyo joined the department", time: "2h ago", color: "from-violet-400 to-purple-600" },
-        { icon: HODIcons.DocumentChart, title: "Weekly Report Submitted", description: "Week 12 statistics recorded", time: "5h ago", color: "from-emerald-400 to-emerald-600" },
-        { icon: HODIcons.Calendar, title: "Department Meeting", description: "Scheduled for Saturday 2PM", time: "1d ago", color: "from-amber-400 to-amber-600" },
-        { icon: HODIcons.CheckCircle, title: "Achievement Unlocked", description: "100% attendance milestone", time: "2d ago", color: "from-rose-400 to-rose-600" },
-    ];
+    // The department's own recent activity, from the database
+    const departmentId = user?.department?.id ?? user?.department_id ?? null;
+    const { data: activityData } = useQuery({
+        queryKey: ['hod-workspace-activities', departmentId],
+        enabled: !!departmentId,
+        queryFn: async () => (await api.get(`/departments/${departmentId}/activities`, { params: { limit: 5 } })).data,
+        staleTime: 30000,
+    });
+    const activities = (activityData?.activities || []).map((a) => ({
+        icon: HODIcons.Calendar,
+        title: a.title,
+        description: [a.description, a.location].filter(Boolean).join(' · ') || a.type || '',
+        time: a.date ? new Date(a.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '',
+        color: 'from-violet-400 to-purple-600',
+    }));
+
+    if (!hasDepartment) {
+        return (
+            <div className="space-y-6">
+                <p className="rounded-2xl bg-white/80 p-8 text-center text-gray-700">You are not assigned to a department yet. Once your pastor appoints you as head of a department, its members, activities and statistics will appear here.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

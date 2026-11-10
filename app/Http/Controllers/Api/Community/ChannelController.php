@@ -197,7 +197,7 @@ class ChannelController extends Controller
 
     public function teachings(Request $r): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->watch->teachings($r->query('series') ?: null)]);
+        return response()->json(['success' => true, 'data' => $this->watch->teachings($r->query('series') ?: null, 40, $r->user())]);
     }
 
     public function viewTeaching(Request $r, int $id): JsonResponse

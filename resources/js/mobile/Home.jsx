@@ -10,7 +10,7 @@ import { community, errorMessage, compact, storageUrl } from "./lib.js";
 import { useNav } from "./nav.jsx";
 import { useUser } from "../context/UserContext.jsx";
 
-const TABS = [{ value: "for_you", label: "For you", icon: Sparkles }, { value: "following", label: "Following", icon: Users }, { value: "zone", label: "My zone", icon: MapPin }];
+const FEED_TABS = [{ value: "for_you", label: "For you", icon: Sparkles }, { value: "following", label: "Following", icon: Users }, { value: "zone", label: "My zone", icon: MapPin }];
 
 export function Brand() {
     return (
@@ -61,7 +61,7 @@ export default function Home({ boot }) {
                     </div>
                 </div>
 
-                <div className="px-3 pt-3"><Segmented value={tab} onChange={setTab} options={TABS} /></div>
+                <div className="px-3 pt-3"><Segmented value={tab} onChange={setTab} options={FEED_TABS} /></div>
 
                 <FeedList
                     queryKey={["feed", tab]}

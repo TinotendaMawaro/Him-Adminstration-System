@@ -346,6 +346,9 @@ class OnlinePaymentService
                 'is_read'  => false,
             ]);
 
+            // A partnership payment renews the partnership (inside the lock, so it can only ever happen once per payment).
+            app(\App\Services\PartnershipService::class)->recordPayment($locked);
+
             return $locked;
         });
 

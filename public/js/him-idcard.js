@@ -2361,7 +2361,29 @@ window.qrcode=module.exports;
     function front(card) {
         var t = THEMES[card.kind] || THEMES.member, a = t.accent;
         var name = card.full_name || '';
-        var nameSize = name.length > 26 ? 34 : name.length > 20 ? 40 : 48;
+        // The name sits left of the QR code (QR starts at x=606; the name starts at x=226): it must never run under it.
+        // Shrink to fit one line; if it still will not fit at 30px, wrap it onto two lines.
+        var NAME_W = 358, nameLines = [name], nameSize = 48, CW = 0.6;
+        function textW(t, size) { return t.length * size * CW; }   // Georgia bold averages ~0.6em per character (capitals are wider)
+        function fits(lines, size) { return lines.every(function (l) { return textW(l, size) <= NAME_W; }); }
+        while (nameSize > 30 && !fits(nameLines, nameSize)) { nameSize -= 2; }
+        if (!fits(nameLines, nameSize)) {
+            // Two lines at 32px: break at a space near the middle.
+            nameSize = 32;
+            var words = name.split(/\s+/), line1 = '', i;
+            for (i = 0; i < words.length; i++) { var t = (line1 ? line1 + ' ' : '') + words[i]; if (textW(t, nameSize) > NAME_W && line1) { break; } line1 = t; }
+            nameLines = [line1, words.slice(i).join(' ')].filter(Boolean);
+            // A single very long word: shrink further, and as a last resort cut it with an ellipsis. It must never reach the QR code.
+            while (nameSize > 22 && !fits(nameLines, nameSize)) { nameSize -= 1; }
+            nameLines = nameLines.map(function (l) {
+                var max = Math.floor(NAME_W / (nameSize * CW));
+                return l.length > max ? l.slice(0, Math.max(1, max - 1)) + '\u2026' : l;
+            });
+        }
+        var nameSvg = nameLines.length === 1
+            ? '<text x="226" y="236" font-family="Georgia, serif" font-size="' + nameSize + '" fill="#ffffff" font-weight="700">' + esc(nameLines[0]) + '</text>'
+            : '<text x="226" y="222" font-family="Georgia, serif" font-size="' + nameSize + '" fill="#ffffff" font-weight="700">' + esc(nameLines[0]) + '</text><text x="226" y="258" font-family="Georgia, serif" font-size="' + nameSize + '" fill="#ffffff" font-weight="700">' + esc(nameLines[1]) + '</text>';
+        var ruleY = nameLines.length === 1 ? 252 : 270;
         var photo = card.photo_data
             ? '<clipPath id="ph"><circle cx="118" cy="268" r="74"/></clipPath><image href="' + card.photo_data + '" x="44" y="194" width="148" height="148" preserveAspectRatio="xMidYMid slice" clip-path="url(#ph)"/>'
             : '<circle cx="118" cy="268" r="74" fill="' + NAVY2 + '"/><text x="118" y="290" text-anchor="middle" font-family="Georgia, serif" font-size="64" fill="' + a + '">' + esc(initials(name).toUpperCase()) + '</text>';
@@ -2380,12 +2402,12 @@ window.qrcode=module.exports;
             '<text x="' + (W - 36 - 95) + '" y="74" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" letter-spacing="2.5" fill="' + a + '">' + esc(card.role_label ? String(card.role_label).toUpperCase() : t.label) + '</text>' +
             // photo + name
             '<circle cx="118" cy="268" r="80" fill="none" stroke="url(#gd)" stroke-width="5"/>' + photo +
-            '<text x="226" y="236" font-family="Georgia, serif" font-size="' + nameSize + '" fill="#ffffff" font-weight="700">' + esc(name) + '</text>' +
-            '<rect x="226" y="252" width="90" height="4" rx="2" fill="url(#gd)"/>' +
-            field(226, 292, 'ZONE', card.zone, a) +
-            field(226, 354, 'REGION', card.region || '—', a) +
-            field(226, 416, 'DATE OF BIRTH', card.dob, a) +
-            field(226, 478, (card.number_label || 'MEMBER NO.').toUpperCase(), card.number, a) +
+            nameSvg +
+            '<rect x="226" y="' + ruleY + '" width="90" height="4" rx="2" fill="url(#gd)"/>' +
+            field(226, nameLines.length === 1 ? 284 : 302, 'ZONE', card.zone, a) +
+            field(226, nameLines.length === 1 ? 342 : 358, 'REGION', card.region || '—', a) +
+            field(226, nameLines.length === 1 ? 400 : 414, 'DATE OF BIRTH', card.dob, a) +
+            field(226, nameLines.length === 1 ? 458 : 470, (card.number_label || 'MEMBER NO.').toUpperCase(), card.number, a) +
             // QR
             '<rect x="' + (W - 36 - 214) + '" y="206" width="214" height="214" rx="20" fill="#ffffff"/>' +
             qrPaths(card.verify_url, W - 36 - 214 + 16, 222, 182) +

@@ -44,7 +44,7 @@ return [
     |
     */
 
-    'expiration' => env('SANCTUM_EXPIRATION', 43200),   // minutes: 30 days
+    'expiration' => env('SANCTUM_EXPIRATION', 10080),   // minutes: 7 days, then sign in again
 
     /*
     |--------------------------------------------------------------------------

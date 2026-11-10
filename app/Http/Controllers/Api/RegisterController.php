@@ -39,7 +39,7 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(10)->mixedCase()->numbers()],
             'phone'    => 'nullable|string|max:20',
             'address'  => 'nullable|string|max:500',
             'zone_code' => 'required|string',

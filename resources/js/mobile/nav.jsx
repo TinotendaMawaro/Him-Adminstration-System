@@ -17,6 +17,9 @@ export function NavProvider({ children }) {
     const frameRef = useRef(null);
     const depth = useRef(0);
     const pending = useRef(0);
+    const [exitPrompt, setExitPrompt] = useState(false);
+    const tabRef = useRef("home");
+    tabRef.current = tab;
 
     const push = useCallback((name, props = {}) => {
         try { window.history.pushState({ hm: depth.current + 1 }, "", window.location.href); } catch { /* ignore */ }
@@ -53,19 +56,45 @@ export function NavProvider({ children }) {
         reset();
     }, [reset]);
 
+    // Back at the very first screen would close the app: ask first. (Other tabs go back to Home first.)
+    const handleRootBack = useCallback(() => {
+        if (tabRef.current !== "home") { setTabState("home"); return; }
+        setExitPrompt(true);
+    }, []);
+
     useEffect(() => {
+        try { window.history.pushState({ hmRoot: true }, "", window.location.href); } catch { /* ignore */ }   // the "stay" entry
         const onPop = () => {
             if (pending.current > 0) { pending.current -= 1; return; }       // caused by our own pop()/reset()
             if (depth.current > 0) {                                          // the person pressed the browser / Android back button
                 depth.current -= 1;
                 setStack((s) => s.slice(0, -1));
+                return;
             }
+            try { window.history.pushState({ hmRoot: true }, "", window.location.href); } catch { /* ignore */ }   // stay in the app
+            handleRootBack();
         };
         window.addEventListener("popstate", onPop);
-        return () => window.removeEventListener("popstate", onPop);
+
+        // Installed Android app: the hardware back button comes through Capacitor instead of popstate.
+        let handle;
+        import("@capacitor/app").then(({ App }) => {
+            App.addListener("backButton", () => {
+                if (depth.current > 0) { depth.current -= 1; pending.current += 1; setStack((s) => s.slice(0, -1)); window.history.back(); return; }
+                handleRootBack();
+            }).then((h) => { handle = h; });
+        }).catch(() => { /* running in a normal browser */ });
+
+        return () => { window.removeEventListener("popstate", onPop); handle?.remove?.(); };
+    }, [handleRootBack]);
+
+    const leaveApp = useCallback(async () => {
+        setExitPrompt(false);
+        try { const { App } = await import("@capacitor/app"); await App.exitApp(); return; } catch { /* not the installed app */ }
+        window.history.go(-2);       // browser / PWA: step back out of the app
     }, []);
 
-    const value = useMemo(() => ({ tab, setTab, stack, push, pop, replace, frameRef }), [tab, setTab, stack, push, pop, replace]);
+    const value = useMemo(() => ({ tab, setTab, stack, push, pop, replace, frameRef, exitPrompt, setExitPrompt, leaveApp }), [tab, setTab, stack, push, pop, replace, exitPrompt, leaveApp]);
 
     return <NavCtx.Provider value={value}>{children}</NavCtx.Provider>;
 }

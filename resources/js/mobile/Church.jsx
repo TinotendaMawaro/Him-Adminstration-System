@@ -3,9 +3,10 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Camera, ChevronRight, Church as ChurchIcon, HandHeart, Home as HomeIcon, MapPin, MessageCircleHeart, Send, UserRound, Users } from "lucide-react";
-import { Avatar, Btn, ConfirmSheet, Empty, ErrorState, Sheet, Skel, TopBar, toast } from "./ui.jsx";
+import { Avatar, Body, Btn, Empty, ErrorState, Field, Group, Row, Sheet, Skel, TopBar, toast } from "./ui.jsx";
 import api from "../lib/api.js";
-import { compressImage, errorMessage, formatWhen, haptic } from "./lib.js";
+import { errorMessage, formatWhen, haptic } from "./lib.js";
+import { compressImage, uploadErrorMessage } from "../lib/image.js";
 import { useNav } from "./nav.jsx";
 import { useUser } from "../context/UserContext.jsx";
 
@@ -13,19 +14,6 @@ const list = (res) => {
     const d = res?.data?.data ?? res?.data?.homegroups ?? res?.data ?? [];
     return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
 };
-
-function Row({ icon: Icon, label, hint, onClick, color = "var(--accent)" }) {
-    return (
-        <button onClick={() => { haptic(6); onClick?.(); }} className="w-full flex items-center gap-3.5 px-4 min-h-[60px] py-2 text-left active:bg-[var(--surface2)]">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color }}><Icon size={20} /></span>
-            <span className="flex-1 min-w-0"><span className="block font-semibold text-[15.5px]">{label}</span>{hint && <span className="block text-xs truncate" style={{ color: "var(--mut)" }}>{hint}</span>}</span>
-            <ChevronRight size={18} style={{ color: "var(--mut)" }} />
-        </button>
-    );
-}
-
-const Field = ({ label, children }) => <div className="mb-3"><label className="hm-label">{label}</label>{children}</div>;
-const Body = ({ children }) => <div className="flex-1 overflow-y-auto hm-scroll px-4 pb-8 pt-3">{children}</div>;
 
 // ── Hub ───────────────────────────────────────────────────────────────────────────────────────
 export function ChurchHub() {
@@ -58,23 +46,17 @@ export function ChurchHub() {
                     </div>
                 </div>
 
-                <section className="mt-5"><h3 className="hm-label">Belonging</h3>
-                    <div className="hm-card overflow-hidden divide-y">
+                <Group flush title="Belonging">
                         <Row icon={HomeIcon} color="#12a150" label="Home group" hint={hgName || (hgPending ? `Request pending: ${hgPending}` : "Find and join a home group")} onClick={() => nav.push("homegroup")} />
                         <Row icon={Building2} color="#7c3aed" label="Department" hint={dpName || (dpPending ? `Request pending: ${dpPending}` : "Serve in a department")} onClick={() => nav.push("department")} />
-                    </div>
-                </section>
-                <section className="mt-5"><h3 className="hm-label">Care</h3>
-                    <div className="hm-card overflow-hidden divide-y">
+                </Group>
+                <Group flush title="Care">
                         <Row icon={MessageCircleHeart} color="#e11d48" label="Prayer & messages to my pastor" hint="Private requests, praise reports and counselling" onClick={() => nav.push("prayer")} />
-                        <Row icon={HandHeart} color="#b45309" label="Partnership" hint="Become a partner and open a marketplace shop" onClick={() => nav.push("partner-info")} />
-                    </div>
-                </section>
-                <section className="mt-5"><h3 className="hm-label">About me</h3>
-                    <div className="hm-card overflow-hidden divide-y">
+                        <Row icon={HandHeart} color="#b45309" label="Partnership" hint="Become a partner and open a marketplace shop" onClick={() => nav.push("partnership")} />
+                </Group>
+                <Group flush title="About me">
                         <Row icon={UserRound} color="#2f6bff" label="Personal details & photo" hint="Name, phone, birthday, address" onClick={() => nav.push("personal")} />
-                    </div>
-                </section>
+                </Group>
             </Body>
         </div>
     );
@@ -274,7 +256,7 @@ export function PhotoPicker({ onDone, size = 120, label = "Choose a photo" }) {
             updateUser?.({ profile_photo: data?.user?.profile_photo });
             toast("Photo saved", "success");
             onDone?.(data?.user?.profile_photo);
-        } catch (e) { toast(errorMessage(e, "Could not upload that photo. Try a smaller one."), "error"); }
+        } catch (e) { toast(uploadErrorMessage(e), "error"); }
         setBusy(false);
     };
     return (

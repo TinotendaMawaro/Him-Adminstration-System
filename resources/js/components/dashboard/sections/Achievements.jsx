@@ -161,116 +161,7 @@ export default function Achievements({ achievements = [] }) {
     const [filter, setFilter] = useState("all");
     const [showLocked, setShowLocked] = useState(false);
 
-    // Sample achievements if none provided
-    const sampleAchievements =
-        achievements.length > 0
-            ? achievements
-            : [
-                  {
-                      id: 1,
-                      title: "Membership Milestone",
-                      description: "Reached 250 active members",
-                      date: "Dec 2024",
-                      tier: "platinum",
-                      icon: "👥",
-                      unlocked: true,
-                  },
-                  {
-                      id: 2,
-                      title: "Home Group Champion",
-                      description: "Established 20+ home groups",
-                      date: "Nov 2024",
-                      tier: "gold",
-                      icon: "🏠",
-                      unlocked: true,
-                  },
-                  {
-                      id: 3,
-                      title: "Spiritual Growth",
-                      description: "50 new believers baptized",
-                      date: "Oct 2024",
-                      tier: "gold",
-                      icon: "🕊️",
-                      unlocked: true,
-                  },
-                  {
-                      id: 4,
-                      title: "Department Excellence",
-                      description: "All departments fully operational",
-                      date: "Sep 2024",
-                      tier: "silver",
-                      icon: "🏆",
-                      unlocked: true,
-                  },
-                  {
-                      id: 5,
-                      title: "Community Impact",
-                      description: "500+ community hours served",
-                      date: "Aug 2024",
-                      tier: "silver",
-                      icon: "🤝",
-                      unlocked: true,
-                  },
-                  {
-                      id: 6,
-                      title: "Youth Revival",
-                      description: "Youth attendance doubled",
-                      date: "Jul 2024",
-                      tier: "bronze",
-                      icon: "🔥",
-                      unlocked: true,
-                  },
-                  {
-                      id: 7,
-                      title: "Worship Excellence",
-                      description: "Launched worship team",
-                      date: "Jun 2024",
-                      tier: "bronze",
-                      icon: "🎵",
-                      unlocked: true,
-                  },
-                  {
-                      id: 8,
-                      title: "Zone Pioneer",
-                      description:
-                          "First zone to reach 100% home group coverage",
-                      tier: "gold",
-                      icon: "🌟",
-                      locked: true,
-                  },
-                  {
-                      id: 9,
-                      title: "Mentorship Master",
-                      description: "Train 50 cell group leaders",
-                      tier: "silver",
-                      icon: "📚",
-                      locked: true,
-                  },
-                  {
-                      id: 10,
-                      title: "Outreach Champion",
-                      description: "Conduct 100 evangelism sessions",
-                      tier: "platinum",
-                      icon: "📢",
-                      locked: true,
-                  },
-                  {
-                      id: 11,
-                      title: "Unity Award",
-                      description: "Zone unity score above 95%",
-                      tier: "gold",
-                      icon: "💫",
-                      locked: true,
-                  },
-                  {
-                      id: 12,
-                      title: "Heritage Builder",
-                      description: "Establish 10 generational ministries",
-                      tier: "platinum",
-                      icon: "🏛️",
-                      locked: true,
-                  },
-              ];
+    const sampleAchievements = achievements;
 
     // Filter achievements
     const filteredAchievements = sampleAchievements.filter((a) => {
@@ -427,7 +318,7 @@ export default function Achievements({ achievements = [] }) {
 
             {/* Achievements Grid */}
             <div className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-4">
                     {filteredAchievements.map((achievement, idx) => (
                         <AchievementBadge
                             key={achievement.id}

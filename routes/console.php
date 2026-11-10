@@ -23,3 +23,6 @@ Schedule::command('greetings:send-automated')->dailyAt('07:00');
 
 // Community: live-session and meeting reminders, expired stories
 Schedule::command('community:maintain')->everyFiveMinutes()->withoutOverlapping();
+
+// Partnerships: expire lapsed ones, remind before renewal, and nudge members monthly
+Schedule::command('partners:lifecycle')->dailyAt('06:00');

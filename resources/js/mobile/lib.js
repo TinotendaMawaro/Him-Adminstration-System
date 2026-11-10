@@ -140,14 +140,4 @@ export const haptic = (ms = 10) => {
 };
 
 /** Resize + re-encode a photo in the browser before upload (phones take 5-10 MB pictures). */
-export async function compressImage(file, maxSide = 1600, quality = 0.82) {
-    if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
-    return new File([blob], (file.name || "photo").replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
-}
+export { compressImage } from "../lib/image.js";

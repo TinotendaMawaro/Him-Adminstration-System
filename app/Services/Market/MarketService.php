@@ -32,7 +32,7 @@ class MarketService
 
     public function canSell(User $u): bool
     {
-        return $u->is_active && Partner::where('user_id', $u->id)->where('status', 'active')->exists();
+        return $u->is_active && app(\App\Services\PartnershipService::class)->inGoodStanding($u);
     }
 
     public function assertCanSell(User $u): void

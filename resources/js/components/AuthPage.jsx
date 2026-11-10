@@ -7,7 +7,7 @@ import api from "../lib/api";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const validateEmail    = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-const validatePassword = (v) => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v);
+const validatePassword = (v) => v.length >= 10 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v);
 
 const LoadingSpinner = () => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -18,7 +18,7 @@ const LoadingSpinner = () => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = () => {} }) {
+export default function AuthPage({ onLoginSuccess = () => {} }) {
     const [mode, setMode]                   = useState("email");
     const [isLoading, setIsLoading]         = useState(false);
     const [errors, setErrors]               = useState({});
@@ -88,7 +88,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
             if (!formData.phoneNumber || formData.phoneNumber.length < 7) e.phoneNumber = "Valid phone number is required";
             if (!formData.physicalAddress) e.physicalAddress = "Physical address is required";
             if (!formData.zoneCode || !(/^\d{4}$/.test(formData.zoneCode) || /^R\d{4}$/.test(formData.zoneCode))) e.zoneCode = "Invalid Zone Code. Please contact your Zone Pastor or Administrator for assistance.";
-            if (!formData.password || !validatePassword(formData.password)) e.password = "Use at least 8 characters, with letters and numbers";
+            if (!formData.password || !validatePassword(formData.password)) e.password = "Use at least 10 characters with upper and lower case letters and a number";
             if (formData.password !== formData.confirmPassword) e.confirmPassword = "Passwords do not match";
             if (!acceptTerms) e.acceptTerms = "You must accept the terms and conditions";
         }
@@ -366,7 +366,7 @@ export default function AuthPage({ onLoginSuccess = () => {}, onPartnerEnroll = 
                                                     )}
                                                     <p className="text-white/70 text-xs mb-3">Would you like to become a Partner?</p>
                                                     <div className="flex gap-2">
-                                                        <button type="button" onClick={() => { handleLoginResponse(registrationResult); onPartnerEnroll(); }} className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#1e3a5f] font-bold rounded-lg text-xs">Partner Now</button>
+                                                        <button type="button" onClick={() => { try { sessionStorage.setItem("hm-open-partnership", "1"); } catch { /* ignore */ } handleLoginResponse(registrationResult); }} className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#1e3a5f] font-bold rounded-lg text-xs">Partner Now</button>
                                                         <button type="button" onClick={() => { handleLoginResponse(registrationResult); }} className="flex-1 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-xs font-medium">Maybe Later</button>
                                                     </div>
                                                 </div>

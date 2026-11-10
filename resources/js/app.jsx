@@ -8,12 +8,12 @@ import { GlobalStateProvider } from "./hooks/GlobalStateProvider.jsx";
 import AuthPage        from "./components/AuthPage.jsx";
 import ErrorBoundary   from "./components/ErrorBoundary.jsx";
 import LoadingScreen   from "./components/onboarding/LoadingScreen.jsx";
-import { MemberLoginSplash } from "./components/MemberSplash.jsx";
+import { GoodbyeHost, SessionSplash, sayGoodbye } from "./components/SessionSplash.jsx";
+import AppTour from "./mobile/AppTour.jsx";
 import TermsModal      from "./components/onboarding/TermsModal.jsx";
 import GuidedTour      from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal   from "./components/PastorsPortal.jsx";
 import HODPortal       from "./components/HODPortal.jsx";
-import PartnerEnrollmentPage from "./components/PartnerEnrollmentPage.jsx";
 import GiveOnline      from "./components/GiveOnline.jsx";
 import MobileApp        from "./mobile/MobileApp.jsx";
 import ProfilePhotoGate from "./components/ProfilePhotoGate.jsx";
@@ -24,9 +24,26 @@ const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30 * 1000 } },
 });
 
+// ─── Idle time-out: web portals sign out after 30 minutes without activity ──────
+function useIdleLogout(enabled, onLogout, minutes = 30) {
+    useEffect(() => {
+        if (!enabled) return undefined;
+        let timer;
+        const arm = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { sayGoodbye({ reason: `You were signed out after ${minutes} minutes of inactivity, to keep your account safe.` }); onLogout(); }, minutes * 60 * 1000);
+        };
+        const events = ["pointerdown", "keydown", "scroll", "touchstart"];
+        events.forEach((e) => window.addEventListener(e, arm, { passive: true }));
+        arm();
+        return () => { clearTimeout(timer); events.forEach((e) => window.removeEventListener(e, arm)); };
+    }, [enabled, onLogout, minutes]);
+}
+
 // ─── Portal router — reads user from context internally ──────────────────────
 function PortalRouter({ onLogout }) {
     const { user, loading } = useUser();
+    useIdleLogout(!!user && ["pastor", "hod"].includes(user.role), onLogout);
 
     if (loading) {
         return <LoadingScreen />;
@@ -162,6 +179,9 @@ function AppInner() {
             }
         }
 
+        // The friendly goodbye (shown by <GoodbyeHost/>, which outlives the page change below).
+        if (shouldLogoutApi) sayGoodbye({ name: user?.name?.split(" ")[0] });
+
         // Leave nothing of this person behind on a shared browser: tokens, cached lists (members, departments,
         // reports...) and any per-user UI state all go.
         try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable (private mode) */ }
@@ -184,7 +204,9 @@ function AppInner() {
             return (
                 <>
                     <PortalRouter onLogout={handleLogout} />
-                    <GuidedTour onFinish={handleTourComplete} onSkip={handleTourComplete} />
+                    {["member", "partner"].includes(user?.role)
+                        ? <AppTour onFinish={handleTourComplete} />
+                        : <GuidedTour onFinish={handleTourComplete} onSkip={handleTourComplete} />}
                 </>
             );
         case "dashboard":
@@ -218,59 +240,34 @@ function RootRedirect() {
 function LoginPage() {
     const navigate = useNavigate();
     const { user, updateUser, refreshUser, loading: userLoading } = useUser();
-    const location = useLocation();
-    const [showMemberSplash, setShowMemberSplash] = useState(false);
-    const [loginDone, setLoginDone] = useState(false);
+    const [showSplash, setShowSplash] = useState(false);
+    const [ready, setReady] = useState(false);
 
-    // For non-member roles, redirect as before. Members use the splash flow.
+    // Already signed in (and not in the middle of the welcome): go straight to the dashboard.
     useEffect(() => {
-        if (!showMemberSplash && user) {
-            const params = new URLSearchParams(location.search);
-            const intent = params.get('intent');
-            if (intent === 'partner') {
-                navigate(user.role === 'pastor' ? "/dashboard" : "/partner/enroll", { replace: true });
-            } else if (user.role !== 'member') {
-                navigate("/dashboard", { replace: true });
-            }
-        }
-    }, [user, navigate, location, showMemberSplash]);
-
-    // Keep the splash visible until the member's data has been freshly fetched
-    // (refreshUser resolves) and the user is ready to be routed to the dashboard.
-    useEffect(() => {
-        if (showMemberSplash && !userLoading && user && user.role === 'member') {
-            setLoginDone(true);
-        }
-    }, [showMemberSplash, userLoading, user]);
+        if (!showSplash && user) navigate("/dashboard", { replace: true });
+    }, [user, navigate, showSplash]);
 
     const handleLoginSuccess = (userData) => {
+        setShowSplash(true);
         updateUser(userData);
-        const params = new URLSearchParams(location.search);
-        const intent = params.get('intent');
-
-        if (intent === 'partner' && userData.role === 'pastor') {
-            navigate("/dashboard", { replace: true });
-        } else if (intent === 'partner') {
-            navigate("/partner/enroll", { replace: true });
-        } else if (userData.role === 'member') {
-            setShowMemberSplash(true);
-            // Fetch the full, fresh member profile before clearing the splash.
-            refreshUser();
-        } else {
-            navigate("/dashboard", { replace: true });
-        }
+        // Load the fresh profile while the welcome plays, so the dashboard opens with current data.
+        Promise.resolve(refreshUser()).catch(() => {}).finally(() => setReady(true));
     };
+
+    const subtitle = [user?.role_label, user?.zone?.name].filter(Boolean).join(" · ");
 
     return (
         <>
-            {showMemberSplash && (
-                <MemberLoginSplash
-                    memberName={user?.name?.split(" ")[0]}
-                    done={loginDone}
-                    onComplete={() => navigate("/dashboard", { replace: true })}
+            {showSplash && (
+                <SessionSplash
+                    name={user?.name?.split(" ")[0]}
+                    subtitle={subtitle}
+                    done={ready && !userLoading}
+                    onDone={() => navigate("/dashboard", { replace: true })}
                 />
             )}
-            <AuthPage onLoginSuccess={handleLoginSuccess} onPartnerEnroll={() => navigate("/partner/enroll", { replace: true })} />
+            <AuthPage onLoginSuccess={handleLoginSuccess} />
         </>
     );
 }
@@ -301,6 +298,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <ErrorBoundary>
                 <UserProvider initialUser={cachedUser} token={cachedToken}>
+                     <GoodbyeHost />
                      <GlobalStateProvider>
                          <BrowserRouter>
                               <Routes>
@@ -310,7 +308,6 @@ function App() {
 
                                    {/* Protected routes */}
                                    <Route element={<RequireAuth />}>
-                                       <Route path="/partner/enroll" element={<PartnerEnrollmentPage />} />
                                        <Route path="*" element={<AppInner />} />
                                    </Route>
                               </Routes>

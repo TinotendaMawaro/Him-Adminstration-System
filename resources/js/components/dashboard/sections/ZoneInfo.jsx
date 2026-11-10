@@ -6,10 +6,10 @@ export default function ZoneInfo({ zone, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState(null);
   const [editData, setEditData] = useState({
-    name: zone?.name || "International Overflow Center",
-    description: zone?.description || "A vibrant community of believers committed to spiritual growth and fellowship.",
-    location: zone?.location || "Harare, Ashdown Park",
-    established: zone?.established || "2010",
+    name: zone?.name || "",
+    description: zone?.description || "",
+    location: zone?.location || "",
+    established: zone?.established || "",
     address: zone?.address || "",
     phone: zone?.phone || "",
   });
@@ -37,10 +37,10 @@ export default function ZoneInfo({ zone, onUpdate }) {
 
   const handleCancel = () => {
     setEditData({
-      name: zone?.name || "International Overflow Center",
-      description: zone?.description || "A vibrant community of believers committed to spiritual growth and fellowship.",
-      location: zone?.location || "Harare, Ashdown Park",
-      established: zone?.established || "2010",
+      name: zone?.name || "",
+      description: zone?.description || "",
+      location: zone?.location || "",
+      established: zone?.established || "",
       address: zone?.address || "",
       phone: zone?.phone || "",
     });

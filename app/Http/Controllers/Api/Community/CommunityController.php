@@ -320,6 +320,7 @@ class CommunityController extends Controller
             'unread_notifications' => \App\Models\Notification::where('user_id', $u->id)->where('is_read', false)->count(),
             'live_now' => count($watch->lives($u)['live_now']),
             'can_sell' => $market->canSell($u),
+            'partnership' => app(\App\Services\PartnershipService::class)->state($u),
             'categories' => ['channels' => \App\Services\Community\ChannelService::CATEGORIES, 'market' => \App\Services\Market\MarketService::CATEGORIES],
         ]]);
     }

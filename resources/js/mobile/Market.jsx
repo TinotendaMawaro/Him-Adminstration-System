@@ -7,6 +7,7 @@ import { Brand } from "./Home.jsx";
 import { ReportSheet } from "./Post.jsx";
 import { community, compressImage, errorMessage, haptic, market, money, timeAgo } from "./lib.js";
 import { useNav } from "./nav.jsx";
+import { PartnerLock } from "./Partnership.jsx";
 import { useUser } from "../context/UserContext.jsx";
 
 const STATUS = {
@@ -44,8 +45,11 @@ export default function Market({ boot }) {
     const timer = useRef(0);
     const cats = boot?.categories?.market || [];
     const canSell = boot?.can_sell;
-    const query = useInfiniteQuery({ queryKey: ["market", term, cat, sort], initialPageParam: 1, queryFn: ({ pageParam }) => market.listings({ q: term || undefined, category: cat || undefined, sort, page: pageParam }), getNextPageParam: (l) => l?.next_page ?? undefined, staleTime: 30_000 });
+    const locked = !!boot?.partnership?.locked;      // expired partnership: the marketplace is closed until they renew
+    const query = useInfiniteQuery({ queryKey: ["market", term, cat, sort], initialPageParam: 1, enabled: !locked, queryFn: ({ pageParam }) => market.listings({ q: term || undefined, category: cat || undefined, sort, page: pageParam }), getNextPageParam: (l) => l?.next_page ?? undefined, staleTime: 30_000 });
     const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+
+    if (locked) return <div className="flex flex-col h-full hm-safe-top"><PartnerLock what="the marketplace" /></div>;
 
     return (
         <div className="flex flex-col h-full">

@@ -2,7 +2,7 @@
 @section('title', 'Choose a new password')
 @section('content')
     <h1>Choose a new password</h1>
-    <p>Pick something only you know. At least 8 characters, with letters and numbers.</p>
+    <p>Pick something only you know. At least 10 characters, with upper and lower case letters and a number.</p>
 
     <form id="f" novalidate>
         <label for="email">Email address</label>

@@ -166,8 +166,6 @@ export default function DepartmentsTab() {
             });
             const response = await api.get(`/departments?${params}`);
             if (response.data && response.data.success) {
-                // Save to localStorage for persistence
-                localStorage.setItem('departments-data', JSON.stringify(response.data));
                 return response.data;
             }
             throw new Error(response.data?.message || 'Failed to load departments');
@@ -177,11 +175,6 @@ export default function DepartmentsTab() {
         refetchOnWindowFocus: true,
         retry: 1,
         keepPreviousData: true,
-        initialData: () => {
-            // Load from localStorage if available
-            const cached = localStorage.getItem('departments-data');
-            return cached ? JSON.parse(cached) : undefined;
-        },
     });
 
     const departments = departmentsResponse?.departments || [];

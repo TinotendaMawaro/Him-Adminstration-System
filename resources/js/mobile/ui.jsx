@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, BadgeCheck, CheckCircle2, Loader2, X, AlertCircle, Inbox } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CheckCircle2, ChevronRight, Loader2, X, AlertCircle, Inbox } from "lucide-react";
 import { useNav } from "./nav.jsx";
 import { haptic, absUrl } from "./lib.js";
 
@@ -186,12 +186,12 @@ export function Sheet({ open, onClose, title, children, full, footer }) {
     );
 }
 
-export function ConfirmSheet({ open, onClose, title, text, confirm = "Confirm", danger, onConfirm, loading }) {
+export function ConfirmSheet({ open, onClose, title, text, confirm = "Confirm", cancel = "Cancel", danger, onConfirm, loading }) {
     return (
         <Sheet open={open} onClose={onClose} title={title}>
             {text && <p className="text-[15px] mb-4" style={{ color: "var(--mut)" }}>{text}</p>}
             <div className="flex gap-3 pb-2">
-                <Btn variant="soft" block onClick={onClose}>Cancel</Btn>
+                <Btn variant="soft" block onClick={onClose}>{cancel}</Btn>
                 <Btn variant={danger ? "danger" : "primary"} block loading={loading} onClick={onConfirm}>{confirm}</Btn>
             </div>
         </Sheet>
@@ -253,3 +253,29 @@ export function DarkProvider({ children }) {
     const value = useMemo(() => ({ dark, toggle }), [dark, toggle]);
     return <DarkCtx.Provider value={value}>{children}</DarkCtx.Provider>;
 }
+
+// ── Shared layout helpers (one copy for every screen) ────────────────────────────────────────────
+
+/** A tappable settings-style row: coloured icon, label, optional hint, chevron. */
+export function Row({ icon: Icon, label, hint, onClick, color = "var(--accent)", right, danger }) {
+    return (
+        <button onClick={() => { haptic(6); onClick?.(); }} className="w-full flex items-center gap-3.5 px-4 min-h-[58px] py-2 text-left active:bg-[var(--surface2)] transition-colors">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${danger ? "var(--danger)" : color} 13%, transparent)`, color: danger ? "var(--danger)" : color }}><Icon size={19} /></span>
+            <span className="flex-1 min-w-0"><span className="block font-semibold text-[15.5px]" style={danger ? { color: "var(--danger)" } : undefined}>{label}</span>{hint && <span className="block text-xs truncate" style={{ color: "var(--mut)" }}>{hint}</span>}</span>
+            {right ?? <ChevronRight size={18} style={{ color: "var(--mut)" }} />}
+        </button>
+    );
+}
+
+/** A titled card that stacks rows with dividers. */
+export const Group = ({ title, children, flush }) => (
+    <section className={flush ? "mt-5" : "mx-4 mt-4"}>
+        {title && <h3 className="hm-label">{title}</h3>}
+        <div className="hm-card overflow-hidden">{(Array.isArray(children) ? children : [children]).filter(Boolean).map((c, i) => <div key={i} style={i ? { borderTop: "1px solid var(--line)" } : undefined}>{c}</div>)}</div>
+    </section>
+);
+
+export const Field = ({ label, children }) => <div className="mb-3"><label className="hm-label">{label}</label>{children}</div>;
+
+/** The scrolling body of a pushed screen. */
+export const Body = ({ children }) => <div className="flex-1 overflow-y-auto hm-scroll px-4 pb-8 pt-3">{children}</div>;

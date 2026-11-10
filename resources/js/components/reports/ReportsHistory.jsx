@@ -354,8 +354,6 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
             });
             const response = await api.get(`/reports/history?${params}`);
             if (response.data && response.data.success) {
-                // Save to localStorage for persistence
-                localStorage.setItem('reports-history-data', JSON.stringify(response.data));
                 return response.data;
             }
             throw new Error(response.data?.message || 'Failed to fetch reports');
@@ -365,11 +363,6 @@ export default function ReportsHistory({ user, onBack, onNewReport }) {
         refetchOnWindowFocus: true,
         retry: 1,
         keepPreviousData: true,
-        initialData: () => {
-            // Load from localStorage if available
-            const cached = localStorage.getItem('reports-history-data');
-            return cached ? JSON.parse(cached) : undefined;
-        },
     });
 
     const reports = reportsResponse?.reports || [];
