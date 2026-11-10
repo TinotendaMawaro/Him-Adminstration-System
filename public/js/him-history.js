@@ -2,7 +2,7 @@
  * Hover history: rest the mouse on any element marked  data-history-user="<user id>"  and a card slides in with that person's
  * history (joined, zone moves, appointments, sign-in resets...). One script for the web portals AND the head-office console:
  *   - in the portals the request goes to /api/people/{id}/history with the signed-in person's token,
- *   - in the console it goes to /staff/history/{id} with the console session.
+ *   - in the console it goes to /admin/people-history/{id} with the console session.
  * The server decides who may see whom; a refusal simply shows nothing.
  */
 (function () {
@@ -52,7 +52,7 @@
         var t = null; try { t = localStorage.getItem('him_token'); } catch (e) { /* storage blocked */ }
         var req = t
             ? fetch('/api/people/' + id + '/history', { headers: { Authorization: 'Bearer ' + t, Accept: 'application/json' } })
-            : fetch('/staff/history/' + id, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+            : fetch('/admin/people-history/' + id, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
         return req.then(function (r) { if (!r.ok) { throw new Error('denied'); } return r.json(); }).then(function (j) { cache[id] = { t: Date.now(), v: j.data }; return j.data; });
     }
 
