@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UserProvider, useUser } from "./context/UserContext.jsx";
 import { GlobalStateProvider } from "./hooks/GlobalStateProvider.jsx";
 import AuthPage        from "./components/AuthPage.jsx";
+import DownloadPage    from "./components/DownloadPage.jsx";
 import ErrorBoundary   from "./components/ErrorBoundary.jsx";
 import LoadingScreen   from "./components/onboarding/LoadingScreen.jsx";
 import { GoodbyeHost, SessionSplash, sayGoodbye } from "./components/SessionSplash.jsx";
@@ -13,7 +14,6 @@ import AppTour from "./mobile/AppTour.jsx";
 import TermsModal      from "./components/onboarding/TermsModal.jsx";
 import GuidedTour      from "./components/onboarding/GuidedTour.jsx";
 import PastorsPortal   from "./components/PastorsPortal.jsx";
-import HODPortal       from "./components/HODPortal.jsx";
 import GiveOnline      from "./components/GiveOnline.jsx";
 import MobileApp        from "./mobile/MobileApp.jsx";
 import ProfilePhotoGate from "./components/ProfilePhotoGate.jsx";
@@ -43,7 +43,7 @@ function useIdleLogout(enabled, onLogout, minutes = 30) {
 // ─── Portal router — reads user from context internally ──────────────────────
 function PortalRouter({ onLogout }) {
     const { user, loading } = useUser();
-    useIdleLogout(!!user && ["pastor", "hod"].includes(user.role), onLogout);
+    useIdleLogout(!!user && user.role === "pastor", onLogout);
 
     if (loading) {
         return <LoadingScreen />;
@@ -69,14 +69,14 @@ function PortalRouter({ onLogout }) {
         </>
     );
 
-    // Members and partners use the mobile community app (the old members portal is gone). Everyone else keeps their own portal.
+    // Members, partners and heads of department are all church members: they use the mobile community app, where a head of department also gets the tools of the role.
     const memberApp = <><MobileApp onLogout={onLogout} /><GiveOnline hideLauncher /></>;
 
     switch (user.role) {
         case "pastor":  return withGiving(<PastorsPortal  onLogout={onLogout} />);
         case "partner":
+        case "hod":
         case "member":  return memberApp;
-        case "hod":     return withGiving(<HODPortal      onLogout={onLogout} />);
         default:
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -204,7 +204,7 @@ function AppInner() {
             return (
                 <>
                     <PortalRouter onLogout={handleLogout} />
-                    {["member", "partner"].includes(user?.role)
+                    {["member", "partner", "hod"].includes(user?.role)
                         ? <AppTour onFinish={handleTourComplete} />
                         : <GuidedTour onFinish={handleTourComplete} onSkip={handleTourComplete} />}
                 </>
@@ -305,6 +305,7 @@ function App() {
                                   {/* Public routes */}
                                   <Route path="/" element={<RootRedirect />} />
                                   <Route path="/login" element={<LoginPage />} />
+                                  <Route path="/download" element={<DownloadPage />} />
 
                                    {/* Protected routes */}
                                    <Route element={<RequireAuth />}>

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Pagination from "../Pagination.jsx";
 import { useUser } from "../../context/UserContext";
 import api from "../../lib/api";
 import SubmitMessageForm from "./SubmitMessageForm";
@@ -116,6 +117,12 @@ export default function PrayerCenter() {
     });
 
     const messages = messagesData || [];
+    const PAGE_SIZE = 10;
+    const [page, setPage] = useState(1);
+    useEffect(() => { setPage(1); }, [filterStatus, filterCategory, searchQuery]);
+    const pageCount = Math.max(1, Math.ceil(messages.length / PAGE_SIZE));
+    const pagedMessages = messages.slice((Math.min(page, pageCount) - 1) * PAGE_SIZE, Math.min(page, pageCount) * PAGE_SIZE);
+    const pager = <Pagination currentPage={Math.min(page, pageCount)} totalPages={pageCount} totalItems={messages.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} className="mt-4" />;
     const categories = categoriesData || [];
     const unreadCount = messages.filter((m) => m.unread_replies > 0).length;
 
@@ -400,13 +407,14 @@ export default function PrayerCenter() {
                             </div>
                         </div>
                         <MessageHistory
-                            messages={messages}
+                            messages={pagedMessages}
                             categories={categories}
                             isPastor={isPastor}
                             currentUserId={user?.id}
                             onSelectMessage={setSelectedMessage}
                             onStatusUpdate={handleStatusUpdate}
                         />
+                        {pager}
                     </div>
                 )}
 
@@ -506,13 +514,14 @@ export default function PrayerCenter() {
 
                         {/* MESSAGES LIST */}
                         <MessageHistory
-                            messages={messages}
+                            messages={pagedMessages}
                             categories={categories}
                             isPastor={isPastor}
                             currentUserId={user?.id}
                             onSelectMessage={setSelectedMessage}
                             onStatusUpdate={handleStatusUpdate}
                         />
+                        {pager}
                     </>
                 )}
 

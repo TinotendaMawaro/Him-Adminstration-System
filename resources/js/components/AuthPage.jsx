@@ -3,6 +3,7 @@ import { CSSTransition, SwitchTransition } from "react-transition-group";
 import AnimatedBackground from "./AnimatedBackground";
 import "./authAnimations.css";
 import api from "../lib/api";
+import { DOWNLOAD_PATH, IS_APP } from "../lib/platform.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ const LoadingSpinner = () => (
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AuthPage({ onLoginSuccess = () => {} }) {
-    const [mode, setMode]                   = useState("email");
+    const [mode, setMode]                   = useState(IS_APP ? "email" : "code");
     const [isLoading, setIsLoading]         = useState(false);
     const [errors, setErrors]               = useState({});
     const [touched, setTouched]             = useState({});
@@ -30,7 +31,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('intent') === 'partner') {
+        if (IS_APP && params.get('intent') === 'partner') {
             setPartnerIntent(true);
             setMode('register');
         }
@@ -217,6 +218,8 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
             } else if (err.response?.data?.requires_password) {
                 setPastorPasswordRequired(true);
                 setErrors({ pastorPassword: "Please enter your password as well." });
+            } else if (err.response?.data?.app_only) {
+                setErrors({ submit: err.response.data.message, appLink: DOWNLOAD_PATH });
             } else if (err.response?.data?.staff) {
                 setErrors({ submit: err.response.data.message, staffLink: err.response.data.redirect });
             } else if ([401, 403, 429].includes(err.response?.status)) {
@@ -241,12 +244,15 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
     const transitionRef = useRef(null);
     const inputBase = "px-4 py-3 rounded-xl text-base md:text-sm w-full bg-white/10 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-300";
 
-    const TABS = [
-        { key: "email", label: "Members", sub: "Sign in with email" },
-        { key: "code", label: "Pastors", sub: "Sign in with code" },
-        { key: "register", label: "Join", sub: "New member" },
-    ];
-    const switchMode = (key) => { setMode(key); setErrors({}); setTouched({}); };
+    // The app is for every church member, including partners, heads of department and group leaders (email + password, or join). The website is for pastors (code).
+    const TABS = IS_APP
+        ? [{ key: "email", label: "Sign in", sub: "Members & partners" }, { key: "register", label: "Join", sub: "New member" }]
+        : [{ key: "code", label: "Pastors", sub: "Sign in with code" }, { key: "register", label: "Join", sub: "Get the app" }];
+    const switchMode = (key) => {
+        // Joining is done in the mobile app: the website sends people to download it.
+        if (key === "register" && !IS_APP) { window.location.assign(DOWNLOAD_PATH); return; }
+        setMode(key); setErrors({}); setTouched({});
+    };
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#070f1d] font-sans text-white lg:grid lg:grid-cols-[1.05fr_1fr]" role="main" aria-label="Authentication Page">
@@ -255,10 +261,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
 
             {/* ── Brand panel (desktop) ─────────────────────────────────────── */}
             <aside className="relative z-10 hidden flex-col justify-between p-12 xl:p-16 lg:flex">
-                <div className="flex items-center gap-3">
-                    <img src="/images/logo.webp" alt="" className="h-12 w-auto object-contain" />
-                    <span className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-200/80">Heartfelt</span>
-                </div>
+                <img src="/images/logo.webp" alt="Heartfelt International Ministries" className="logo-shake h-20 w-auto self-start object-contain" />
                 <div className="max-w-xl">
                     <p className="mb-4 inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-amber-200">One family · one platform</p>
                     <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight xl:text-6xl" style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>
@@ -278,12 +281,11 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
             <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 sm:px-8">
                 <div className="w-full max-w-[440px]">
                     <div className="mb-6 text-center lg:hidden">
-                        <img src="/images/logo.webp" alt="Heartfelt International Ministries" className="mx-auto h-14 w-auto object-contain" />
-                        <h1 className="mt-3 bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-100 bg-clip-text text-2xl font-extrabold text-transparent" style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", Georgia, serif' }}>Heartfelt International Ministries</h1>
+                        <img src="/images/logo.webp" alt="Heartfelt International Ministries" className="logo-shake mx-auto h-24 w-auto object-contain" />
                     </div>
 
                     <div className="rounded-3xl border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl sm:p-8">
-                        <div role="tablist" aria-label="Sign in method" className="grid grid-cols-3 gap-1 rounded-2xl bg-black/25 p-1">
+                        <div role="tablist" aria-label="Sign in method" className={`${TABS.length === 2 ? "grid-cols-2" : "grid-cols-3"} grid gap-1 rounded-2xl bg-black/25 p-1`}>
                             {TABS.map(({ key, label, sub }) => (
                                 <button key={key} role="tab" aria-selected={mode === key} onClick={() => switchMode(key)}
                                     className={`min-h-[52px] rounded-xl px-1 text-center transition-all duration-200 ${mode === key ? "bg-gradient-to-b from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-900/40" : "text-slate-300 hover:bg-white/10"}`}>
@@ -295,7 +297,7 @@ export default function AuthPage({ onLoginSuccess = () => {} }) {
 
                         <div className="mb-5 mt-6 text-center">
                             <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>{mode === "register" ? "Create your account" : "Welcome back"}</h2>
-                            <p className="mt-1 text-sm text-slate-400">{mode === "code" ? "Pastors sign in with their unique code" : mode === "register" ? "Join the church family in a minute" : "Members and partners: use your email and password"}</p>
+                            <p className="mt-1 text-sm text-slate-400">{mode === "code" ? "Pastors sign in with their unique code" : mode === "register" ? "Join the church family in a minute" : "Use the email and password you registered with"}</p>
                         </div>
 
                     <div className="flex-1 flex flex-col justify-center md:overflow-y-auto py-2">
@@ -470,6 +472,9 @@ onBlur={() => {
                                     {errors.submit && (
                                         <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-2">
                                             <p className="text-red-300 text-xs text-center" role="alert">{errors.submit}</p>
+                                            {errors.appLink && (
+                                                <p className="text-center mt-1"><a href={errors.appLink} className="text-amber-300 text-xs font-semibold underline">Download the app →</a></p>
+                                            )}
                                             {errors.staffLink && (
                                                 <p className="text-center mt-1"><a href={errors.staffLink} className="text-amber-300 text-xs font-semibold underline">Go to the staff portal →</a></p>
                                             )}
@@ -493,14 +498,14 @@ onBlur={() => {
 
                     </div>
 
-                    <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md" aria-label="Staff portals">
+                    {!IS_APP && (<div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md" aria-label="Staff portals">
                         <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Staff portals</p>
                         <div className="grid grid-cols-3 gap-2">
                             {[{ href: "/admin/login", label: "Master" }, { href: "/finance/login", label: "Finance" }, { href: "/events/login", label: "Events" }].map(({ href, label }) => (
                                 <a key={href} href={href} className="flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/5 px-2 text-xs font-semibold text-slate-200 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">{label}</a>
                             ))}
                         </div>
-                    </div>
+                    </div>)}
 
                     <p className="mt-5 text-center text-[11px] text-slate-500">Need help? <span className="text-slate-300">support@heartfeltonline.org</span><br className="sm:hidden" /><span className="hidden sm:inline"> · </span>© 2026 Heartfelt International Ministries</p>
                 </div>

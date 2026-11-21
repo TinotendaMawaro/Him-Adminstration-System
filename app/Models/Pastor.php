@@ -24,6 +24,11 @@ class Pastor extends Model
         'is_regional_leader',
         'is_general_overseer',
         'region_id',
+        'next_of_kin_name',
+        'next_of_kin_phone',
+        'next_of_kin_relationship',
+        'qualifications',
+        'position',
     ];
 
     protected function casts(): array

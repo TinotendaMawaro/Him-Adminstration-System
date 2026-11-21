@@ -8,10 +8,11 @@ import api from "../lib/api.js";
 import { errorMessage, formatWhen, haptic } from "./lib.js";
 import { compressImage, uploadErrorMessage } from "../lib/image.js";
 import { useNav } from "./nav.jsx";
+import { meetingLabel } from "../lib/homegroup.js";
 import { useUser } from "../context/UserContext.jsx";
 
 const list = (res) => {
-    const d = res?.data?.data ?? res?.data?.homegroups ?? res?.data ?? [];
+    const d = res?.data?.data ?? res?.data?.homegroups ?? res?.data?.departments ?? res?.data ?? [];
     return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
 };
 
@@ -73,6 +74,22 @@ export function HomeGroupScreen() {
     const cancel = useMutation({ mutationFn: () => api.delete("/home-group/cancel-request"), onSuccess: () => done("Request cancelled"), onError: (e) => toast(errorMessage(e), "error") });
     const leaveM = useMutation({ mutationFn: () => api.delete("/home-group/leave", { data: { reason } }), onSuccess: () => done("You have left the home group"), onError: (e) => toast(errorMessage(e), "error") });
     const m = mine.data?.member, pending = mine.data?.pending;
+    const nav = useNav();
+    // Invitations from the pastor and appointments to lead: nothing happens until the member accepts.
+    const invites = useQuery({ queryKey: ["hg-invitations"], queryFn: () => api.get("/homegroup-invitations").then((r) => (r.data.invitations || []).filter((i) => i.status === "pending")) });
+    const promo = useQuery({ queryKey: ["hg-promotion"], queryFn: () => api.get("/home-group/my-promotion").then((r) => r.data.promotion || null) });
+    const channel = useQuery({ queryKey: ["hg-channel"], queryFn: () => api.get("/home-group/channel").then((r) => r.data.data), enabled: !!m?.home_group });
+    const refreshAll = () => ["my-homegroup", "hg-invitations", "hg-promotion", "hg-channel", "zone-summary", "my-channels", "channels", "bootstrap"].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+    const answerInvite = useMutation({
+        mutationFn: ({ id, accept }) => api.post(`/homegroup-invitations/${id}/${accept ? "accept" : "decline"}`),
+        onSuccess: (_, v) => { haptic(10); toast(v.accept ? "You joined the home group and its channel" : "Invitation declined", "success"); refreshAll(); },
+        onError: (e) => toast(errorMessage(e), "error"),
+    });
+    const answerPromo = useMutation({
+        mutationFn: ({ id, accept }) => api.post(`/home-group/promotion/${id}/respond`, { action: accept ? "accept" : "decline" }),
+        onSuccess: (_, v) => { haptic(10); toast(v.accept ? "You now lead this home group" : "Appointment declined", "success"); refreshAll(); },
+        onError: (e) => toast(errorMessage(e), "error"),
+    });
 
     return (
         <div className="flex flex-col h-full">
@@ -80,13 +97,37 @@ export function HomeGroupScreen() {
             <Body>
                 {mine.isLoading && <><Skel h={96} r={20} /><Skel h={64} r={20} className="mt-3" /></>}
                 {mine.isError && <ErrorState error={mine.error} onRetry={mine.refetch} />}
+                {promo.data && (
+                    <div className="hm-card p-4" style={{ borderColor: "var(--accent)" }}>
+                        <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>Appointment to lead</div>
+                        <div className="text-lg font-extrabold mt-1">{promo.data.home_group?.name || promo.data.homeGroup?.name || "Home group"}</div>
+                        <p className="text-sm mt-1" style={{ color: "var(--mut)" }}>{promo.data.pastor?.name || "Your pastor"} would like you to lead this home group. Leaders post updates and schedule meetings in the group's channel.</p>
+                        <div className="flex gap-2 mt-3">
+                            <Btn size="sm" loading={answerPromo.isPending} onClick={() => answerPromo.mutate({ id: promo.data.id, accept: true })}>Accept</Btn>
+                            <Btn size="sm" variant="soft" disabled={answerPromo.isPending} onClick={() => answerPromo.mutate({ id: promo.data.id, accept: false })}>Decline</Btn>
+                        </div>
+                    </div>
+                )}
+                {(invites.data || []).map((i) => (
+                    <div key={i.id} className="hm-card p-4 mt-3">
+                        <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "#12a150" }}>You are invited</div>
+                        <div className="text-lg font-extrabold mt-1">{i.home_group?.name || i.homeGroup?.name || "Home group"}</div>
+                        {i.message && <p className="text-sm mt-1" style={{ color: "var(--mut)" }}>“{i.message}”</p>}
+                        <p className="text-sm mt-1" style={{ color: "var(--mut)" }}>{meetingLabel(i.home_group || i.homeGroup)}</p>
+                        <div className="flex gap-2 mt-3">
+                            <Btn size="sm" loading={answerInvite.isPending} onClick={() => answerInvite.mutate({ id: i.id, accept: true })}>Accept</Btn>
+                            <Btn size="sm" variant="soft" disabled={answerInvite.isPending} onClick={() => answerInvite.mutate({ id: i.id, accept: false })}>Decline</Btn>
+                        </div>
+                    </div>
+                ))}
                 {m?.home_group && (
-                    <div className="hm-card p-4">
+                    <div className="hm-card p-4 mt-3">
                         <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>Your home group</div>
                         <div className="text-xl font-extrabold mt-1">{m.home_group.name}</div>
-                        <div className="text-sm mt-1" style={{ color: "var(--mut)" }}>{[m.home_group.meeting_day, m.home_group.meeting_time?.slice?.(0, 5), m.home_group.location].filter(Boolean).join(" · ") || "Meeting details to be announced"}</div>
+                        <div className="text-sm mt-1" style={{ color: "var(--mut)" }}>{meetingLabel(m.home_group)}</div>
                         {m.home_group.leader?.name && <div className="text-sm mt-2">Leader: <b>{m.home_group.leader.name}</b></div>}
                         {m.lead_pastor?.name && <div className="text-sm">Pastor: <b>{m.lead_pastor.name}</b></div>}
+                        {channel.data?.channel_id && <Btn size="sm" className="mt-4 mr-2" icon={Users} onClick={() => nav.push("channel", { id: channel.data.channel_id })}>{channel.data.is_leader ? "Manage group channel" : "Open group channel"}</Btn>}
                         <Btn variant="soft" size="sm" className="mt-4" onClick={() => setLeave(true)}>Leave group</Btn>
                     </div>
                 )}
@@ -108,7 +149,7 @@ export function HomeGroupScreen() {
                             {list(groups.data).map((g) => (
                                 <button key={g.id} onClick={() => setPick(g)} className="hm-card p-4 w-full text-left active:scale-[.99] transition-transform">
                                     <div className="font-bold text-[16px]">{g.name}</div>
-                                    <div className="text-sm" style={{ color: "var(--mut)" }}>{[g.meeting_day, g.meeting_time, g.location].filter(Boolean).join(" · ") || "Meeting details to be announced"}</div>
+                                    <div className="text-sm" style={{ color: "var(--mut)" }}>{meetingLabel(g)}</div>
                                     {g.leader?.name && <div className="text-xs mt-1" style={{ color: "var(--mut)" }}>Led by {g.leader.name}</div>}
                                 </button>
                             ))}
@@ -137,11 +178,32 @@ export function DepartmentScreen() {
     const cancel = useMutation({ mutationFn: () => api.delete("/department-request/cancel"), onSuccess: () => done("Request cancelled"), onError: (e) => toast(errorMessage(e), "error") });
     const leaveM = useMutation({ mutationFn: () => api.delete("/department/leave", { data: { reason } }), onSuccess: () => done("You have left the department"), onError: (e) => toast(errorMessage(e), "error") });
     const m = mine.data?.member, pending = mine.data?.pending;
+    const nav = useNav();
+    const { user } = useUser();
+    // A head of department is a member who was given this role: they accept it here, then lead from the department's channel.
+    const appointed = useQuery({ queryKey: ["my-hod-appointment"], queryFn: () => api.get("/departments", { params: { per_page: 100 } }).then((r) => list(r).find((d) => Number(d.hod_id) === Number(user?.id) && d.hod_status === "pending") || null) });
+    const channel = useQuery({ queryKey: ["dept-channel"], queryFn: () => api.get("/department/channel").then((r) => r.data.data), enabled: !!m?.department });
+    const answerHod = useMutation({
+        mutationFn: ({ id, accept }) => api.post(`/departments/${id}/${accept ? "accept-hod" : "decline-hod"}`),
+        onSuccess: (_, v) => { haptic(10); toast(v.accept ? "You are now head of this department" : "Appointment declined", "success"); ["my-hod-appointment", "my-department", "dept-channel", "bootstrap", "my-channels"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); },
+        onError: (e) => toast(errorMessage(e), "error"),
+    });
 
     return (
         <div className="flex flex-col h-full">
             <TopBar back title="Department" subtitle="Serve with your gifts" />
             <Body>
+                {appointed.data && (
+                    <div className="hm-card p-4 mb-3" style={{ borderColor: "var(--accent)" }}>
+                        <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>Appointment to lead</div>
+                        <div className="text-lg font-extrabold mt-1">{appointed.data.name}</div>
+                        <p className="text-sm mt-1" style={{ color: "var(--mut)" }}>You have been asked to be head of this department. Heads post updates and schedule meetings in the department's channel.</p>
+                        <div className="flex gap-2 mt-3">
+                            <Btn size="sm" loading={answerHod.isPending} onClick={() => answerHod.mutate({ id: appointed.data.id, accept: true })}>Accept</Btn>
+                            <Btn size="sm" variant="soft" disabled={answerHod.isPending} onClick={() => answerHod.mutate({ id: appointed.data.id, accept: false })}>Decline</Btn>
+                        </div>
+                    </div>
+                )}
                 {mine.isLoading && <Skel h={96} r={20} />}
                 {mine.isError && <ErrorState error={mine.error} onRetry={mine.refetch} />}
                 {m?.department && (
@@ -149,6 +211,7 @@ export function DepartmentScreen() {
                         <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>Your department</div>
                         <div className="text-xl font-extrabold mt-1">{m.department.name}</div>
                         {m.department.description && <p className="text-sm mt-1" style={{ color: "var(--mut)" }}>{m.department.description}</p>}
+                        {channel.data?.channel_id && <Btn size="sm" className="mt-4 mr-2" icon={Users} onClick={() => nav.push("channel", { id: channel.data.channel_id })}>{channel.data.is_head ? "Manage department channel" : "Open department channel"}</Btn>}
                         <Btn variant="soft" size="sm" className="mt-4" onClick={() => setLeave(true)}>Leave department</Btn>
                     </div>
                 )}

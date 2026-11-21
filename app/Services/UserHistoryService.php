@@ -71,13 +71,17 @@ class UserHistoryService
 
         usort($events, fn ($a, $b) => strcmp((string) $b['at'], (string) $a['at']));
 
-        $member = Member::where('user_id', $subject->id)->first();
+        $member = Member::with(['homeGroup:id,name,leader_id', 'department:id,name,hod_id'])->where('user_id', $subject->id)->first();
         $pastor = Pastor::where('user_id', $subject->id)->first();
 
         return [
             'person' => [
                 'id' => $subject->id, 'name' => $subject->name, 'role' => $subject->role->getLabel(),
                 'zone' => $subject->zone?->name, 'photo' => $subject->profile_photo,
+                'home_group' => $member?->homeGroup?->name,
+                'home_group_role' => $member?->homeGroup ? ((int) $member->homeGroup->leader_id === (int) $subject->id ? 'Leader' : 'Member') : null,
+                'department' => $member?->department?->name,
+                'department_role' => $member?->department ? ((int) $member->department->hod_id === (int) $subject->id ? 'Head' : 'Member') : null,
                 'code' => $pastor?->code ?? $member?->member_code ?? $member?->member_number,
                 'since' => $subject->created_at?->format('M Y'),
                 'last_sign_in' => $subject->last_login_at ? \Carbon\Carbon::parse($subject->last_login_at)->diffForHumans() : null,

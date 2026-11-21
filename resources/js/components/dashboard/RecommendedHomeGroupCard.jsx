@@ -26,7 +26,7 @@ export default function RecommendedHomeGroupCard({ onJoin }) {
       <div className="bg-emerald-500/10 rounded-xl p-3">
         <p className="text-xs font-bold text-white">{recommendation.name}</p>
         <p className="text-[10px] text-gray-400 mt-0.5">
-          {recommendation.meeting_day} • {recommendation.meeting_time}
+          {[recommendation.meeting_day, recommendation.meeting_time].filter(Boolean).join(" • ") || "To be announced by the group leader"}
         </p>
         <p className="text-[10px] text-emerald-300 mt-1 font-semibold">
           {recommendation.distance_km} km away • Perfect for new members!

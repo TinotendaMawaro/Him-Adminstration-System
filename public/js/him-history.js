@@ -58,7 +58,7 @@
 
     function render(d) {
         var p = d.person, ini = (p.name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
-        var chips = [p.role, p.code, p.zone, p.since ? 'Since ' + p.since : null, p.last_sign_in ? 'Last seen ' + p.last_sign_in : null].filter(Boolean)
+        var chips = [p.role, p.code, p.zone, p.home_group ? p.home_group + (p.home_group_role ? ' · ' + p.home_group_role : '') : null, p.department ? p.department + (p.department_role ? ' · ' + p.department_role : '') : null, p.since ? 'Since ' + p.since : null, p.last_sign_in ? 'Last seen ' + p.last_sign_in : null].filter(Boolean)
             .map(function (c) { return '<span class="hh-chip">' + esc(c) + '</span>'; }).join('');
         var items = d.events.map(function (e, i) {
             return '<div class="hh-item" style="transition-delay:' + (60 + i * 45) + 'ms"><div class="hh-t">' + esc(e.title) + '</div>' + (e.detail ? '<div class="hh-d">' + esc(e.detail) + '</div>' : '') + '<div class="hh-w">' + esc(ago(e.at)) + '</div></div>';

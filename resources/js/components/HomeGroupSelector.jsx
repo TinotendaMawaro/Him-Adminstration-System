@@ -265,7 +265,7 @@ const HomeGroupSelector = ({ user, onClose, onRequestLeave }) => {
                         <Icons.Calendar className="w-5 h-5 text-emerald-600" />
                         <div>
                             <p className="text-sm text-gray-500">Meeting Time</p>
-                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group?.meeting_time || "Contact leader"}</p>
+                            <p className="font-semibold text-gray-900">{myHomeGroup.home_group?.meeting_time || "To be announced by the group leader"}</p>
                         </div>
                     </div>
                 </div>

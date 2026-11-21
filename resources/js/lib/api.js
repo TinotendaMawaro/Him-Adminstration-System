@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { APP_HEADER, IS_APP } from './platform.js';
 
 // Use relative URL - works with Vite's proxy (localhost:5173 → localhost:8000)
 // or when frontend and backend are on same origins
@@ -8,6 +9,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...(IS_APP ? APP_HEADER : {}),
     },
 });
 

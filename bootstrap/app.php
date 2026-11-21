@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'partnership' => \App\Http\Middleware\RequiresPartnership::class,
             'secure.api' => \App\Http\Middleware\SecureApiMiddleware::class,
+            'app.client' => \App\Http\Middleware\RequireAppClient::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

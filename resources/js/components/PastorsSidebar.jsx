@@ -147,8 +147,21 @@ const Icons = {
     ),
 };
 
+Icons.Inbox = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+);
+Icons.Bell = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+    </svg>
+);
+
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Icons.Dashboard },
+    { id: "inbox", label: "Inbox", icon: Icons.Inbox },
+    { id: "notifications", label: "Notifications", icon: Icons.Bell },
     { id: "members", label: "Members", icon: Icons.Users },
     { id: "homegroups", label: "Home Groups", icon: Icons.HomeGroup },
     { id: "prayer-center", label: "Prayer Center", icon: Icons.HandsPraying },

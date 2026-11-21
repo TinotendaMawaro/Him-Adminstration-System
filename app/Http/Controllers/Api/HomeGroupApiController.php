@@ -212,26 +212,12 @@ class HomeGroupApiController extends Controller
             'leader_id' => 'required|exists:users,id',
         ]);
 
-        // Verify the user belongs to the same zone as the pastor
-        $leader = User::where('id', $validated['leader_id'])
-            ->where('zone_id', $zoneId)
-            ->firstOrFail();
+        // The person must be in the pastor's zone, and they must accept before they lead: this sends them the appointment.
+        User::where('id', $validated['leader_id'])->where('zone_id', $zoneId)->firstOrFail();
 
-        // Auto-add leader to the homegroup if not already a member
-        if ($leader->home_group_id !== $homegroup->id) {
-            $leader->update(['home_group_id' => $homegroup->id]);
-        }
+        $request->merge(['user_id' => $validated['leader_id']]);
 
-        $homegroup->update(['leader_id' => $validated['leader_id']]);
-
-        // Clear cache
-        Cache::forget("homegroups_zone_{$zoneId}");
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Leader assigned successfully',
-            'homegroup' => $homegroup->fresh('leader'),
-        ]);
+        return app(HomeGroupMemberController::class)->promoteLeader($request, $homegroup->id);
     }
 
     /**

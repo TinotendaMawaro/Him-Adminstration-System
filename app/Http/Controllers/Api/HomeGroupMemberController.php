@@ -34,6 +34,37 @@ class HomeGroupMemberController extends Controller
     /**
      * Get user's current home group
      */
+    /** GET /api/home-group/channel — the channel of the home group I belong to (created on first use). */
+    public function myChannel(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $group = $user->home_group_id ? HomeGroup::find($user->home_group_id) : null;
+        if (!$group) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+        $svc = app(\App\Services\Community\HomeGroupChannelService::class);
+        $svc->add($group, $user);
+
+        return response()->json(['success' => true, 'data' => ['channel_id' => $svc->channelFor($group)->id, 'is_leader' => (int) $group->leader_id === (int) $user->id]]);
+    }
+
+    /** GET /api/department/channel — the channel of my department (created on first use). */
+    public function myDepartmentChannel(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $dept = $user->department_id ? \App\Models\Department::find($user->department_id) : null;
+        if (!$dept) {
+            return response()->json(['success' => true, 'data' => null]);
+        }
+        $svc = app(\App\Services\Community\DepartmentChannelService::class);
+        $svc->add($dept, $user);
+
+        return response()->json(['success' => true, 'data' => [
+            'channel_id' => $svc->channelFor($dept)->id,
+            'is_head' => (int) $dept->hod_id === (int) $user->id && $dept->hod_status === 'accepted',
+        ]]);
+    }
+
     public function myHomeGroup(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -940,11 +971,7 @@ class HomeGroupMemberController extends Controller
             ], 400);
         }
 
-        // Auto-add member to homegroup if not already a member
-        if ($member->home_group_id !== $homeGroup->id) {
-            $member->update(['home_group_id' => $homeGroup->id]);
-        }
-
+        // Nothing changes until they accept: only then do they lead the group (and join its channel).
         $promotion = \App\Models\LeaderPromotionRequest::create([
             'user_id'     => $member->id,
             'home_group_id' => $homeGroup->id,
@@ -995,12 +1022,7 @@ class HomeGroupMemberController extends Controller
         $pastor = $promotion->pastor;
 
         if ($action === 'accept') {
-            // Update user role to HOD
-            $user->update(['role' => 'hod']);
-
-            // Invalidate all existing Sanctum tokens to force logout
-            $user->tokens()->delete();
-
+            // A home group leader stays a member (the app is where they lead): they run the group's channel, post and schedule meetings.
             // Set as homegroup leader
             $homeGroup->update(['leader_id' => $user->id]);
 
@@ -1027,7 +1049,7 @@ class HomeGroupMemberController extends Controller
             return response()->json([
                 'success'    => true,
                 'message'    => 'You are now a Homegroup Leader.',
-                'new_role'   => 'hod',
+                'new_role'   => $user->role->value,
                 'home_group' => $homeGroup->fresh('leader'),
                 'user'       => $user->fresh(['zone', 'homeGroup']),
             ]);

@@ -568,3 +568,14 @@
 .animate-ripple {
   animation: ripple 0.6s linear;
 }
+/* The logo on the sign-in screen: a gentle, endless shake that draws the eye without being annoying. */
+@keyframes logo-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-4deg) scale(1.03); }
+  30% { transform: rotate(3.5deg) scale(1.03); }
+  45% { transform: rotate(-2.5deg) scale(1.02); }
+  60% { transform: rotate(2deg) scale(1.01); }
+  75%, 90% { transform: rotate(0deg) scale(1); }
+}
+.logo-shake { transform-origin: 50% 70%; animation: logo-shake 3.2s ease-in-out infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .logo-shake { animation: none; } }

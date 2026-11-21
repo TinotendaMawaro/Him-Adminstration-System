@@ -66,7 +66,7 @@ Route::get('/cron/run', function (\Illuminate\Http\Request $request) {
 })->middleware('throttle:10,1');
 
 Route::post('/register', RegisterController::class)
-     ->middleware('throttle:3,1'); // 3 registrations per minute
+     ->middleware(['app.client', 'throttle:3,1']); // joining happens in the mobile app; 3 registrations per minute
 
 // ── Zone Lookup (public — no auth required, used during registration) ─────────
     Route::get('/zones/lookup', [DashboardController::class, 'lookupZone'])
@@ -145,6 +145,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
     // ── Members ────────────────────────────────────────────────────────────────
     Route::prefix('members')->group(function () {
         Route::get('/me', [MemberController::class, 'me']);
+        Route::get('/filter-options', [MemberController::class, 'filterOptions'])->middleware('role:master,pastor,hod');
         Route::get('/zone-summary', [MemberController::class, 'zoneSummary']);
         Route::get('/zone-history', [MemberController::class, 'zoneHistory']);
         Route::put('/me', [MemberController::class, 'updateMe']);
@@ -167,6 +168,8 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
     // ── Pastor Portal ────────────────────────────────────────────────────────────
     Route::prefix('pastors')->middleware('role:pastor')->group(function () {
         Route::get('/me', [PastorController::class, 'me']);
+        Route::get('/profile', [\App\Http\Controllers\Api\PastorProfileController::class, 'show']);
+        Route::put('/profile', [\App\Http\Controllers\Api\PastorProfileController::class, 'update'])->middleware('throttle:30,1');
         Route::get('/zones', [PastorController::class, 'zones']);
         Route::post('/members/{member}/transfer', [PastorController::class, 'transferMember'])->middleware('throttle:20,1');
         Route::get('/zone-summary', [PastorController::class, 'zoneSummary']);
@@ -243,6 +246,8 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
 
     Route::get('/home-groups/available', [HomeGroupApiController::class, 'index']);
     Route::get('/home-group/my', [HomeGroupMemberController::class, 'myHomeGroup']);
+    Route::get('/home-group/channel', [HomeGroupMemberController::class, 'myChannel']);
+    Route::get('/department/channel', [HomeGroupMemberController::class, 'myDepartmentChannel']);
     Route::post('/home-group/join', [HomeGroupMemberController::class, 'joinHomeGroup']);
     Route::delete('/home-group/leave', [HomeGroupMemberController::class, 'leaveHomeGroup']);
     Route::get('/home-group/{id}/members', [HomeGroupMemberController::class, 'homeGroupMembers']);
@@ -299,12 +304,14 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
 
     // ── Notifications ──────────────────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']); // support PUT too
-    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
-    Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']); // support PUT too
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::match(['put', 'patch'], '/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::match(['put', 'patch'], '/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id');
+    Route::post('/notifications/{id}/archive', [NotificationController::class, 'archive'])->whereNumber('id');
+    Route::delete('/notifications/{id}/archive', [NotificationController::class, 'unarchive'])->whereNumber('id');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
+    Route::get('/departments/hod-candidates', [DepartmentController::class, 'hodCandidates']);
 
     // ── Messages ───────────────────────────────────────────────────────────────
     Route::prefix('messages')->group(function () {
@@ -313,6 +320,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
         Route::get('/conversations', [MessageController::class, 'conversations']);
         Route::get('/conversation/{contactId}', [MessageController::class, 'conversation'])->whereNumber('contactId');
         Route::get('/unread-count', [MessageController::class, 'unreadCount']);
+        Route::get('/announcements', [MessageController::class, 'announcements']);
         Route::get('/pastor', [MessageController::class, 'pastorMessages']);
         Route::get('/department-members', [MessageController::class, 'departmentMembers']);
         Route::post('/direct', [MessageController::class, 'sendDirect'])->middleware('throttle:30,1');

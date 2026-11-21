@@ -1,5 +1,5 @@
 // Partnership inside the app: the status members see, the monthly nudge, the lock on partner-only material, and the screen to join or renew.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, BadgeCheck, CalendarClock, Check, Crown, HeartHandshake, Lock, Store, Tv, X } from "lucide-react";
 import { Body, Btn, Empty, ErrorState, Skel, TopBar, toast } from "./ui.jsx";
@@ -22,7 +22,41 @@ export function usePartnership() {
     return data?.data?.partnership || null;
 }
 
-const give = (amount) => window.dispatchEvent(new CustomEvent("him:give", { detail: { type: "partnership", amount } }));
+// Straight to the payment gateway: no extra dialog in between. In the app the gateway opens in the system browser sheet, and when
+// the person comes back the partnership status is refreshed (the server confirms the payment itself).
+async function openGateway(url) {
+    try {
+        if (window.Capacitor?.isNativePlatform?.()) {
+            const { Browser } = await import("@capacitor/browser");
+            await Browser.open({ url, presentationStyle: "popover" });
+            return;
+        }
+    } catch { /* fall back to a normal navigation */ }
+    window.location.assign(url);
+}
+
+function usePartnershipPayment() {
+    const qc = useQueryClient();
+    const [busy, setBusy] = useState(false);
+    useEffect(() => {
+        const refresh = () => document.visibilityState === "visible" && qc.invalidateQueries({ queryKey: ["bootstrap"] });
+        document.addEventListener("visibilitychange", refresh);
+        return () => document.removeEventListener("visibilitychange", refresh);
+    }, [qc]);
+    const pay = async (amount) => {
+        if (busy) return;
+        setBusy(true);
+        try {
+            const { data } = await api.post("/online-payments", { type: "partnership", amount: Number(amount) });
+            const url = data?.data?.pay_url;
+            if (!url) throw new Error("no url");
+            await openGateway(url);
+        } catch (e) {
+            toast(e.response?.status === 422 ? "Partnership payments are not open yet. Please try again shortly or contact your pastor." : errorMessage(e), "error");
+        } finally { setBusy(false); }
+    };
+    return { pay, busy };
+}
 
 // ── Slim strip + monthly nudge on the Home tab ──────────────────────────────────────────────────────
 export function PartnershipBanner() {
@@ -84,10 +118,11 @@ export function PartnershipScreen() {
     const t = TONE[p?.status || "none"];
     const Icon = t.icon;
     const canPay = p && p.status !== "none";
+    const { pay, busy: paying } = usePartnershipPayment();
 
     const enroll = useMutation({
         mutationFn: (pkg) => api.post("/partners/enroll", { package_id: pkg.id, contribution_type: freq, payment_method: "visa" }),
-        onSuccess: (_, pkg) => { qc.invalidateQueries({ queryKey: ["bootstrap"] }); toast("Almost done: complete your first payment", "success"); give(pkg.monthly_amount); },
+        onSuccess: (_, pkg) => { qc.invalidateQueries({ queryKey: ["bootstrap"] }); toast("Almost done: complete your first payment", "success"); pay(pkg.monthly_amount); },
         onError: (e) => toast(errorMessage(e), "error"),
     });
 
@@ -104,7 +139,7 @@ export function PartnershipScreen() {
                     <p className="text-sm opacity-90 mt-1.5 leading-snug">{p?.message || "Partners support the work of the ministry and unlock the marketplace."}</p>
                     {p?.renewal_date && <div className="text-[13px] mt-3 font-semibold">{p.status === "expired" ? "Expired" : "Renews"} {fmtDate(p.renewal_date)}</div>}
                     {pct !== null && <div className="h-2 rounded-full mt-2" style={{ background: "rgba(255,255,255,.18)" }}><div className="h-2 rounded-full" style={{ width: `${pct}%`, background: p.status === "expired" ? "#fb7185" : "linear-gradient(90deg,#c9a84c,#f2dc9a)" }} /></div>}
-                    {canPay && p.amount > 0 && <Btn block className="mt-4" icon={HeartHandshake} onClick={() => give(p.amount)}>{p.status === "expired" || p.status === "expiring" ? "Renew" : p.status === "pending" ? "Pay now" : "Give"} {money(p.amount)}</Btn>}
+                    {canPay && p.amount > 0 && <Btn block className="mt-4" icon={HeartHandshake} loading={paying} onClick={() => pay(p.amount)}>{p.status === "expired" || p.status === "expiring" ? "Renew" : p.status === "pending" ? "Pay now" : "Give"} {money(p.amount)}</Btn>}
                 </div>
 
                 <h3 className="hm-label" style={{ marginTop: 24 }}>What partners enjoy</h3>
@@ -135,7 +170,7 @@ export function PartnershipScreen() {
                                 </button>
                             ))}
                         </div>
-                        <Btn block className="mt-4" disabled={!picked} loading={enroll.isPending} icon={HeartHandshake} onClick={() => enroll.mutate((pk.data || []).find((x) => x.id === picked))}>Become a partner</Btn>
+                        <Btn block className="mt-4" disabled={!picked} loading={enroll.isPending || paying} icon={HeartHandshake} onClick={() => enroll.mutate((pk.data || []).find((x) => x.id === picked))}>Become a partner</Btn>
                         <p className="text-xs text-center mt-2" style={{ color: "var(--mut)" }}>You pay securely through the ClicknPay gateway. Your partnership starts when the payment is confirmed.</p>
                     </>
                 )}

@@ -44,6 +44,63 @@ class AppServiceProvider extends ServiceProvider
         EventRegistration::observe(EventRegistrationObserver::class);
         Notification::observe(NotificationObserver::class);
 
+        // Home groups live in their own channel: joining or leaving a group (by any route) moves the person in or out of it,
+        // and the leader runs it.
+        $moved = [];
+        User::updating(function (User $u) use (&$moved) {
+            if ($u->isDirty('home_group_id')) {
+                $moved[$u->id] = $u->getOriginal('home_group_id');
+            }
+        });
+        User::saved(function (User $u) use (&$moved) {
+            if (!array_key_exists($u->id, $moved)) {
+                return;
+            }
+            $old = $moved[$u->id];
+            unset($moved[$u->id]);
+            \App\Services\Community\HomeGroupChannelService::safely(function ($svc) use ($u, $old) {
+                if ($old) {
+                    $svc->remove((int) $old, $u);
+                }
+                if ($u->home_group_id && ($group = \App\Models\HomeGroup::find($u->home_group_id))) {
+                    $svc->add($group, $u);
+                }
+            });
+        });
+        // Departments work the same way: a department's channel holds its people and is run by its head.
+        $deptMoved = [];
+        User::updating(function (User $u) use (&$deptMoved) {
+            if ($u->isDirty('department_id')) {
+                $deptMoved[$u->id] = $u->getOriginal('department_id');
+            }
+        });
+        User::saved(function (User $u) use (&$deptMoved) {
+            if (!array_key_exists($u->id, $deptMoved)) {
+                return;
+            }
+            $old = $deptMoved[$u->id];
+            unset($deptMoved[$u->id]);
+            \App\Services\Community\DepartmentChannelService::safely(function ($svc) use ($u, $old) {
+                if ($old) {
+                    $svc->remove((int) $old, $u);
+                }
+                if ($u->department_id && ($dept = \App\Models\Department::find($u->department_id))) {
+                    $svc->add($dept, $u);
+                }
+            });
+        });
+        \App\Models\Department::saved(function (\App\Models\Department $d) {
+            $changed = $d->wasChanged('hod_id') || $d->wasChanged('hod_status');
+            if ($changed && $d->hod_id && $d->hod_status === 'accepted') {
+                \App\Services\Community\DepartmentChannelService::safely(fn ($svc) => $svc->syncHead($d));
+            }
+        });
+        \App\Models\HomeGroup::saved(function (\App\Models\HomeGroup $g) {
+            if ($g->wasChanged('leader_id') && $g->leader_id) {
+                \App\Services\Community\HomeGroupChannelService::safely(fn ($svc) => $svc->syncLeader($g));
+            }
+        });
+
         // Resend over HTTPS (no extra Composer package).
         Mail::extend('resend', fn (array $config) => new ResendTransport($config['key'] ?? null, $config['base_url'] ?? 'https://api.resend.com'));
 

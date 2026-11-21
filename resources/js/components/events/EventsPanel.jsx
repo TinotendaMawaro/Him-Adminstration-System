@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api.js";
+import Pagination from "../Pagination.jsx";
 
 /**
  * The ONE events screen: the mobile app and the pastor / HOD portals all render this component, so an event is registered
@@ -35,11 +36,17 @@ export default function EventsPanel() {
     });
     const events = data?.data || [];
     const shown = useMemo(() => (tab === "mine" ? events.filter((e) => e.my_registration && e.my_registration.status !== "cancelled") : events), [events, tab]);
+    const PAGE_SIZE = 9;
+    const [page, setPage] = useState(1);
+    React.useEffect(() => { setPage(1); }, [tab]);
+    const pageCount = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+    const current = Math.min(page, pageCount);
+    const pageItems = useMemo(() => shown.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE), [shown, current]);
     const groups = useMemo(() => {
         const g = new Map();
-        shown.forEach((e) => { const k = monthKey(e.starts_at); g.set(k, [...(g.get(k) || []), e]); });
+        pageItems.forEach((e) => { const k = monthKey(e.starts_at); g.set(k, [...(g.get(k) || []), e]); });
         return [...g.entries()];
-    }, [shown]);
+    }, [pageItems]);
 
     const done = async (msg) => { say("ok", msg); await refetch(); qc.invalidateQueries({ queryKey: ["events-mobile"] }); };
     const register = async (e) => { setBusy(e.id); try { await api.post(`/events/${e.id}/register`); await done(e.requires_payment ? "Registered. Complete your payment to confirm." : "You are registered."); } catch (x) { say("bad", err(x)); } setBusy(null); };
@@ -112,6 +119,7 @@ export default function EventsPanel() {
                     </div>
                 </div>
             ))}
+            <Pagination currentPage={current} totalPages={pageCount} totalItems={shown.length} itemsPerPage={PAGE_SIZE} onPageChange={setPage} className="mt-2" />
         </section>
     );
 }

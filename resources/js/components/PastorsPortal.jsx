@@ -21,7 +21,10 @@ import PastorsSidebar from "./PastorsSidebar.jsx";
 import WeeklyReportForm from "./reports/WeeklyReportForm.jsx";
 import ReportsHistory from "./reports/ReportsHistory.jsx";
 import NotificationBell from "./notifications/NotificationBell.jsx";
-import ProfileSection from "./dashboard/sections/ProfileSection.jsx";
+import NotificationStrip from "./notifications/NotificationStrip.jsx";
+import NotificationsPage from "./notifications/NotificationsPage.jsx";
+import InboxPage from "./inbox/InboxPage.jsx";
+import PastorProfile from "./pastors/PastorProfile.jsx";
 import DashboardStats from "./dashboard/DashboardStats.jsx";
 import PastorMembershipCard from "./PastorMembershipCard.jsx";
 import PrayerCenter from "./prayer-center/PrayerCenter.jsx";
@@ -441,142 +444,6 @@ const Icons = {
 // ============================================================================
 // PROFILE DRAWER COMPONENT
 // ============================================================================
-
-const ProfileDrawer = ({ user, onClose, onSave }) => {
-    const [formData, setFormData] = useState({
-        name: user?.name || "",
-        email: user?.email || "",
-        phone: user?.phone || "",
-        address: user?.address || "",
-        location: user?.location || "",
-    });
-    const [isSaving, setIsSaving] = useState(false);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSave = () => {
-        setIsSaving(true);
-        setTimeout(() => {
-            onSave({ ...user, ...formData });
-            setIsSaving(false);
-        }, 1000);
-    };
-
-    return (
-        <>
-            <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-                onClick={onClose}
-            />
-            <div className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 animate-slideIn">
-                <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            Profile
-                        </h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-xl hover:bg-gray-100"
-                        >
-                            <svg
-                                className="w-6 h-6 text-gray-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        <div className="flex flex-col items-center">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-xl mb-4">
-                                <span className="text-white font-bold text-4xl">
-                                    {formData.name?.charAt(0) || "C"}
-                                </span>
-                            </div>
-                            <p className="text-lg font-semibold">
-                                {formData.name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                {user?.zone?.name || "—"} Zone Pastor
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            {[
-                                {
-                                    label: "Full Name",
-                                    name: "name",
-                                    type: "text",
-                                },
-                                {
-                                    label: "Email",
-                                    name: "email",
-                                    type: "email",
-                                },
-                                { label: "Phone", name: "phone", type: "tel" },
-                                {
-                                    label: "Location",
-                                    name: "location",
-                                    type: "text",
-                                },
-                            ].map(({ label, name, type }) => (
-                                <div key={name}>
-                                    <label className="block text-sm font-medium mb-1">
-                                        {label}
-                                    </label>
-                                    <input
-                                        type={type}
-                                        name={name}
-                                        value={formData[name]}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400"
-                                    />
-                                </div>
-                            ))}
-                            <div>
-                                <label className="block text-sm font-medium mb-1">
-                                    Address
-                                </label>
-                                <textarea
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-gold-400"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-6 border-t space-y-3">
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            className="w-full py-3 bg-gradient-to-r from-gold-400 to-gold-500 text-white font-semibold rounded-xl hover:from-gold-500 disabled:opacity-50"
-                        >
-                            {isSaving ? "Saving..." : "Save Changes"}
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } } .animate-slideIn { animation: slideIn 0.3s ease-out; }`}</style>
-        </>
-    );
-};
 
 const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Icons.Dashboard },
@@ -1053,7 +920,10 @@ const DashboardContent = ({ user, onNavigate }) => {
                 </div>
             </div>
 
-{/* Stats Grid */}
+{/* What is new: on top of the cards */}
+            <NotificationStrip onNavigate={onNavigate} />
+
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {loading ? (
                     <>
@@ -1447,8 +1317,13 @@ export default function PastorsPortal({ onLogout }) {
     const { updateUser } = useUser();
     const queryClient = useQueryClient();
     const [activeItem, setActiveItem] = useState("dashboard");
+    // Where the bell (or a dashboard card) sent us: the conversation to open, or the notification to show.
+    const [navParams, setNavParams] = useState({});
+    const navigate = (page, params = {}) => {
+        setNavParams(params);
+        setActiveItem(page);
+    };
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showProfileDrawer, setShowProfileDrawer] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -1588,15 +1463,22 @@ export default function PastorsPortal({ onLogout }) {
         switch (activeItem) {
             case "dashboard":
                 return (
-                    <DashboardContent user={user} onNavigate={setActiveItem} />
+                    <DashboardContent user={user} onNavigate={navigate} />
+                );
+            case "inbox":
+                return <InboxPage key={navParams.contactId || "inbox"} openContactId={navParams.contactId || null} />;
+            case "notifications":
+                return (
+                    <NotificationsPage
+                        key={navParams.focus?.id || "notifications"}
+                        focus={navParams.focus || null}
+                        initialTab={navParams.tab || "unread"}
+                        onNavigate={navigate}
+                    />
                 );
             case "profile":
                 return (
-                    <ProfileSection
-                        user={user}
-                        onClose={() => setActiveItem("dashboard")}
-                        onUpdate={(updatedUser) => updateUser(updatedUser)}
-                    />
+                    <PastorProfile user={user} onUpdate={(updatedUser) => updateUser(updatedUser)} />
                 );
             case "members":
                 return <MembersTab />;
@@ -1630,10 +1512,10 @@ export default function PastorsPortal({ onLogout }) {
                     </div>
                 );
             case "more":
-                return <DashboardContent user={user} onNavigate={setActiveItem} />;
+                return <DashboardContent user={user} onNavigate={navigate} />;
             default:
                 return (
-                    <DashboardContent user={user} onNavigate={setActiveItem} />
+                    <DashboardContent user={user} onNavigate={navigate} />
                 );
         }
     };
@@ -1642,6 +1524,8 @@ export default function PastorsPortal({ onLogout }) {
         ({
             dashboard: "Dashboard",
             profile: "My Profile",
+            inbox: "Inbox",
+            notifications: "Notifications",
             members: "Members",
             homegroups: "Home Groups",
             "prayer-center": "Prayer Center",
@@ -1659,7 +1543,7 @@ export default function PastorsPortal({ onLogout }) {
             <FloatingParticles />
             <PastorsSidebar
                 activeItem={activeItem}
-                onItemClick={setActiveItem}
+                onItemClick={(page) => navigate(page)}
                 user={user}
                 onLogout={onLogout}
                 isOpen={sidebarOpen}
@@ -1708,7 +1592,7 @@ export default function PastorsPortal({ onLogout }) {
                             user={user}
                             onLogout={onLogout}
                             onOpenProfile={() => setActiveItem("profile")}
-                            onNavigate={setActiveItem}
+                            onNavigate={navigate}
                         />
                     </div>
                     <div className="flex-1 overflow-y-auto bg-white/80 m-2 sm:m-3 lg:m-4 rounded-2xl shadow-md border border-white/40">
@@ -1718,18 +1602,6 @@ export default function PastorsPortal({ onLogout }) {
                     </div>
                 </div>
             </div>
-
-            {/* Profile Drawer (legacy — kept for backward compat, currently unused) */}
-            {showProfileDrawer && (
-                <ProfileDrawer
-                    user={user}
-                    onClose={() => setShowProfileDrawer(false)}
-                    onSave={(updatedUser) => {
-                        updateUser(updatedUser);
-                        setShowProfileDrawer(false);
-                    }}
-                />
-            )}
         </div>
     );
 }

@@ -119,6 +119,11 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Pastors sign in with their pastor code.'], 403);
         }
 
+        // Members, partners and heads of department (a head is a member with a responsibility) sign in on the mobile app only.
+        if (in_array($user->role, [UserRole::Member, UserRole::Partner, UserRole::HOD], true) && !\App\Http\Middleware\RequireAppClient::isApp($request)) {
+            return response()->json(\App\Http\Middleware\RequireAppClient::refusal(), 403);
+        }
+
         RateLimiter::clear($acctKey);
 
         return $this->issueToken($request, $user, 'email');

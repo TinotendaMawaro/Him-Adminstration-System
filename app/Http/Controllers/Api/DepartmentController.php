@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\User;
@@ -139,6 +140,58 @@ class DepartmentController extends Controller
                 'created_at' => $department->created_at,
                 'updated_at' => $department->updated_at,
             ],
+        ]);
+    }
+
+    /**
+     * GET /api/departments/hod-candidates?search=&page=&department_id=
+     *
+     * Everyone who can be appointed head of a department: every active member of the ministry, in any zone, region
+     * or country (local and international). Partners are members too. Pastors already lead a zone, so they are left out.
+     */
+    public function hodCandidates(Request $request): JsonResponse
+    {
+        $me = $request->user();
+        if (!$me->isMaster() && !$me->isFinance() && !$me->isEventRole() && !$me->isPastor()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $search = trim((string) $request->query('search', ''));
+
+        $query = User::query()
+            ->where('is_active', true)
+            ->whereIn('role', [UserRole::Member->value, UserRole::HOD->value, UserRole::Partner->value])
+            ->with(['zone.region.country', 'homeGroup:id,name']);
+
+        if ($search !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $search) . '%';
+            $query->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('email', 'like', $like)->orWhere('unique_code', 'like', $like));
+        }
+
+        // The person already leading (or invited to lead) this department is not offered again.
+        if ($departmentId = (int) $request->query('department_id')) {
+            $department = Department::find($departmentId);
+            if ($department?->hod_id) {
+                $query->where('id', '!=', $department->hod_id);
+            }
+        }
+
+        $page = $query->orderBy('name')->paginate(max(1, min(50, (int) $request->query('per_page', 20))));
+
+        return response()->json([
+            'success' => true,
+            'data'    => collect($page->items())->map(fn (User $u) => [
+                'id'         => $u->id,
+                'name'       => $u->name,
+                'email'      => $u->email,
+                'role'       => $u->role->value,
+                'zone'       => $u->zone?->name,
+                'region'     => $u->zone?->region?->name,
+                'country'    => $u->zone?->region?->country?->name,
+                'home_group' => $u->homeGroup?->name,
+                'photo'      => $u->profile_photo,
+            ])->values(),
+            'meta' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
         ]);
     }
 
@@ -398,10 +451,10 @@ class DepartmentController extends Controller
         $hodUser = User::find($validated['user_id']);
 
         // Check if user is a valid HOD candidate (must be HOD, Pastor, or Member role)
-        if (!$hodUser->isHOD() && !$hodUser->isPastor() && !$hodUser->isMember()) {
+        if (!$hodUser->isHOD() && !$hodUser->isMember() && !$hodUser->isPartner()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only users with HOD, Pastor, or Member roles can be appointed as HOD.',
+                'message' => 'Only members can be appointed as head of a department.',
             ], 400);
         }
 

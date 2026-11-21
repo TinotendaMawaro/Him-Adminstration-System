@@ -14,7 +14,7 @@ return [
         array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', ''))),
     ))),
     'allowed_origins_patterns' => [],
-    'allowed_headers' => ['Authorization', 'Content-Type', 'Accept', 'X-Requested-With'],
+    'allowed_headers' => ['Authorization', 'Content-Type', 'Accept', 'X-Requested-With', 'X-HIM-Client'],
     'exposed_headers' => ['Retry-After'],
     'max_age' => 600,
     'supports_credentials' => false,

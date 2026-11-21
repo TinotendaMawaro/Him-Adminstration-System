@@ -232,7 +232,7 @@ class ChurchStructureSeeder extends Seeder
     // ─────────────────────────────────────────────────────────────────────────
     private array $pastors = [
         // ── Region 01 - Harare North ──────────────────────────────────────────
-        ['R0101P01', 'C Vutabwashe',  null],     // Regional Leader, Zone R0101
+        ['R0101P01', 'Chipo Vutabwashe',  null],     // Regional Leader, Zone R0101
         ['R0101P02', 'TBA', null],
         ['R0102P01', 'Pastor Evans',   null],     // Regional Leader Dzivarasekwa
         ['R0103P01', 'Pastor Chonzi Jnr', null],  // Regional Leader AFDIS

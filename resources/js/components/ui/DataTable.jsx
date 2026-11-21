@@ -83,7 +83,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Confirm", 
  * columns: [{ key, label, render?(row), className?, width?, primary? }]   (primary = the card title on phones)
  * pagination: { page, lastPage, total, perPage, onPage }  (server side)  |  pageSize: number (client side)
  */
-export default function DataTable({ columns, rows, rowKey = "id", loading, error, empty = "Nothing here yet", selection, pagination, pageSize, onRetry, noun = "row" }) {
+export default function DataTable({ columns, rows, rowKey = "id", loading, error, empty = "Nothing here yet", selection, pagination, pageSize, onRetry, onRowClick, noun = "row" }) {
     const [clientPage, setClientPage] = useState(1);
     useEffect(() => { setClientPage(1); }, [rows.length]);
 
@@ -93,6 +93,10 @@ export default function DataTable({ columns, rows, rowKey = "id", loading, error
     const visible = server || !pageSize ? rows : rows.slice((page - 1) * pageSize, page * pageSize);
     const primary = columns.find((c) => c.primary) || columns[0];
     const cell = (c, row) => (c.render ? c.render(row) : row[c.key] ?? "—");
+    // A row opens its details when tapped or clicked, except where the tap was meant for a checkbox, button or link inside it.
+    const open = (row) => (e) => { if (onRowClick && !e.target.closest("input,button,a,select,label")) onRowClick(row); };
+    const clickable = onRowClick ? { role: "button", tabIndex: 0, style: { cursor: "pointer" } } : {};
+    const key = (row) => (e) => { if (onRowClick && (e.key === "Enter") && e.target === e.currentTarget) onRowClick(row); };
 
     if (error) {
         return (
@@ -118,7 +122,7 @@ export default function DataTable({ columns, rows, rowKey = "id", loading, error
                         {loading ? <tr><td colSpan={columns.length + (selection ? 1 : 0)} className="px-4 py-10 text-center text-sm text-gray-500">Loading…</td></tr>
                             : !visible.length ? <tr><td colSpan={columns.length + (selection ? 1 : 0)} className="px-4 py-10 text-center text-sm text-gray-500">{empty}</td></tr>
                                 : visible.map((row) => (
-                                    <tr key={row[rowKey]} className={`align-middle hover:bg-gray-50 ${selection?.has(row[rowKey]) ? "bg-sky-50/60" : ""}`}>
+                                    <tr key={row[rowKey]} {...clickable} onClick={open(row)} onKeyDown={key(row)} className={`align-middle hover:bg-gray-50 ${selection?.has(row[rowKey]) ? "bg-sky-50/60" : ""}`}>
                                         {selection && <td className="px-3 py-2.5"><input type="checkbox" aria-label={`Select ${noun}`} checked={selection.has(row[rowKey])} onChange={() => selection.toggle(row[rowKey])} /></td>}
                                         {columns.map((c) => <td key={c.key} className={`px-3 py-2.5 text-gray-800 ${c.className || ""}`}>{cell(c, row)}</td>)}
                                     </tr>
@@ -132,7 +136,7 @@ export default function DataTable({ columns, rows, rowKey = "id", loading, error
                 {loading ? <p className="px-4 py-10 text-center text-sm text-gray-500">Loading…</p>
                     : !visible.length ? <p className="px-4 py-10 text-center text-sm text-gray-500">{empty}</p>
                         : visible.map((row) => (
-                            <div key={row[rowKey]} className={`flex gap-3 p-3 ${selection?.has(row[rowKey]) ? "bg-sky-50/60" : ""}`}>
+                            <div key={row[rowKey]} {...clickable} onClick={open(row)} onKeyDown={key(row)} className={`flex gap-3 p-3 ${selection?.has(row[rowKey]) ? "bg-sky-50/60" : ""}`}>
                                 {selection && <input className="mt-1 h-5 w-5 shrink-0" type="checkbox" aria-label={`Select ${noun}`} checked={selection.has(row[rowKey])} onChange={() => selection.toggle(row[rowKey])} />}
                                 <div className="min-w-0 flex-1">
                                     <div className="truncate text-[15px] font-bold text-gray-900">{cell(primary, row)}</div>

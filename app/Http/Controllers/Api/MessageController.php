@@ -161,6 +161,28 @@ class MessageController extends Controller
         return response()->json(['success' => true, 'message' => 'Message marked as read']);
     }
 
+    /** GET /api/messages/announcements — announcements and notices sent to you through a department; marks them read. */
+    public function announcements(Request $request): JsonResponse
+    {
+        $me = $request->user();
+
+        $rows = Message::with(['sender:id,name', 'department:id,name'])
+            ->where('receiver_id', $me->id)->where('recipient_type', 'department')
+            ->latest()->limit(100)->get();
+
+        Message::where('receiver_id', $me->id)->where('recipient_type', 'department')->where('is_read', false)->update(['is_read' => true]);
+
+        return response()->json(['success' => true, 'announcements' => $rows->map(fn (Message $m) => [
+            'id'         => $m->id,
+            'type'       => $m->type,
+            'senderId'   => $m->sender_id,
+            'senderName' => $m->sender?->name,
+            'department' => $m->department?->name,
+            'content'    => $m->content,
+            'created_at' => $m->created_at->toISOString(),
+        ])->values()]);
+    }
+
     /** GET /api/messages/pastor — unread messages from pastors. */
     public function pastorMessages(Request $request): JsonResponse
     {
@@ -218,7 +240,7 @@ class MessageController extends Controller
         Notification::create([
             'user_id' => $to->id, 'title' => "New message from {$from->name}", 'message' => Str::limit(strip_tags($message->content), 120),
             'type' => 'info', 'category' => 'message', 'is_read' => false,
-        ]);
+        ] + (Notification::hasRelated() ? ['related_id' => $from->id] : []));
 
         $body = $this->present($message, $from) + ['sender_id' => $from->id];
 
@@ -251,7 +273,7 @@ class MessageController extends Controller
             Notification::create([
                 'user_id' => $r->id, 'title' => "{$label} for {$department->name}", 'message' => Str::limit(strip_tags($content), 120),
                 'type' => 'info', 'category' => 'message', 'is_read' => false,
-            ]);
+            ] + (Notification::hasRelated() ? ['related_id' => $me->id] : []));
         }
 
         return response()->json([

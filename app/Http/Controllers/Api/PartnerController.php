@@ -75,7 +75,7 @@ class PartnerController extends Controller
         // Never activate on a promise: a partner becomes active when the first payment is confirmed (online gateway or head office).
         $autoActivate = false;
 
-        $partner = DB::transaction(function () use ($user, $zone, $validated, $package, $autoActivate) {
+        $partner = DB::transaction(function () use ($request, $user, $zone, $validated, $package, $autoActivate) {
             $partner = Partner::create([
                 'user_id'           => $user->id,
 'member_id' => $user->member ? $user->member->id : null,
@@ -96,13 +96,13 @@ class PartnerController extends Controller
                 'zone_id'           => $zone->id,
                 'package_id'        => $package->id,
                 'payment_method'    => $validated['payment_method'],
-                'payment_reference' => $validated['payment_reference'],
-                'payment_notes'     => $validated['payment_notes'],
-                'renewal_terms'     => $validated['renewal_terms'],
+                'payment_reference' => ($validated['payment_reference'] ?? null),
+                'payment_notes'     => ($validated['payment_notes'] ?? null),
+                'renewal_terms'     => ($validated['renewal_terms'] ?? null),
                 'points_earned'     => 0,
             ]);
 
-            $paymentNotes = isset($validated['payment_notes']) ? $validated['payment_notes'] : '';
+            $paymentNotes = ($validated['payment_notes'] ?? '');
             if ($request->hasFile('payment_proof')) {
                 $path = $request->file('payment_proof')->store('payment-proofs', 'public');
                 $partner->payment_proof_path = "/storage/{$path}";
@@ -117,7 +117,7 @@ class PartnerController extends Controller
                 'currency'          => 'USD',
                 'status'            => $autoActivate ? \App\Enums\PaymentStatus::Completed : \App\Enums\PaymentStatus::Pending,
                 'method'            => $validated['payment_method'],
-                'transaction_id'    => $validated['payment_reference'],
+                'transaction_id'    => ($validated['payment_reference'] ?? null),
                 'notes'             => $paymentNotes,
                 'paid_at'           => $autoActivate ? now() : null,
                 'recorded_by'       => $user->id,

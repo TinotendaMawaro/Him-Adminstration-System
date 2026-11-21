@@ -14,35 +14,39 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // A new search starts again from the first page.
+  useEffect(() => { setPage(1); }, [searchTerm, isOpen]);
+
+  // Everyone in the ministry (any zone, region or country) can be appointed; the server searches and pages.
   useEffect(() => {
-    if (isOpen && departmentId) {
-      fetchUsers();
-    }
-  }, [isOpen, departmentId]);
-
-  const fetchUsers = async () => {
+    if (!isOpen || !departmentId) return undefined;
+    let cancelled = false;
     setLoading(true);
-    try {
-      // Get all active users that can be HODs
-      const response = await api.get('/members');
-      if (response.data && response.data.success) {
-        // Filter to users with appropriate roles (member, hod, pastor)
-        const eligibleUsers = response.data.data.filter(user =>
-          user.is_active && ['member', 'hod', 'pastor'].includes(user.role?.toLowerCase())
-        );
-        setUsers(eligibleUsers || []);
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/departments/hod-candidates', {
+          params: { search: searchTerm || undefined, page, department_id: departmentId },
+        });
+        if (cancelled) return;
+        setUsers(data?.data || []);
+        setLastPage(data?.meta?.last_page || 1);
+        setTotal(data?.meta?.total || 0);
+      } catch (err) {
+        if (cancelled) return;
+        setUsers([]);
+        setError(err.response?.data?.message || 'Could not load the member list.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, searchTerm ? 300 : 0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [isOpen, departmentId, searchTerm, page]);
 
-  const filteredUsers = users.filter(u =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users;
 
   const handleAssign = async () => {
     if (!selectedUser) return;
@@ -77,7 +81,7 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
       <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
         <div className="px-6 py-5 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-900">Assign HOD</h2>
-          <p className="text-gray-500 text-sm mt-1">Select a user to lead {departmentName}</p>
+          <p className="text-gray-500 text-sm mt-1">Choose any member of Heartfelt, local or international, to lead {departmentName}</p>
         </div>
         <div className="p-6 space-y-4 overflow-y-auto">
           {error && (
@@ -93,7 +97,7 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search users..."
+              placeholder="Search by name, email or code..."
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
             />
           </div>
@@ -101,7 +105,7 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
             {loading ? (
               <div className="text-center py-4 text-gray-500">Loading users...</div>
             ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No eligible users available</div>
+              <div className="text-center py-4 text-gray-500">No members match your search</div>
             ) : (
               filteredUsers.map(user => (
                 <button
@@ -118,7 +122,7 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-gray-900">{user.name}</p>
-                    <p className="text-sm text-gray-500">{user.role || 'Member'}</p>
+                    <p className="text-sm text-gray-500">{[user.zone, user.country].filter(Boolean).join(' · ') || 'No zone yet'}</p>
                   </div>
                   {selectedUser && selectedUser.id === user.id && (
                     <svg className="w-5 h-5 text-emerald-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -129,6 +133,16 @@ function AssignHodModal({ isOpen, onClose, departmentName, departmentId, onSucce
               ))
             )}
           </div>
+          {lastPage > 1 && (
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>{total} members</span>
+              <div className="flex items-center gap-2">
+                <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 rounded-lg bg-gray-100 disabled:opacity-40">Previous</button>
+                <span>{page} / {lastPage}</span>
+                <button type="button" disabled={page >= lastPage || loading} onClick={() => setPage((p) => p + 1)} className="px-3 py-1.5 rounded-lg bg-gray-100 disabled:opacity-40">Next</button>
+              </div>
+            </div>
+          )}
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
           <button

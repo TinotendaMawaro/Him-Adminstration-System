@@ -370,6 +370,9 @@ class ChannelService
     {
         $this->community->assertCanContribute($u);
         abort_unless($this->isMember($c, $u), 403, 'Join this channel to schedule meetings.');
+        $links = DB::table('channels')->where('id', $c->id)->first();
+        $homeGroupId = $links->home_group_id ?? null;
+        abort_if(($homeGroupId || ($links->department_id ?? null)) && !$this->canModerate($c, $u), 403, 'Only the leader can schedule meetings here.');
         $title = $this->community->clean($d['title'] ?? '', 140);
         if (mb_strlen($title) < 3) {
             throw ValidationException::withMessages(['title' => 'Give the meeting a title.']);
@@ -390,6 +393,10 @@ class ChannelService
             'mode' => $mode, 'link_url' => $link, 'location' => $mode === 'in_person' ? ($this->community->clean($d['location'] ?? '', 190) ?: null) : null,
         ]);
         DB::table('channel_meeting_rsvps')->insert(['meeting_id' => $m->id, 'user_id' => $u->id, 'status' => 'going', 'created_at' => now(), 'updated_at' => now()]);
+        // Until a meeting is scheduled the home group reads "to be announced by the leader"; once the leader announces, the day, time and place appear.
+        if ($homeGroupId && ($hg = \App\Models\HomeGroup::find($homeGroupId))) {
+            $hg->update(array_filter(['meeting_day' => $starts->format('l'), 'meeting_time' => $starts->format('H:i'), 'location' => $m->location ?: $hg->location]));
+        }
         $this->tellMembers($c, $u, "Meeting: {$title}", $starts->format('D d M, H:i') . " · {$c->name}");
 
         return $this->meeting($m->load('creator'), 'going', 1);

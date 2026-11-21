@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/api";
 import { Icons } from "../icons";
@@ -64,6 +64,28 @@ export default function Member360View({ memberId, onClose }) {
                   Zone: {data.affiliations?.zone_name}
                 </p>
               </div>
+            </div>
+
+            {/* Everything about them */}
+            <div className="gradient-border card-hover p-4">
+              <h4 className="text-xs font-bold text-white mb-3">Personal details</h4>
+              <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-xs">
+                {[
+                  ["Member code", data.member?.member_code],
+                  ["Status", data.profile?.status],
+                  ["Phone", data.profile?.phone],
+                  ["Email", data.profile?.email],
+                  ["Date of birth", data.profile?.date_of_birth],
+                  ["Gender", data.profile?.gender],
+                  ["Address", data.profile?.address],
+                  ["Home group", data.affiliations?.current_home_group ? `${data.affiliations.current_home_group} (${data.profile?.home_group_role})` : "Not in a home group"],
+                  ["Department", data.affiliations?.current_department ? `${data.affiliations.current_department} (${data.profile?.department_role})` : "Not in a department"],
+                  ["Partnership", data.profile?.partner],
+                  ["Last signed in", data.profile?.last_sign_in],
+                ].map(([k, v]) => (
+                  <React.Fragment key={k}><dt className="text-gray-400">{k}</dt><dd className="min-w-0 break-words text-white">{v || "—"}</dd></React.Fragment>
+                ))}
+              </dl>
             </div>
 
             {/* Engagement Metrics */}

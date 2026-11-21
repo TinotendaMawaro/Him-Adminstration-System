@@ -26,6 +26,40 @@ class MemberController extends Controller
     /** GET /api/members
      *  SECURE ENDPOINT - Role-based data isolation
      */
+    /** What the members list can be narrowed by: the departments and home groups the person may see (pastors: their zone). */
+    public function filterOptions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user->isPastor() || $user->isHOD() || $user->isMaster(), 403);
+
+        $departments = Department::query()->where(fn ($q) => $q->whereNull('zone_id')->orWhere('zone_id', $user->zone_id))
+            ->when($user->isHOD(), fn ($q) => $q->where('id', $user->department_id))->orderBy('name')->get(['id', 'name']);
+        $groups = HomeGroup::where('zone_id', $user->zone_id)->orderBy('name')->get(['id', 'name']);
+
+        return response()->json(['success' => true, 'data' => [
+            'departments' => $departments, 'home_groups' => $groups,
+            'has_music' => $departments->contains(fn ($d) => stripos($d->name, 'music') !== false),
+        ]]);
+    }
+
+    private function applyGroupFilter($query, string $group, $viewer): void
+    {
+        if ($group === 'hod') {
+            $heads = Department::whereNotNull('hod_id')->pluck('hod_id');
+            $query->where(fn ($q) => $q->whereIn('user_id', $heads)->orWhereHas('user', fn ($u) => $u->where('role', 'hod')));
+        } elseif ($group === 'hg_leader') {
+            $query->whereIn('user_id', HomeGroup::whereNotNull('leader_id')->pluck('leader_id'));
+        } elseif ($group === 'music') {
+            $ids = Department::where('name', 'LIKE', '%music%')->pluck('id');
+            $query->where(fn ($q) => $q->whereIn('department_id', $ids)->orWhereHas('user', fn ($u) => $u->whereIn('department_id', $ids)));
+        } elseif (str_starts_with($group, 'dept:')) {
+            $id = (int) substr($group, 5);
+            $query->where(fn ($q) => $q->where('department_id', $id)->orWhereHas('user', fn ($u) => $u->where('department_id', $id)));
+        } elseif (str_starts_with($group, 'hg:')) {
+            $query->where('home_group_id', (int) substr($group, 3));
+        }
+    }
+
     public function index(Request $request): JsonResponse
     {
         // Manual authorization check (since authorize() method isn't available)
@@ -44,7 +78,7 @@ class MemberController extends Controller
         $validated = $request->validate([
             'search'        => ['nullable', 'string', 'max:100'],
             'status'        => ['nullable', 'string', Rule::in(array_merge(array_column(\App\Enums\MemberStatus::cases(), 'value'), ['true', 'false', '1', '0']))],
-            'ministry'      => ['nullable', 'string', Rule::in(['R', 'M', 'H', 'P'])],
+            'group'         => ['nullable', 'string', 'max:20', 'regex:/^(hod|hg_leader|music|dept:\d+|hg:\d+)$/'],
             'home_group_id' => ['nullable', 'integer'],
             'sort'          => ['nullable', Rule::in(['surname', 'name', 'member_number', 'created_at'])],
             'dir'           => ['nullable', Rule::in(['asc', 'desc'])],
@@ -91,9 +125,9 @@ class MemberController extends Controller
             $query->where('status', $status);
         }
 
-        // Ministry = the letter the member code starts with (R, M, H, P)
-        if (!empty($validated['ministry'])) {
-            $query->where(fn ($q) => $q->where('member_code', 'LIKE', $validated['ministry'] . '%')->orWhere('member_number', 'LIKE', $validated['ministry'] . '%'));
+        // One "group" filter: a department, a home group, the music ministry, heads of department or home group leaders.
+        if (!empty($validated['group'])) {
+            $this->applyGroupFilter($query, $validated['group'], $user);
         }
 
         if (!empty($validated['home_group_id'])) {

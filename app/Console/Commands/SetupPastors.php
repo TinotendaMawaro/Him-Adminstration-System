@@ -33,7 +33,7 @@ class SetupPastors extends Command
         $this->info('Setting up HEARTFELT INTERNATIONAL MINISTRIES pastors...');
 
         $pastors = [
-            ['name' => 'Pastor Cee', 'code' => 'R0101P01'],
+            ['name' => 'Pastor Chipo Vutabwashe', 'code' => 'R0101P01'],
             ['name' => 'Pastor Mtombeni E', 'code' => 'R0102P01'],
             ['name' => 'Pastor Mtombeni M', 'code' => 'R0102P02'],
             ['name' => 'Pastor Chonzi M', 'code' => 'R0103P01'],

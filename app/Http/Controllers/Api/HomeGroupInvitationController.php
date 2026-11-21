@@ -50,18 +50,22 @@ class HomeGroupInvitationController extends Controller
                     ->find($id);
 
                 if (!$homeGroup) {
-                    throw new \Exception('Home group not found in your zone.');
+                    throw new \DomainException('Home group not found in your zone.');
                 }
 
                 // Verify member exists and belongs to same zone
                 $member = User::where('id', $validated['member_id'])
                     ->where('zone_id', $pastor->zone_id)
-                    ->where('role', 'member')
+                    ->whereIn('role', ['member', 'partner'])
                     ->lockForUpdate()
                     ->first();
 
                 if (!$member) {
-                    throw new \Exception('Member not found in your zone.');
+                    throw new \DomainException('Member not found in your zone.');
+                }
+
+                if ((int) $member->home_group_id === (int) $homeGroup->id) {
+                    throw new \DomainException("{$member->name} is already in this home group.");
                 }
 
                 // Check for existing pending invitations with row-level locking
@@ -72,18 +76,24 @@ class HomeGroupInvitationController extends Controller
                     ->first();
 
                 if ($existingInvitation) {
-                    throw new \Exception('A pending invitation already exists for this member.');
+                    throw new \DomainException('A pending invitation already exists for this member.');
                 }
 
                 // Create invitation with explicit column mapping
-                $invitation = HomeGroupInvitation::create([
-                    'homegroup_id' => $homeGroup->id,
-                    'member_id' => $member->id, // This should reference users.id
-                    'pastor_id' => $pastor->id,
-                    'status' => 'pending',
-                    'message' => $validated['message'] ?? null,
-                    'invited_at' => now(),
-                ]);
+                // One row per (group, member): inviting someone who earlier declined (or left) re-opens that row.
+                $invitation = HomeGroupInvitation::updateOrCreate(
+                    ['homegroup_id' => $homeGroup->id, 'member_id' => $member->id],
+                    [
+                        'pastor_id' => $pastor->id,
+                        'requested_by' => $pastor->id,
+                        'is_request' => false,
+                        'status' => 'pending',
+                        'message' => $validated['message'] ?? null,
+                        'invited_at' => now(),
+                        'responded_at' => null,
+                        'response_note' => null,
+                    ]
+                );
 
                 Log::info('Homegroup invitation created successfully', [
                     'invitation_id' => $invitation->id,
@@ -112,6 +122,10 @@ class HomeGroupInvitationController extends Controller
                 'message' => 'Invitation sent successfully.',
                 'invitation' => $result['invitation']->load(['homeGroup', 'member', 'requester']),
             ], 201);
+
+        } catch (\DomainException $e) {
+            // Something the pastor can fix (wrong zone, already invited): say what, instead of a server error.
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
 
         } catch (\Illuminate\Database\QueryException $e) {
             $errorCode = $e->getCode();

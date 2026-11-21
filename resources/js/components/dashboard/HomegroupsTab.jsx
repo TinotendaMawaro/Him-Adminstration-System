@@ -5,6 +5,7 @@ import api from "../../lib/api.js";
 import InviteMemberDrawer from "./InviteMemberModal.jsx";
 import Drawer from "../Drawer.jsx";
 import Pagination from "../Pagination.jsx";
+import { meetingLabel } from "../../lib/homegroup.js";
 import { ActionButton, ConfirmDialog, SelectionBar, useSelection } from "../ui/DataTable.jsx";
 
 // Ripple Effect Button Component
@@ -75,8 +76,8 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess, editing }) {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
-    meeting_day: "Sunday",
-    meeting_time: "10:00"
+    meeting_day: "",
+    meeting_time: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -86,8 +87,8 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess, editing }) {
     if (!isOpen) return;
     setError("");
     setFormData(editing
-      ? { name: editing.name || "", location: editing.location || "", meeting_day: editing.meeting_day || "Sunday", meeting_time: (editing.meeting_time || "10:00").slice(0, 5) }
-      : { name: "", location: "", meeting_day: "Sunday", meeting_time: "10:00" });
+      ? { name: editing.name || "", location: editing.location || "", meeting_day: editing.meeting_day || "", meeting_time: (editing.meeting_time || "").slice(0, 5) }
+      : { name: "", location: "", meeting_day: "", meeting_time: "" });
   }, [isOpen, editing]);
 
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -111,7 +112,7 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess, editing }) {
       if (response.data && response.data.success) {
         onSuccess();
         onClose();
-        setFormData({ name: "", location: "", meeting_day: "Sunday", meeting_time: "10:00" });
+        setFormData({ name: "", location: "", meeting_day: "", meeting_time: "" });
       } else {
         setError(response.data?.message || 'Failed to save the home group');
       }
@@ -173,6 +174,7 @@ function CreateHomegroupModal({ isOpen, onClose, onSuccess, editing }) {
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400 transition-all"
               >
+                <option value="">To be announced by the leader</option>
                 {days.map(day => (
                   <option key={day} value={day}>{day}</option>
                 ))}
@@ -503,9 +505,7 @@ function HomegroupCard({ homegroup, onAssignLeader, onDemoteLeader, onInviteMemb
         {/* Meeting Info */}
         <div className="bg-emerald-50/50 rounded-xl p-3 mb-4">
           <p className="text-xs text-gray-500 uppercase tracking-wider">Meeting Schedule</p>
-          <p className="font-semibold text-gray-900">
-            {homegroup.meeting_day || 'Not set'} at {homegroup.meeting_time || 'Not set'}
-          </p>
+          <p className="font-semibold text-gray-900">{meetingLabel(homegroup)}</p>
         </div>
 
         {/* Leader Info */}

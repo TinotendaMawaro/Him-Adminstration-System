@@ -32,3 +32,4 @@ android
 dist-app
 .gradle
 scripts/verify
+public/downloads

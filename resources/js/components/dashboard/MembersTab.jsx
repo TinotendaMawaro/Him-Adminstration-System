@@ -14,8 +14,7 @@ export default function MembersTab() {
     const [transferMember, setTransferMember] = useState(null);
     const [flash, setFlash] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
-    const [filterHomeGroup, setFilterHomeGroup] = useState("");
-    const [filterMinistry, setFilterMinistry] = useState("");
+        const [filterGroup, setFilterGroup] = useState("");
     const [selectedMember, setSelectedMember] = useState(null);
     const [showDrawer, setShowDrawer] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -31,14 +30,13 @@ export default function MembersTab() {
            refetch: refetchMembers,
            isFetching: membersFetching,
          } = useQuery({
-           queryKey: ["pastor-members", currentPage, perPage, debouncedSearch, filterStatus, filterHomeGroup, filterMinistry],
+           queryKey: ["pastor-members", currentPage, perPage, debouncedSearch, filterStatus, filterGroup],
            queryFn: async () => {
              try {
                const params = new URLSearchParams({ page: currentPage, per_page: perPage });
                if (debouncedSearch) params.append('search', debouncedSearch);
                if (filterStatus) params.append('status', filterStatus);
-               if (filterHomeGroup) params.append('home_group_id', filterHomeGroup);
-               if (filterMinistry) params.append('ministry', filterMinistry);
+               if (filterGroup) params.append('group', filterGroup);
 
                const res = await api.get(`/members?${params}`);
                if (!res.data.success) throw new Error(res.data.message || "Failed to fetch members");
@@ -64,39 +62,24 @@ export default function MembersTab() {
     const membersData = membersResponse?.data || [];
     const paginationMeta = membersResponse?.meta || { current_page: 1, last_page: 1, per_page: perPage, total: 0 };
 
-    const { data: homegroups = [], isLoading: homegroupsLoading } = useQuery({
-         queryKey: ["pastor-homegroups"],
-         queryFn: async () => {
-             const res = await api.get('/pastors/home-groups');
-             if (!res.data.success) throw new Error(res.data.message || 'Failed');
-             return res.data.data;
-         },
-         staleTime: 30000,
+    // What the list can be narrowed by: departments and home groups of this zone.
+    const { data: filterOptions } = useQuery({
+         queryKey: ["member-filter-options"],
+         queryFn: async () => (await api.get("/members/filter-options")).data.data,
+         staleTime: 120000,
          refetchOnWindowFocus: false,
          retry: 1,
     });
 
     const handlePageChange = (page) => setCurrentPage(page);
 
-    useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus, filterHomeGroup, filterMinistry]);
+    useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus, filterGroup]);
 
     const filteredMembers = useMemo(() => Array.isArray(membersData) ? membersData : [], [membersData]);
     const selection = useSelection(filteredMembers);
 
-    const handleViewMember = async (member) => {
-      try {
-        const response = await api.get(`/pastors/members/${member.id}/360`);
-        if (response.data.success) {
-          setSelectedMember(response.data.data);
-          setShowDrawer(true);
-        }
-      } catch (err) {
-        console.error('Error fetching member 360:', err);
-        // Fallback to basic member data
-        setSelectedMember(member);
-        setShowDrawer(true);
-      }
-    };
+    // Opening a member shows everything about them (the 360 view loads its own data).
+    const handleViewMember = (member) => { setSelectedMember(member); setShowDrawer(true); };
 
     const handleRefresh = async () => {
       await queryClient.invalidateQueries({ queryKey: ["pastor-members"] });
@@ -205,16 +188,15 @@ export default function MembersTab() {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <select value={filterMinistry} onChange={(e) => setFilterMinistry(e.target.value)} className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-32`}>
-            <option value="">All Ministries</option>
-            <option value="R">Revival (R)</option>
-            <option value="M">Ministry (M)</option>
-            <option value="H">Harvest (H)</option>
-            <option value="P">Purpose (P)</option>
-          </select>
-          <select value={filterHomeGroup} onChange={(e) => setFilterHomeGroup(e.target.value)} className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-40`}>
-            <option value="">All Home Groups</option>
-            {homegroups.map((hg) => <option key={hg.id} value={hg.id}>{hg.name}</option>)}
+          <select value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)} aria-label="Filter by group" className={`${INPUT_CLASS} flex-1 sm:flex-none sm:w-56`}>
+            <option value="">Everyone in the zone</option>
+            <optgroup label="Leaders">
+              <option value="hod">Heads of department (HODs)</option>
+              <option value="hg_leader">Home group leaders</option>
+            </optgroup>
+            {filterOptions?.has_music && <optgroup label="Ministries"><option value="music">Music ministry</option></optgroup>}
+            {!!filterOptions?.departments?.length && <optgroup label="Department">{filterOptions.departments.map((d) => <option key={d.id} value={`dept:${d.id}`}>{d.name}</option>)}</optgroup>}
+            {!!filterOptions?.home_groups?.length && <optgroup label="Home group">{filterOptions.home_groups.map((g) => <option key={g.id} value={`hg:${g.id}`}>{g.name}</option>)}</optgroup>}
           </select>
           <button onClick={handleExport} disabled={!filteredMembers.length} className={`${INPUT_CLASS} px-3 bg-white hover:bg-gray-50 disabled:opacity-50`}>
             Export CSV
@@ -229,6 +211,7 @@ export default function MembersTab() {
           loading={membersLoading}
           selection={selection}
           noun="member"
+          onRowClick={handleViewMember}
           empty="No members found"
           pagination={{ page: paginationMeta.current_page, lastPage: paginationMeta.last_page, total: paginationMeta.total, perPage: paginationMeta.per_page, onPage: handlePageChange }}
         />

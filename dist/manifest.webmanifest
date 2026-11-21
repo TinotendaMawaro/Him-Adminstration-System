@@ -1,0 +1,23 @@
+{
+  "name": "Heartfelt Community",
+  "short_name": "Heartfelt",
+  "description": "Heartfelt International Ministries: community, teachings, channels and the partners' marketplace in one app.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2744",
+  "theme_color": "#0f2744",
+  "categories": ["social", "lifestyle", "education"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Watch live", "short_name": "Live", "url": "/?tab=watch", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Marketplace", "short_name": "Market", "url": "/?tab=market", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My channels", "short_name": "Channels", "url": "/?tab=channels", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
